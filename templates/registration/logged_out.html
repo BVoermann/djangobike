@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Logout - Bike Shop Simulation{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white text-center">
+                    <h4><i class="fas fa-check-circle me-2"></i>Erfolgreich abgemeldet</h4>
+                </div>
+                <div class="card-body text-center">
+                    <p class="mb-4">Sie wurden erfolgreich von der Bike Shop Simulation abgemeldet.</p>
+                    
+                    <div class="d-grid">
+                        <a href="{% url 'login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-1"></i>Erneut anmelden
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Bike Shop Management Simulation
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

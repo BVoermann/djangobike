@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>{{ session.name }}</h2>
+        <p class="text-muted">Monat {{ session.current_month }}/{{ session.current_year }}</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Guthaben</h5>
+                <h3 class="text-success">{{ dashboard_data.balance|floatformat:2 }}€</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Facharbeiter</h5>
+                <h3>{{ dashboard_data.workers|default:0 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Lagerbestand</h5>
+                <h3>{{ dashboard_data.component_stocks.count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Produzierte Räder</h5>
+                <h3>{{ dashboard_data.produced_bikes.count }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Letzte Transaktionen</h5>
+            </div>
+            <div class="card-body">
+                {% if dashboard_data.recent_transactions %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Datum</th>
+                                <th>Kategorie</th>
+                                <th>Beschreibung</th>
+                                <th>Betrag</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in dashboard_data.recent_transactions %}
+                            <tr>
+                                <td>{{ transaction.month }}/{{ transaction.year }}</td>
+                                <td>{{ transaction.category }}</td>
+                                <td>{{ transaction.description }}</td>
+                                <td class="{% if transaction.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                    {% if transaction.transaction_type == 'income' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:2 }}€
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Keine Transaktionen vorhanden.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Schnellaktionen</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'procurement:procurement' session.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-shopping-cart"></i> Einkauf
+                    </a>
+                    <a href="{% url 'production:production' session.id %}" class="btn btn-outline-success">
+                        <i class="fas fa-cogs"></i> Produktion
+                    </a>
+                    <a href="{% url 'sales:sales' session.id %}" class="btn btn-outline-info">
+                        <i class="fas fa-chart-line"></i> Verkauf
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

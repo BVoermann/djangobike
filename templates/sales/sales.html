@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load math_filters %}
+
+{% block title %}Verkauf{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Verkauf</h2>
+        <p>Verkaufen Sie Ihre produzierten Fahrräder an verschiedene Märkte.</p>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <strong>Verfügbare Fahrräder:</strong> {{ available_bikes.count }}
+        </div>
+    </div>
+</div>
+
+{% if available_bikes %}
+<form id="sales-form">
+    {% csrf_token %}
+    <div class="row">
+        {% for market in markets %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>{{ market.name }}</h5>
+                    <small class="text-muted">
+                        Entfernung: {{ market.distance_km }} km | 
+                        Transportkosten: {{ market.transport_cost_per_km|floatformat:2 }}€/km
+                    </small>
+                </div>
+                <div class="card-body">
+                    <h6>Verfügbare Fahrräder:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fahrradtyp</th>
+                                    <th>Preissegment</th>
+                                    <th>Produktionskosten</th>
+                                    <th>Verkaufspreis</th>
+                                    <th>Verkaufen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bike in available_bikes %}
+                                <tr>
+                                    <td>{{ bike.bike_type.name }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if bike.price_segment == 'cheap' %}bg-secondary
+                                            {% elif bike.price_segment == 'standard' %}bg-primary
+                                            {% else %}bg-warning{% endif %}">
+                                            {{ bike.get_price_segment_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ bike.production_cost|floatformat:2 }}€</td>
+                                    <td>
+                                        <input type="number" 
+                                               class="form-control form-control-sm price-input" 
+                                               step="0.01"
+                                               min="{{ bike.production_cost }}"
+                                               data-bike="{{ bike.id }}"
+                                               data-market="{{ market.id }}"
+                                               data-distance="{{ market.distance_km }}"
+                                               data-transport-cost="{{ market.transport_cost_per_km }}"
+                                               placeholder="Preis eingeben">
+                                    </td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input sell-checkbox" 
+                                                   type="checkbox" 
+                                                   data-bike="{{ bike.id }}"
+                                                   data-market="{{ market.id }}">
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <strong>Markt Gesamt: <span class="market-total" data-market="{{ market.id }}">0.00€</span></strong>
+                        <br>
+                        <small class="text-muted">
+                            Transportkosten: <span class="transport-costs" data-market="{{ market.id }}">0.00€</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Gesamtumsatz: <span id="grand-total">0.00€</span></h5>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-chart-line"></i> Verkaufsaufträge erstellen
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h5>Keine Fahrräder verfügbar</h5>
+            <p>Sie haben derzeit keine produzierten Fahrräder zum Verkauf. 
+               Gehen Sie zur <a href="{% url 'production:production' session.id %}" class="alert-link">Produktion</a>, 
+               um Fahrräder herzustellen.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const priceInputs = document.querySelectorAll('.price-input');
+    const sellCheckboxes = document.querySelectorAll('.sell-checkbox');
+    
+    priceInputs.forEach(input => {
+        input.addEventListener('input', updateTotals);
+    });
+    
+    sellCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateTotals);
+    });
+    
+    function updateTotals() {
+        let grandTotal = 0;
+        
+        // Reset market totals
+        document.querySelectorAll('.market-total').forEach(el => {
+            el.textContent = '0.00€';
+        });
+        
+        document.querySelectorAll('.transport-costs').forEach(el => {
+            el.textContent = '0.00€';
+        });
+        
+        // Calculate totals for each market
+        const markets = new Set();
+        sellCheckboxes.forEach(checkbox => {
+            markets.add(checkbox.dataset.market);
+        });
+        
+        markets.forEach(marketId => {
+            let marketTotal = 0;
+            let totalTransportCost = 0;
+            
+            const marketCheckboxes = document.querySelectorAll(`[data-market="${marketId}"].sell-checkbox:checked`);
+            
+            marketCheckboxes.forEach(checkbox => {
+                const bikeId = checkbox.dataset.bike;
+                const priceInput = document.querySelector(`[data-bike="${bikeId}"][data-market="${marketId}"].price-input`);
+                const price = parseFloat(priceInput.value) || 0;
+                const distance = parseFloat(priceInput.dataset.distance);
+                const transportCostPerKm = parseFloat(priceInput.dataset.transportCost);
+                
+                if (price > 0) {
+                    marketTotal += price;
+                    totalTransportCost += distance * transportCostPerKm;
+                }
+            });
+            
+            const marketTotalEl = document.querySelector(`.market-total[data-market="${marketId}"]`);
+            const transportCostEl = document.querySelector(`.transport-costs[data-market="${marketId}"]`);
+            
+            marketTotalEl.textContent = marketTotal.toFixed(2) + '€';
+            transportCostEl.textContent = totalTransportCost.toFixed(2) + '€';
+            
+            grandTotal += marketTotal - totalTransportCost;
+        });
+        
+        document.getElementById('grand-total').textContent = grandTotal.toFixed(2) + '€';
+    }
+    
+    document.getElementById('sales-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const salesData = [];
+        
+        const markets = new Set();
+        sellCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                markets.add(checkbox.dataset.market);
+            }
+        });
+        
+        markets.forEach(marketId => {
+            const marketCheckboxes = document.querySelectorAll(`[data-market="${marketId}"].sell-checkbox:checked`);
+            const bikes = [];
+            
+            marketCheckboxes.forEach(checkbox => {
+                const bikeId = checkbox.dataset.bike;
+                const priceInput = document.querySelector(`[data-bike="${bikeId}"][data-market="${marketId}"].price-input`);
+                const price = parseFloat(priceInput.value) || 0;
+                const distance = parseFloat(priceInput.dataset.distance);
+                const transportCostPerKm = parseFloat(priceInput.dataset.transportCost);
+                
+                if (price > 0) {
+                    bikes.push({
+                        bike_id: bikeId,
+                        price: price,
+                        transport_cost: distance * transportCostPerKm
+                    });
+                }
+            });
+            
+            if (bikes.length > 0) {
+                salesData.push({
+                    market_id: marketId,
+                    bikes: bikes
+                });
+            }
+        });
+        
+        if (salesData.length === 0) {
+            alert('Bitte wählen Sie mindestens ein Fahrrad zum Verkauf aus und geben Sie einen Preis ein.');
+            return;
+        }
+        
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(salesData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Fehler: ' + data.error);
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

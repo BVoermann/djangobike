@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}Produktion{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Produktion</h2>
+        <p>Planen Sie die Produktion für den aktuellen Monat.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Arbeiterkapazität</h5>
+            </div>
+            <div class="card-body">
+                {% for worker in workers %}
+                <div class="row">
+                    <div class="col-8">{{ worker.get_worker_type_display }}</div>
+                    <div class="col-4">{{ worker.count }} x {{ worker.monthly_hours }}h</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Materialbestände</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Komponente</th>
+                                <th>Bestand</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in component_stocks %}
+                            <tr>
+                                <td>{{ stock.component.component_type.name }} - {{ stock.component.name }}</td>
+                                <td>{{ stock.quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="production-form">
+    {% csrf_token %}
+    <div class="card">
+        <div class="card-header">
+            <h5>Produktionsplanung</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fahrradtyp</th>
+                            <th>Facharbeiter (h)</th>
+                            <th>Hilfsarbeiter (h)</th>
+                            <th>Günstig</th>
+                            <th>Standard</th>
+                            <th>Premium</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bike_type in bike_types %}
+                        <tr>
+                            <td>{{ bike_type.name }}</td>
+                            <td>{{ bike_type.skilled_worker_hours }}</td>
+                            <td>{{ bike_type.unskilled_worker_hours }}</td>
+                            <td>
+                                <input type="number" 
+                                       class="form-control production-input" 
+                                       min="0" 
+                                       value="0"
+                                       data-bike-type="{{ bike_type.id }}"
+                                       data-segment="cheap"
+                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}">
+                            </td>
+                            <td>
+                                <input type="number" 
+                                       class="form-control production-input" 
+                                       min="0" 
+                                       value="0"
+                                       data-bike-type="{{ bike_type.id }}"
+                                       data-segment="standard"
+                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}">
+                            </td>
+                            <td>
+                                <input type="number" 
+                                       class="form-control production-input" 
+                                       min="0" 
+                                       value="0"
+                                       data-bike-type="{{ bike_type.id }}"
+                                       data-segment="premium"
+                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3">Gesamt benötigte Stunden:</th>
+                            <th colspan="3">
+                                Facharbeiter: <span id="total-skilled">0</span>h | 
+                                Hilfsarbeiter: <span id="total-unskilled">0</span>h
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-cogs"></i> Produktion starten
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productionInputs = document.querySelectorAll('.production-input');
+    
+    productionInputs.forEach(input => {
+        input.addEventListener('input', updateTotals);
+    });
+    
+    function updateTotals() {
+        let totalSkilled = 0;
+        let totalUnskilled = 0;
+        
+        productionInputs.forEach(input => {
+            const quantity = parseInt(input.value) || 0;
+            const skilled = parseFloat(input.dataset.skilled);
+            const unskilled = parseFloat(input.dataset.unskilled);
+            
+            totalSkilled += quantity * skilled;
+            totalUnskilled += quantity * unskilled;
+        });
+        
+        document.getElementById('total-skilled').textContent = totalSkilled.toFixed(1);
+        document.getElementById('total-unskilled').textContent = totalUnskilled.toFixed(1);
+    }
+    
+    document.getElementById('production-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const productionData = [];
+        const bikeTypes = new Set();
+        
+        productionInputs.forEach(input => {
+            bikeTypes.add(input.dataset.bikeType);
+        });
+        
+        bikeTypes.forEach(bikeTypeId => {
+            const typeInputs = document.querySelectorAll(`[data-bike-type="${bikeTypeId}"]`);
+            const data = { bike_type_id: bikeTypeId };
+            
+            typeInputs.forEach(input => {
+                const segment = input.dataset.segment;
+                const quantity = parseInt(input.value) || 0;
+                data[`quantity_${segment}`] = quantity;
+            });
+            
+            productionData.push(data);
+        });
+        
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(productionData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Fehler: ' + data.error);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

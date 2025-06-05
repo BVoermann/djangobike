@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Parameter hochladen{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Simulationsparameter hochladen</h2>
+        <p>Laden Sie eine ZIP-Datei mit den Excel-Parameterdateien hoch.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.parameter_file.label_tag }}
+                        {{ form.parameter_file }}
+                        <div class="form-text">{{ form.parameter_file.help_text }}</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Hochladen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Benötigte Dateien</h5>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-file-excel text-success"></i> lieferanten.xlsx</li>
+                    <li><i class="fas fa-file-excel text-success"></i> fahrraeder.xlsx</li>
+                    <li><i class="fas fa-file-excel text-success"></i> preise_verkauf.xlsx</li>
+                    <li><i class="fas fa-file-excel text-success"></i> lager.xlsx</li>
+                    <li><i class="fas fa-file-excel text-success"></i> maerkte.xlsx</li>
+                    <li><i class="fas fa-file-excel text-success"></i> personal.xlsx</li>
+                    <li><i class="fas fa-file-excel text-success"></i> finanzen.xlsx</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Fahrradladen-Simulator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Fahrradladen-Simulator</h1>
+        <p class="lead">Willkommen bei Ihrem Fahrradladen-Simulator!</p>
+    </div>
+</div>
+
+{% if not sessions %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Keine aktiven Spielsessions</h5>
+                <p class="card-text">Erstellen Sie eine neue Spielsession, um zu beginnen.</p>
+                <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Neue Session erstellen
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <h3>Ihre Spielsessions</h3>
+    </div>
+</div>
+<div class="row">
+    {% for session in sessions %}
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ session.name }}</h5>
+                <p class="card-text">
+                    Monat: {{ session.current_month }}/{{ session.current_year }}<br>
+                    Guthaben: {{ session.balance|floatformat:2 }}€
+                </p>
+                <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-primary">
+                    Spielen
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<div class="row">
+    <div class="col-12">
+        <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Neue Session erstellen
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

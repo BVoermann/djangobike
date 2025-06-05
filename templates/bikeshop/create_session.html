@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Session erstellen{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Neue Spielsession erstellen</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-play"></i> Session erstellen
+                    </button>
+                    <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-secondary">
+                        Abbrechen
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

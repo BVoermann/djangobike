@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load math_filters %}
+
+{% block title %}Finanzen{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Finanzen</h2>
+        <p>Verwalten Sie Ihre Finanzen und Kredite.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Aktuelle Kredite</h5>
+            </div>
+            <div class="card-body">
+                {% if active_credits %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Typ</th>
+                                <th>Betrag</th>
+                                <th>Zinssatz</th>
+                                <th>Verbleibend</th>
+                                <th>Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for credit in active_credits %}
+                            <tr>
+                                <td>{{ credit.get_credit_type_display }}</td>
+                                <td>{{ credit.amount|floatformat:2 }}€</td>
+                                <td>{{ credit.interest_rate }}%</td>
+                                <td>{{ credit.remaining_months }} Monate</td>
+                                <td>{{ credit.monthly_payment|floatformat:2 }}€</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Keine aktiven Kredite.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Neuen Kredit aufnehmen</h5>
+            </div>
+            <div class="card-body">
+                <form id="credit-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Kredittyp</label>
+                        <select class="form-select" id="credit-type" required>
+                            <option value="short">Kurzfristig (10%, 3 Monate)</option>
+                            <option value="medium">Mittelfristig (8%, 6 Monate)</option>
+                            <option value="long">Langfristig (6%, 12 Monate)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Betrag</label>
+                        <input type="number" class="form-control" id="credit-amount" 
+                               min="1000" max="{{ session.balance|mul:0.25|floatformat:0 }}" required>
+                        <small class="text-muted">
+                            Maximal: {{ session.balance|mul:0.25|floatformat:2 }}€ (25% des Guthabens)
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-money-bill"></i> Kredit aufnehmen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>Transaktionen (aktueller Monat)</h5>
+            </div>
+            <div class="card-body">
+                {% if current_transactions %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Kategorie</th>
+                                <th>Beschreibung</th>
+                                <th>Betrag</th>
+                                <th>Datum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in current_transactions %}
+                            <tr>
+                                <td>{{ transaction.category }}</td>
+                                <td>{{ transaction.description }}</td>
+                                <td class="{% if transaction.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                    {% if transaction.transaction_type == 'income' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:2 }}€
+                                </td>
+                                <td>{{ transaction.created_at|date:"d.m.Y H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Keine Transaktionen in diesem Monat.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Monatsberichte</h5>
+            </div>
+            <div class="card-body">
+                {% if monthly_reports %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Monat</th>
+                                <th>Bilanz</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in monthly_reports %}
+                            <tr>
+                                <td>{{ report.month }}/{{ report.year }}</td>
+                                <td class="{% if report.closing_balance > report.opening_balance %}text-success{% else %}text-danger{% endif %}">
+                                    {{ report.closing_balance|sub:report.opening_balance|floatformat:2 }}€
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Keine Berichte verfügbar.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('credit-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        action: 'take_credit',
+        credit_type: document.getElementById('credit-type').value,
+        amount: document.getElementById('credit-amount').value
+    };
+    
+    fetch('', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Fehler: ' + data.error);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+/* Zusätzliche Styles für den Fahrradladen-Simulator */
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.balance-display {
+    font-family: 'Courier New', monospace;
+}
+
+.progress {
+    height: 1.5rem;
+}
+
+.sidebar .nav-link {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.sidebar .nav-link.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.production-input, .quantity-input {
+    width: 80px;
+    text-align: center;
+}

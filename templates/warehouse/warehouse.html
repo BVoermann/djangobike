@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load math_filters %}
+
+{% block title %}Lager{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>Lager</h2>
+        <p>Übersicht über Ihre Lagerbestände.</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for data in warehouse_data %}
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>{{ data.warehouse.name }}</h5>
+                <small class="text-muted">{{ data.warehouse.location }}</small>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="progress">
+                        <div class="progress-bar" 
+                             role="progressbar" 
+                             style="width: {{ data.usage|floatformat:0|add:0|mul:100|div:data.warehouse.capacity_m2 }}%">
+                            {{ data.usage|floatformat:1 }}m² / {{ data.warehouse.capacity_m2 }}m²
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        Verfügbar: {{ data.remaining|floatformat:1 }}m² | 
+                        Miete: {{ data.warehouse.rent_per_month|floatformat:2 }}€/Monat
+                    </small>
+                </div>
+                
+                <h6>Komponenten:</h6>
+                {% if data.stocks %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Komponente</th>
+                                <th>Menge</th>
+                                <th>Platzbedarf</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in data.stocks %}
+                            <tr>
+                                <td>{{ stock.component.component_type.name }} - {{ stock.component.name }}</td>
+                                <td>{{ stock.quantity }}</td>
+                                <td>{{ stock.quantity|mul:stock.component.component_type.storage_space_per_unit|floatformat:2 }}m²</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Keine Komponenten im Lager.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

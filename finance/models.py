@@ -7,6 +7,7 @@ class Credit(models.Model):
     """Kredit"""
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE)
     credit_type = models.CharField(max_length=20, choices=[
+        ('instant', 'Sofortkredit'),
         ('short', 'Kurzfristig'),
         ('medium', 'Mittelfristig'),
         ('long', 'Langfristig')

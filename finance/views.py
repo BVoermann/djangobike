@@ -35,13 +35,19 @@ def finance_view(request, session_id):
 
                 # Kreditkonditionen
                 credit_conditions = {
+                    'instant': {'rate': 15, 'months': 1},
                     'short': {'rate': 10, 'months': 3},
                     'medium': {'rate': 8, 'months': 6},
                     'long': {'rate': 6, 'months': 12}
                 }
 
                 conditions = credit_conditions[credit_type]
-                max_amount = session.balance * 0.25  # Maximal 25% des Guthabens
+
+                # Sofortkredit hat niedrigere Maximalgrenze (15% des Guthabens)
+                if credit_type == 'instant':
+                    max_amount = session.balance * 0.15
+                else:
+                    max_amount = session.balance * 0.25  # Andere Kredite: 25% des Guthabens
 
                 if amount > max_amount:
                     return JsonResponse({'success': False, 'error': 'Kreditbetrag zu hoch!'})

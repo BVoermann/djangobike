@@ -59,7 +59,8 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label class="form-label">Kredittyp</label>
-                        <select class="form-select" id="credit-type" required>
+                        <select class="form-select" id="credit-type" required onchange="updateMaxAmount()">
+                            <option value="instant">Sofortkredit (15%, 1 Monat)</option>
                             <option value="short">Kurzfristig (10%, 3 Monate)</option>
                             <option value="medium">Mittelfristig (8%, 6 Monate)</option>
                             <option value="long">Langfristig (6%, 12 Monate)</option>
@@ -67,10 +68,10 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Betrag</label>
-                        <input type="number" class="form-control" id="credit-amount" 
-                               min="1000" max="{{ session.balance|mul:0.25|floatformat:0 }}" required>
-                        <small class="text-muted">
-                            Maximal: {{ session.balance|mul:0.25|floatformat:2 }}€ (25% des Guthabens)
+                        <input type="number" class="form-control" id="credit-amount"
+                               min="1000" required>
+                        <small class="text-muted" id="max-amount-text">
+                            Maximal: {{ session.balance|mul:0.15|floatformat:2 }}€ (15% des Guthabens)
                         </small>
                     </div>
                     <button type="submit" class="btn btn-warning">
@@ -158,15 +159,38 @@
 
 {% block scripts %}
 <script>
+// Funktionen für die dynamische Anzeige der Maximalbeträge
+function updateMaxAmount() {
+    const creditType = document.getElementById('credit-type').value;
+    const balance = {{ session.balance }};
+    const creditAmountInput = document.getElementById('credit-amount');
+    const maxAmountText = document.getElementById('max-amount-text');
+
+    let maxAmount, percentage, percentageText;
+
+    if (creditType === 'instant') {
+        maxAmount = balance * 0.15;
+        percentage = 15;
+        percentageText = '15%';
+    } else {
+        maxAmount = balance * 0.25;
+        percentage = 25;
+        percentageText = '25%';
+    }
+
+    creditAmountInput.max = Math.floor(maxAmount);
+    maxAmountText.textContent = `Maximal: ${maxAmount.toFixed(2)}€ (${percentageText} des Guthabens)`;
+}
+
 document.getElementById('credit-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const formData = {
         action: 'take_credit',
         credit_type: document.getElementById('credit-type').value,
         amount: document.getElementById('credit-amount').value
     };
-    
+
     fetch('', {
         method: 'POST',
         headers: {
@@ -183,6 +207,11 @@ document.getElementById('credit-form').addEventListener('submit', function(e) {
             alert('Fehler: ' + data.error);
         }
     });
+});
+
+// Initialisierung beim Laden der Seite
+document.addEventListener('DOMContentLoaded', function() {
+    updateMaxAmount();
 });
 </script>
 {% endblock %}

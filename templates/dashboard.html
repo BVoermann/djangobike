@@ -1,59 +1,124 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Fahrradladen-Simulator{% endblock %}
+{% block title %}Dashboard - BikeShop Simulator{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1>Fahrradladen-Simulator</h1>
-        <p class="lead">Willkommen bei Ihrem Fahrradladen-Simulator!</p>
+<div class="container-fluid">
+    <!-- Hero Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <h1 class="display-4 fw-bold mb-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                    <i class="fas fa-bicycle me-3"></i>BikeShop Simulator
+                </h1>
+                <p class="lead text-muted">Manage your bike business like a pro! 🚀</p>
+            </div>
+        </div>
     </div>
+
+    {% if not sessions %}
+    <!-- Empty State -->
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="fas fa-rocket fa-4x text-muted mb-3"></i>
+                        <h3 class="fw-bold">Ready to Start?</h3>
+                        <p class="text-muted lead">Create your first business simulation and start building your bike empire!</p>
+                    </div>
+                    <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Create Your First Session
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Sessions Grid -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="fw-bold mb-0">
+                    <i class="fas fa-gamepad me-2"></i>Your Business Sessions
+                </h2>
+                <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-success">
+                    <i class="fas fa-plus me-2"></i>New Session
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        {% for session in sessions %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 session-card">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title fw-bold mb-0">{{ session.name }}</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{% url 'bikeshop:delete_session' session.id %}">
+                                        <i class="fas fa-trash me-2"></i>Delete Session
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="fs-4 fw-bold text-primary mb-1">{{ session.current_month }}</div>
+                                <div class="small text-muted">Month</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="fs-4 fw-bold text-success mb-1">{{ session.current_year }}</div>
+                                <div class="small text-muted">Year</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Balance</span>
+                            <span class="badge bg-success fs-6 px-3 py-2">{{ session.balance|floatformat:2 }}€</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-primary w-100">
+                        <i class="fas fa-play me-2"></i>Continue Playing
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 
-{% if not sessions %}
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body text-center">
-                <h5 class="card-title">Keine aktiven Spielsessions</h5>
-                <p class="card-text">Erstellen Sie eine neue Spielsession, um zu beginnen.</p>
-                <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Neue Session erstellen
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-{% else %}
-<div class="row">
-    <div class="col-12">
-        <h3>Ihre Spielsessions</h3>
-    </div>
-</div>
-<div class="row">
-    {% for session in sessions %}
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{{ session.name }}</h5>
-                <p class="card-text">
-                    Monat: {{ session.current_month }}/{{ session.current_year }}<br>
-                    Guthaben: {{ session.balance|floatformat:2 }}€
-                </p>
-                <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-primary">
-                    Spielen
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-<div class="row">
-    <div class="col-12">
-        <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Neue Session erstellen
-        </a>
-    </div>
-</div>
-{% endif %}
+<style>
+.session-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 20px;
+}
+
+.session-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+}
+
+.badge {
+    border-radius: 15px;
+}
+</style>
 {% endblock %}

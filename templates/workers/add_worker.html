@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Arbeiter einstellen - BikeShop Pro{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fas fa-user-plus" style="background: var(--success-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Neuen Arbeiter einstellen
+            </h1>
+            <p class="lead text-muted">Fügen Sie einen neuen Mitarbeiter zu Ihrem Team hinzu</p>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+            <div class="card-body p-5">
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.name }}
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-2"></i>{{ form.name.label }}
+                            </label>
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.worker_type.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-briefcase me-2" style="color: #667eea;"></i>{{ form.worker_type.label }}
+                            </label>
+                            {{ form.worker_type }}
+                            {% if form.worker_type.errors %}
+                                <div class="text-danger small mt-1">{{ form.worker_type.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-2">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.hourly_wage.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-euro-sign me-2" style="color: #4facfe;"></i>{{ form.hourly_wage.label }}
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-euro-sign text-success"></i>
+                                </span>
+                                {{ form.hourly_wage }}
+                                <span class="input-group-text bg-light">/h</span>
+                            </div>
+                            {% if form.hourly_wage.help_text %}
+                                <div class="form-text">{{ form.hourly_wage.help_text }}</div>
+                            {% endif %}
+                            {% if form.hourly_wage.errors %}
+                                <div class="text-danger small mt-1">{{ form.hourly_wage.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.efficiency.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-tachometer-alt me-2" style="color: #f093fb;"></i>{{ form.efficiency.label }}
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-percent text-primary"></i>
+                                </span>
+                                {{ form.efficiency }}
+                                <span class="input-group-text bg-light">%</span>
+                            </div>
+                            {% if form.efficiency.help_text %}
+                                <div class="form-text">{{ form.efficiency.help_text }}</div>
+                            {% endif %}
+                            {% if form.efficiency.errors %}
+                                <div class="text-danger small mt-1">{{ form.efficiency.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label for="{{ form.experience_level.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-medal me-2" style="color: #667eea;"></i>{{ form.experience_level.label }}
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="fas fa-star text-warning"></i>
+                                </span>
+                                {{ form.experience_level }}
+                            </div>
+                            {% if form.experience_level.help_text %}
+                                <div class="form-text">{{ form.experience_level.help_text }}</div>
+                            {% endif %}
+                            {% if form.experience_level.errors %}
+                                <div class="text-danger small mt-1">{{ form.experience_level.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empfehlungen Card -->
+                <div class="card border-0 mb-4" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);">
+                    <div class="card-body">
+                        <h6 class="card-title d-flex align-items-center mb-3">
+                            <i class="fas fa-lightbulb me-2" style="color: #f093fb;"></i>
+                            <span class="fw-bold">Empfohlene Werte</span>
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 rounded" style="background: var(--success-gradient); color: white;">
+                                    <h6 class="fw-bold mb-2">
+                                        <i class="fas fa-cog me-2"></i>Facharbeiter
+                                    </h6>
+                                    <small class="d-block">• 25-35€/h Stundenlohn</small>
+                                    <small class="d-block">• 90-150% Effizienz</small>
+                                    <small class="d-block">• Level 3-8 Erfahrung</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 rounded" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                    <h6 class="fw-bold mb-2">
+                                        <i class="fas fa-hammer me-2"></i>Hilfsarbeiter
+                                    </h6>
+                                    <small class="d-block">• 15-20€/h Stundenlohn</small>
+                                    <small class="d-block">• 80-120% Effizienz</small>
+                                    <small class="d-block">• Level 1-5 Erfahrung</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-3 justify-content-end flex-wrap">
+                    <a href="{% url 'workers:dashboard' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left me-2"></i>Zurück
+                    </a>
+                    <button type="submit" class="btn btn-success btn-lg px-4">
+                        <i class="fas fa-user-plus me-2"></i>Arbeiter einstellen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="card border-0" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);">
+            <div class="card-body text-center py-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-rocket me-2" style="color: #4facfe;"></i>
+                    Schneller geht's mit Bulk-Einstellung
+                </h6>
+                <p class="text-muted mb-3">Stellen Sie mehrere Arbeiter auf einmal mit automatisch generierten Eigenschaften ein.</p>
+                <a href="{% url 'workers:quick_hire' %}" class="btn btn-primary">
+                    <i class="fas fa-users me-2"></i>Zur Schnelleinstellung
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<style>
+.form-floating > .form-control {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+    font-size: 1.1rem;
+}
+
+.form-floating > .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.form-floating > label {
+    padding: 1rem 0.75rem 0.25rem;
+    font-weight: 600;
+}
+
+.input-group-lg > .form-control {
+    font-size: 1.1rem;
+    border: 2px solid #e9ecef;
+}
+
+.input-group-lg > .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.btn {
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+    }
+}
+</style>
+
+<script>
+// Auto-fill wage and efficiency based on worker type with smooth animations
+document.getElementById('{{ form.worker_type.id_for_label }}').addEventListener('change', function() {
+    const wageField = document.getElementById('{{ form.hourly_wage.id_for_label }}');
+    const efficiencyField = document.getElementById('{{ form.efficiency.id_for_label }}');
+    const experienceField = document.getElementById('{{ form.experience_level.id_for_label }}');
+    
+    // Add loading effect
+    [wageField, efficiencyField, experienceField].forEach(field => {
+        field.style.transition = 'all 0.3s ease';
+        field.style.backgroundColor = '#f8f9fa';
+    });
+    
+    setTimeout(() => {
+        if (this.value === 'skilled') {
+            if (!wageField.value) wageField.value = '30.00';
+            if (!efficiencyField.value) efficiencyField.value = '120';
+            if (!experienceField.value) experienceField.value = '5';
+        } else if (this.value === 'unskilled') {
+            if (!wageField.value) wageField.value = '17.50';
+            if (!efficiencyField.value) efficiencyField.value = '100';
+            if (!experienceField.value) experienceField.value = '3';
+        }
+        
+        // Reset background
+        setTimeout(() => {
+            [wageField, efficiencyField, experienceField].forEach(field => {
+                field.style.backgroundColor = '';
+            });
+        }, 500);
+    }, 100);
+});
+
+// Add form validation feedback
+document.querySelector('form').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        }
+    });
+    
+    if (!isValid) {
+        e.preventDefault();
+        // Smooth scroll to first invalid field
+        const firstInvalid = this.querySelector('.is-invalid');
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,387 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Schnell einstellen - BikeShop Pro{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fas fa-users" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Schnelleinstellung
+            </h1>
+            <p class="lead text-muted">Stellen Sie mehrere Arbeiter auf einmal ein - schnell und unkompliziert</p>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+            <div class="card-body p-5">
+
+                <!-- Info Banner -->
+                <div class="card border-0 mb-4" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%); border-left: 4px solid #4facfe !important;">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-magic fa-2x" style="color: #4facfe;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-2">Automatische Generierung</h6>
+                                <p class="mb-0 text-muted">Arbeiter werden automatisch mit realistischen Werten basierend auf dem gewählten Typ erstellt. Namen, Effizienz und Erfahrung werden zufällig aber branchenüblich generiert.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="{{ form.worker_type.id_for_label }}" class="form-label fw-bold fs-5">
+                                    <i class="fas fa-briefcase me-2" style="color: #667eea;"></i>{{ form.worker_type.label }}
+                                </label>
+                                <select class="form-select form-select-lg" id="{{ form.worker_type.id_for_label }}" name="{{ form.worker_type.html_name }}" style="border: 3px solid #e9ecef; border-radius: 15px; font-size: 1.1rem;">
+                                    <option value="">--- Wählen Sie den Arbeitertyp ---</option>
+                                    {% for value, label in form.worker_type.field.choices %}
+                                        {% if value %}
+                                        <option value="{{ value }}" {% if form.worker_type.value == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% if form.worker_type.help_text %}
+                                    <div class="form-text">{{ form.worker_type.help_text }}</div>
+                                {% endif %}
+                                {% if form.worker_type.errors %}
+                                    <div class="text-danger small mt-2">{{ form.worker_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="{{ form.count.id_for_label }}" class="form-label fw-bold fs-5">
+                                    <i class="fas fa-hashtag me-2" style="color: #4facfe;"></i>{{ form.count.label }}
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-light border-end-0" style="border: 3px solid #e9ecef; border-right: none !important; border-radius: 15px 0 0 15px;">
+                                        <i class="fas fa-users text-primary"></i>
+                                    </span>
+                                    {{ form.count }}
+                                </div>
+                                {% if form.count.help_text %}
+                                    <div class="form-text">{{ form.count.help_text }}</div>
+                                {% endif %}
+                                {% if form.count.errors %}
+                                    <div class="text-danger small mt-2">{{ form.count.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Cards -->
+                    <div class="preview-container mb-4">
+                        <div id="preview-skilled" class="card border-0 mb-3" style="display: none; background: var(--success-gradient); color: white; border-radius: 20px;">
+                            <div class="card-body p-4">
+                                <h5 class="card-title d-flex align-items-center mb-3">
+                                    <i class="fas fa-cog me-3"></i>
+                                    Facharbeiter - Automatische Werte
+                                </h5>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-euro-sign me-2"></i>
+                                            <span><strong>Stundenlohn:</strong> 25-35€/h</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-tachometer-alt me-2"></i>
+                                            <span><strong>Effizienz:</strong> 90-150%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-medal me-2"></i>
+                                            <span><strong>Erfahrung:</strong> Level 3-8</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user me-2"></i>
+                                            <span><strong>Namen:</strong> Deutsche Namen</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="preview-unskilled" class="card border-0 mb-3" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px;">
+                            <div class="card-body p-4">
+                                <h5 class="card-title d-flex align-items-center mb-3">
+                                    <i class="fas fa-hammer me-3"></i>
+                                    Hilfsarbeiter - Automatische Werte
+                                </h5>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-euro-sign me-2"></i>
+                                            <span><strong>Stundenlohn:</strong> 15-20€/h</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-tachometer-alt me-2"></i>
+                                            <span><strong>Effizienz:</strong> 80-120%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-medal me-2"></i>
+                                            <span><strong>Erfahrung:</strong> Level 1-5</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user me-2"></i>
+                                            <span><strong>Namen:</strong> Deutsche Namen</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-3 justify-content-end flex-wrap">
+                        <a href="{% url 'workers:dashboard' %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>Zurück
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg px-4" id="submit-btn">
+                            <span class="btn-text">
+                                <i class="fas fa-users me-2"></i>Arbeiter einstellen
+                            </span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Erstelle Arbeiter...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Additional Information -->
+<div class="row justify-content-center mt-5">
+    <div class="col-lg-8">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 h-100" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%);">
+                    <div class="card-body text-center p-4">
+                        <div class="display-6 mb-3" style="color: #f093fb;">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <h6 class="fw-bold mb-3">Individuelle Einstellung</h6>
+                        <p class="text-muted mb-3">Für spezielle Anforderungen und individuelle Anpassungen der Arbeitereigenschaften.</p>
+                        <a href="{% url 'workers:add_worker' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-2"></i>Einzeln einstellen
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 h-100" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
+                    <div class="card-body text-center p-4">
+                        <div class="display-6 mb-3" style="color: #667eea;">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h6 class="fw-bold mb-3">Team-Übersicht</h6>
+                        <p class="text-muted mb-3">Verwalten Sie Ihr komplettes Team und überwachen Sie die Produktivität.</p>
+                        <a href="{% url 'workers:dashboard' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-tachometer-alt me-2"></i>Zum Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<style>
+.form-select {
+    border: 3px solid #e9ecef;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+    transform: scale(1.02);
+}
+
+.input-group-lg > .form-control {
+    border: 3px solid #e9ecef;
+    border-left: none;
+    border-radius: 0 15px 15px 0;
+    font-size: 1.1rem;
+}
+
+.input-group-lg > .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.preview-container .card {
+    animation: slideInUp 0.5s ease;
+    transition: all 0.3s ease;
+}
+
+.preview-container .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.btn {
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+@media (max-width: 768px) {
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+    }
+}
+</style>
+
+<script>
+// Show/hide preview with smooth animations
+const workerTypeSelect = document.getElementById('{{ form.worker_type.id_for_label }}');
+const skilledPreview = document.getElementById('preview-skilled');
+const unskilledPreview = document.getElementById('preview-unskilled');
+
+workerTypeSelect.addEventListener('change', function() {
+    // Hide all previews first
+    [skilledPreview, unskilledPreview].forEach(preview => {
+        if (preview.style.display !== 'none') {
+            preview.style.opacity = '0';
+            preview.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                preview.style.display = 'none';
+            }, 300);
+        }
+    });
+    
+    // Show the selected preview after a delay
+    setTimeout(() => {
+        let targetPreview = null;
+        if (this.value === 'skilled') {
+            targetPreview = skilledPreview;
+        } else if (this.value === 'unskilled') {
+            targetPreview = unskilledPreview;
+        }
+        
+        if (targetPreview) {
+            targetPreview.style.display = 'block';
+            targetPreview.style.opacity = '0';
+            targetPreview.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                targetPreview.style.opacity = '1';
+                targetPreview.style.transform = 'translateY(0)';
+            }, 50);
+        }
+    }, 300);
+});
+
+// Form submission with loading state
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnLoading = submitBtn.querySelector('.btn-loading');
+    
+    // Show loading state
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+    submitBtn.disabled = true;
+    
+    // Add validation
+    const requiredFields = this.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+            field.classList.add('is-valid');
+        }
+    });
+    
+    if (!isValid) {
+        e.preventDefault();
+        // Reset button state
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        submitBtn.disabled = false;
+        
+        // Focus first invalid field
+        const firstInvalid = this.querySelector('.is-invalid');
+        if (firstInvalid) {
+            firstInvalid.focus();
+        }
+    }
+});
+
+// Trigger change event on page load
+workerTypeSelect.dispatchEvent(new Event('change'));
+
+// Add number input validation
+const countInput = document.getElementById('{{ form.count.id_for_label }}');
+if (countInput) {
+    countInput.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        if (value > 10) {
+            this.setCustomValidity('Maximale Anzahl ist 10 Arbeiter pro Vorgang');
+        } else if (value < 1) {
+            this.setCustomValidity('Mindestens 1 Arbeiter muss eingestellt werden');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+}
+</script>
+{% endblock %}

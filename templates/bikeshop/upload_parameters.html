@@ -1,48 +1,282 @@
 {% extends 'base.html' %}
 
-{% block title %}Parameter hochladen{% endblock %}
+{% block title %}Upload Parameters - BikeShop Pro{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2>Simulationsparameter hochladen</h2>
-        <p>Laden Sie eine ZIP-Datei mit den Excel-Parameterdateien hoch.</p>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-cloud-upload-alt me-3"></i>Upload Simulation Parameters
+                </h1>
+                <p class="lead text-muted">Upload your ZIP file containing Excel parameter files to get started</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        <div class="col-lg-8">
+            <div class="card upload-card">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="upload-icon mb-3">
+                            <i class="fas fa-file-upload fa-4x"></i>
+                        </div>
+                        <h4 class="fw-bold">Select Your Parameter File</h4>
+                        <p class="text-muted">Choose a ZIP file containing all required Excel files</p>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data" class="upload-form">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <div class="file-upload-wrapper">
+                                <input type="file" 
+                                       name="{{ form.parameter_file.name }}" 
+                                       id="{{ form.parameter_file.id_for_label }}"
+                                       accept=".zip"
+                                       class="file-input"
+                                       required>
+                                <label for="{{ form.parameter_file.id_for_label }}" class="file-upload-label">
+                                    <div class="file-upload-content">
+                                        <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                                        <div class="fw-semibold file-label-text">Click to browse files</div>
+                                        <small class="text-muted">or drag and drop your ZIP file here</small>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-text mt-3">{{ form.parameter_file.help_text }}</div>
+                            <div class="selected-file mt-2" style="display: none;">
+                                <i class="fas fa-file-archive text-primary me-2"></i>
+                                <span class="file-name"></span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2 clear-file">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-rocket me-2"></i>Start Upload
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card requirements-card h-100">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-list-check me-2"></i>Required Files
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Your ZIP file must contain these Excel files:</p>
+                    <div class="requirement-list">
+                        <div class="requirement-item">
+                            <i class="fas fa-file-excel text-success me-3"></i>
+                            <span class="fw-semibold">lieferanten.xlsx</span>
+                        </div>
+                        <div class="requirement-item">
+                            <i class="fas fa-file-excel text-success me-3"></i>
+                            <span class="fw-semibold">fahrraeder.xlsx</span>
+                        </div>
+                        <div class="requirement-item">
+                            <i class="fas fa-file-excel text-success me-3"></i>
+                            <span class="fw-semibold">preise_verkauf.xlsx</span>
+                        </div>
+                        <div class="requirement-item">
+                            <i class="fas fa-file-excel text-success me-3"></i>
+                            <span class="fw-semibold">lager.xlsx</span>
+                        </div>
+                        <div class="requirement-item">
+                            <i class="fas fa-file-excel text-success me-3"></i>
+                            <span class="fw-semibold">maerkte.xlsx</span>
+                        </div>
+                        <div class="requirement-item">
+                            <i class="fas fa-file-excel text-success me-3"></i>
+                            <span class="fw-semibold">personal.xlsx</span>
+                        </div>
+                        <div class="requirement-item">
+                            <i class="fas fa-file-excel text-success me-3"></i>
+                            <span class="fw-semibold">finanzen.xlsx</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info border-0 mt-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Tip:</strong> Make sure all files are properly formatted and contain the required data columns.
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'bikeshop:download_default_parameters' %}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-download me-2"></i>Download Example Files
+                        </a>
+                        <small class="d-block text-muted mt-2">Get a ZIP with template files to get started</small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        {{ form.parameter_file.label_tag }}
-                        {{ form.parameter_file }}
-                        <div class="form-text">{{ form.parameter_file.help_text }}</div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-upload"></i> Hochladen
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Benötigte Dateien</h5>
-                <ul class="list-unstyled">
-                    <li><i class="fas fa-file-excel text-success"></i> lieferanten.xlsx</li>
-                    <li><i class="fas fa-file-excel text-success"></i> fahrraeder.xlsx</li>
-                    <li><i class="fas fa-file-excel text-success"></i> preise_verkauf.xlsx</li>
-                    <li><i class="fas fa-file-excel text-success"></i> lager.xlsx</li>
-                    <li><i class="fas fa-file-excel text-success"></i> maerkte.xlsx</li>
-                    <li><i class="fas fa-file-excel text-success"></i> personal.xlsx</li>
-                    <li><i class="fas fa-file-excel text-success"></i> finanzen.xlsx</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+.upload-card {
+    border: none;
+    border-radius: 25px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.upload-icon {
+    color: #667eea;
+}
+
+.file-upload-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-upload-wrapper .file-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.file-upload-label {
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    border: 3px dashed #ddd;
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.file-upload-label:hover {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    transform: translateY(-2px);
+}
+
+.file-upload-content {
+    color: #6c757d;
+}
+
+.file-upload-label:hover .file-upload-content {
+    color: #667eea;
+}
+
+.requirements-card {
+    border: none;
+    border-radius: 20px;
+}
+
+.requirement-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+}
+
+.requirement-item:last-child {
+    border-bottom: none;
+}
+
+.requirement-item i {
+    font-size: 1.2rem;
+}
+
+.alert {
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgba(13, 202, 240, 0.1) 0%, rgba(13, 110, 253, 0.1) 100%);
+}
+
+.selected-file {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.file-upload-label.has-file {
+    border-color: #28a745;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
+}
+
+.file-upload-label.has-file .file-upload-content {
+    color: #28a745;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('{{ form.parameter_file.id_for_label }}');
+    const fileLabel = document.querySelector('.file-upload-label');
+    const fileLabelText = document.querySelector('.file-label-text');
+    const selectedFileDiv = document.querySelector('.selected-file');
+    const fileNameSpan = document.querySelector('.file-name');
+    const clearFileBtn = document.querySelector('.clear-file');
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Update UI to show selected file
+            fileLabel.classList.add('has-file');
+            fileLabelText.textContent = 'File selected!';
+            fileNameSpan.textContent = file.name;
+            selectedFileDiv.style.display = 'flex';
+        }
+    });
+
+    clearFileBtn.addEventListener('click', function() {
+        // Clear the file input
+        fileInput.value = '';
+        fileLabel.classList.remove('has-file');
+        fileLabelText.textContent = 'Click to browse files';
+        selectedFileDiv.style.display = 'none';
+    });
+
+    // Drag and drop functionality
+    fileLabel.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileLabel.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)';
+    });
+
+    fileLabel.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        fileLabel.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
+    });
+
+    fileLabel.addEventListener('drop', function(e) {
+        e.preventDefault();
+        fileLabel.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type === 'application/zip' || file.name.toLowerCase().endsWith('.zip')) {
+                fileInput.files = files;
+                
+                // Trigger change event
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
+            } else {
+                alert('Please select a ZIP file.');
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

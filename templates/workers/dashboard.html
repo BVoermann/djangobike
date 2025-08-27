@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Arbeiterverwaltung - BikeShop Pro{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-users" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Arbeiterverwaltung
+            </h1>
+            <p class="lead text-muted">Verwalten Sie Ihr Team und optimieren Sie die Produktivität</p>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiken -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h2 class="fw-bold">{{ stats.total_workers }}</h2>
+                <p class="mb-0 opacity-75">Aktive Arbeiter</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <h2 class="fw-bold">{{ stats.skilled_workers }}</h2>
+                <p class="mb-0 opacity-75">Facharbeiter</p>
+                <small class="d-block mt-2">Ø {{ stats.avg_efficiency_skilled|floatformat:0 }}% Effizienz</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-hammer"></i>
+                </div>
+                <h2 class="fw-bold">{{ stats.unskilled_workers }}</h2>
+                <p class="mb-0 opacity-75">Hilfsarbeiter</p>
+                <small class="d-block mt-2">Ø {{ stats.avg_efficiency_unskilled|floatformat:0 }}% Effizienz</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+                <h2 class="fw-bold">{{ stats.total_monthly_costs|floatformat:0 }}€</h2>
+                <p class="mb-0 opacity-75">Monatliche Kosten</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Aktionen -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-4">
+        <a href="{% url 'workers:add_worker' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 action-card">
+                <div class="card-body text-center p-4">
+                    <div class="display-6 mb-3" style="color: #4facfe;">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h5 class="fw-bold">Arbeiter einstellen</h5>
+                    <p class="text-muted mb-0">Einzelnen neuen Mitarbeiter mit individuellen Eigenschaften hinzufügen</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-lg-4">
+        <a href="{% url 'workers:quick_hire' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 action-card">
+                <div class="card-body text-center p-4">
+                    <div class="display-6 mb-3" style="color: #667eea;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5 class="fw-bold">Schnell einstellen</h5>
+                    <p class="text-muted mb-0">Mehrere Arbeiter mit automatisch generierten Eigenschaften</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-lg-4">
+        <a href="{% url 'workers:fired_workers' %}" class="text-decoration-none">
+            <div class="card h-100 border-0 action-card">
+                <div class="card-body text-center p-4">
+                    <div class="display-6 mb-3" style="color: #f093fb;">
+                        <i class="fas fa-archive"></i>
+                    </div>
+                    <h5 class="fw-bold">Entlassene anzeigen</h5>
+                    <p class="text-muted mb-0">Archiv der ehemaligen Mitarbeiter einsehen</p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Filter und Suche -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-8">
+                <form method="get" class="d-flex">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input class="form-control border-start-0" type="search" name="search"
+                               placeholder="Nach Arbeitern suchen..." value="{{ search_query }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search me-2"></i>Suchen
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-4">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="filter" id="filter-all" {% if not filter_type %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="filter-all">
+                        <a href="?type=" class="text-decoration-none text-reset">Alle</a>
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="filter" id="filter-skilled" {% if filter_type == 'skilled' %}checked{% endif %}>
+                    <label class="btn btn-outline-success" for="filter-skilled">
+                        <a href="?type=skilled" class="text-decoration-none text-reset">Facharbeiter</a>
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="filter" id="filter-unskilled" {% if filter_type == 'unskilled' %}checked{% endif %}>
+                    <label class="btn btn-outline-info" for="filter-unskilled">
+                        <a href="?type=unskilled" class="text-decoration-none text-reset">Hilfsarbeiter</a>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Arbeiterliste -->
+<div class="card">
+    <div class="card-header border-0 pb-0">
+        <h4 class="mb-0 fw-bold">
+            <i class="fas fa-users me-2"></i>Aktive Arbeiter
+        </h4>
+    </div>
+    <div class="card-body p-0">
+        {% if workers %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <tr>
+                            <th class="border-0 fw-bold">Mitarbeiter</th>
+                            <th class="border-0 fw-bold">Typ</th>
+                            <th class="border-0 fw-bold">Lohn</th>
+                            <th class="border-0 fw-bold">Effizienz</th>
+                            <th class="border-0 fw-bold">Level</th>
+                            <th class="border-0 fw-bold">Kosten</th>
+                            <th class="border-0 fw-bold">Score</th>
+                            <th class="border-0 fw-bold">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for worker in workers %}
+                        <tr class="border-bottom">
+                            <td class="py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3" style="width: 45px; height: 45px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                        {{ worker.name|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ worker.name }}</div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>seit {{ worker.hired_date|date:"d.m.Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if worker.worker_type == 'skilled' %}
+                                    <span class="badge rounded-pill" style="background: var(--success-gradient); color: white;">
+                                        <i class="fas fa-cog me-1"></i>Facharbeiter
+                                    </span>
+                                {% else %}
+                                    <span class="badge rounded-pill" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                        <i class="fas fa-hammer me-1"></i>Hilfsarbeiter
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-bold text-success">{{ worker.hourly_wage }}€</span>
+                                <small class="text-muted d-block">/Stunde</small>
+                            </td>
+                            <td>
+                                <div class="progress mb-1" style="height: 8px; border-radius: 10px;">
+                                    <div class="progress-bar
+                                        {% if worker.efficiency >= 120 %}bg-success
+                                        {% elif worker.efficiency >= 100 %}bg-primary
+                                        {% else %}bg-warning{% endif %}"
+                                        style="width: {{ worker.efficiency }}%; border-radius: 10px;">
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ worker.efficiency }}%</small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="level-badge" style="background: var(--dark-gradient); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold;">
+                                        L{{ worker.experience_level }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-primary">{{ worker.monthly_cost }}€</span>
+                                <small class="text-muted d-block">/Monat</small>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill fs-6
+                                    {% if worker.productivity_score >= 8 %}" style="background: var(--success-gradient); color: white;
+                                    {% elif worker.productivity_score >= 5 %}" style="background: var(--primary-gradient); color: white;
+                                    {% else %}" style="background: var(--warning-gradient); color: white;{% endif %}">
+                                    {{ worker.productivity_score|floatformat:1 }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'workers:worker_detail' worker.id %}"
+                                       class="btn btn-sm btn-outline-primary" title="Details">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'workers:fire_worker' worker.id %}"
+                                       class="btn btn-sm btn-outline-danger" title="Entlassen">
+                                        <i class="fas fa-user-times"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <div class="empty-state" style="opacity: 0.7;">
+                    <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Noch keine Arbeiter</h3>
+                    <p class="text-muted mb-4">
+                        {% if search_query %}
+                            Keine Arbeiter entsprechen Ihrer Suche "{{ search_query }}".
+                            <br>Versuchen Sie andere Suchbegriffe oder ändern Sie die Filter.
+                        {% else %}
+                            Bauen Sie Ihr Dream-Team auf! Stellen Sie Ihre ersten Arbeiter ein.
+                        {% endif %}
+                    </p>
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="{% url 'workers:add_worker' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Ersten Arbeiter einstellen
+                        </a>
+                        <a href="{% url 'workers:quick_hire' %}" class="btn btn-success btn-lg">
+                            <i class="fas fa-users me-2"></i>Schnell einstellen
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if workers.has_other_pages %}
+<div class="d-flex justify-content-center mt-4">
+    <nav>
+        <ul class="pagination pagination-lg">
+            {% if workers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&type={{ filter_type }}{% endif %}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ workers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&type={{ filter_type }}{% endif %}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link fw-bold">
+                    {{ workers.number }} von {{ workers.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if workers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ workers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&type={{ filter_type }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ workers.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if filter_type %}&type={{ filter_type }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+.action-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.avatar-circle {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    transform: scale(1.01);
+}
+
+.level-badge {
+    transition: all 0.3s ease;
+}
+
+.level-badge:hover {
+    transform: scale(1.1);
+}
+
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .action-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

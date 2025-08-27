@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Arbeiter entlassen - BikeShop Pro{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fas fa-user-times" style="background: var(--danger-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Arbeiter entlassen
+            </h1>
+            <p class="lead text-muted">Diese Entscheidung kann nicht rückgängig gemacht werden</p>
+        </div>
+    </div>
+</div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Warning Alert -->
+        <div class="alert border-0 mb-4" style="background: linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 225, 64, 0.1) 100%); border-left: 4px solid #fa709a !important;">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-exclamation-triangle fa-2x" style="color: #fa709a;"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-2 text-dark">Unwiderrufliche Aktion</h5>
+                    <p class="mb-0 text-muted">Diese Entlassung kann nicht rückgängig gemacht werden. Der Arbeiter wird dauerhaft aus dem aktiven Team entfernt.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Worker Profile Card -->
+        <div class="card border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="avatar-circle" style="width: 80px; height: 80px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.8rem;">
+                            {{ worker.name|slice:":1"|upper }}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3 class="fw-bold mb-2">{{ worker.name }}</h3>
+                        {% if worker.worker_type == 'skilled' %}
+                            <span class="badge rounded-pill px-3 py-2" style="background: var(--success-gradient); color: white; font-size: 0.9rem;">
+                                <i class="fas fa-cog me-2"></i>Facharbeiter
+                            </span>
+                        {% else %}
+                            <span class="badge rounded-pill px-3 py-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 0.9rem;">
+                                <i class="fas fa-hammer me-2"></i>Hilfsarbeiter
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="row g-4">
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 rounded" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);">
+                            <i class="fas fa-euro-sign fa-2x mb-2" style="color: #4facfe;"></i>
+                            <h5 class="fw-bold">{{ worker.hourly_wage }}€</h5>
+                            <small class="text-muted">Stundenlohn</small>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 rounded" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%);">
+                            <i class="fas fa-tachometer-alt fa-2x mb-2" style="color: #f093fb;"></i>
+                            <h5 class="fw-bold">{{ worker.efficiency }}%</h5>
+                            <small class="text-muted">Effizienz</small>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 rounded" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
+                            <i class="fas fa-medal fa-2x mb-2" style="color: #667eea;"></i>
+                            <h5 class="fw-bold">Level {{ worker.experience_level }}</h5>
+                            <small class="text-muted">Erfahrung</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3 mt-3">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt me-3" style="color: #667eea;"></i>
+                            <div>
+                                <small class="text-muted d-block">Eingestellt am</small>
+                                <span class="fw-bold">{{ worker.hired_date|date:"d.m.Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-coins me-3" style="color: #4facfe;"></i>
+                            <div>
+                                <small class="text-muted d-block">Monatliche Kosten</small>
+                                <span class="fw-bold text-success">{{ worker.monthly_cost }}€</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Impact Analysis -->
+        <div class="card border-0 mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-4">
+                    <i class="fas fa-chart-line me-2" style="color: #667eea;"></i>
+                    Auswirkungen der Entlassung
+                </h5>
+                
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="text-center p-4 rounded" style="background: var(--success-gradient); color: white;">
+                            <div class="display-6 mb-3">
+                                <i class="fas fa-piggy-bank"></i>
+                            </div>
+                            <h5 class="fw-bold">+{{ worker.monthly_cost }}€</h5>
+                            <p class="mb-0 opacity-75">Monatliche Einsparung</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 rounded" style="background: var(--danger-gradient); color: white;">
+                            <div class="display-6 mb-3">
+                                <i class="fas fa-chart-line-down"></i>
+                            </div>
+                            <h5 class="fw-bold">-{{ worker.productivity_score|floatformat:1 }}</h5>
+                            <p class="mb-0 opacity-75">Produktivitätspunkte</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 rounded" style="background: var(--warning-gradient); color: white;">
+                            <div class="display-6 mb-3">
+                                <i class="fas fa-industry"></i>
+                            </div>
+                            <h5 class="fw-bold">Kapazität</h5>
+                            <p class="mb-0 opacity-75">Möglicher Rückgang</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Form -->
+        <div class="card border-0">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="confirmation-section mb-4">
+                        <h5 class="fw-bold mb-4 text-center">
+                            <i class="fas fa-hand-paper me-2" style="color: #fa709a;"></i>
+                            Bestätigung erforderlich
+                        </h5>
+                        
+                        <div class="form-check p-4 rounded" style="background: linear-gradient(135deg, rgba(250, 112, 154, 0.05) 0%, rgba(254, 225, 64, 0.05) 100%); border: 2px solid rgba(250, 112, 154, 0.2);">
+                            <input class="form-check-input" type="checkbox" id="confirm-fire" required style="transform: scale(1.2);">
+                            <label class="form-check-label ms-2" for="confirm-fire" style="font-size: 1.1rem;">
+                                Ich bestätige ausdrücklich, dass ich <strong style="color: #fa709a;">{{ worker.name }}</strong> dauerhaft entlassen möchte und mir bewusst ist, dass diese Aktion nicht rückgängig gemacht werden kann.
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="{% url 'workers:dashboard' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-arrow-left me-2"></i>Abbrechen
+                        </a>
+                        <button type="submit" class="btn btn-lg px-4" id="fire-button" disabled style="background: var(--danger-gradient); color: white; border: none;">
+                            <span class="btn-text">
+                                <i class="fas fa-user-times me-2"></i>Endgültig entlassen
+                            </span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>Entlasse...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<style>
+.avatar-circle {
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.confirmation-section {
+    animation: fadeInUp 0.6s ease;
+}
+
+.form-check {
+    transition: all 0.3s ease;
+}
+
+.form-check:hover {
+    background: linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 225, 64, 0.1) 100%) !important;
+}
+
+.btn {
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    transform: none !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.btn-danger:not(:disabled):hover {
+    animation: pulse 0.6s ease;
+    box-shadow: 0 8px 25px rgba(250, 112, 154, 0.4);
+}
+
+@media (max-width: 768px) {
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .avatar-circle {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 1.4rem !important;
+    }
+}
+</style>
+
+<script>
+// Enhanced confirmation system
+const confirmCheckbox = document.getElementById('confirm-fire');
+const fireButton = document.getElementById('fire-button');
+
+confirmCheckbox.addEventListener('change', function() {
+    const isChecked = this.checked;
+    fireButton.disabled = !isChecked;
+    
+    // Visual feedback
+    if (isChecked) {
+        fireButton.style.opacity = '1';
+        fireButton.style.transform = 'scale(1)';
+    } else {
+        fireButton.style.opacity = '0.5';
+        fireButton.style.transform = 'scale(0.98)';
+    }
+});
+
+// Form submission with loading state
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!confirmCheckbox.checked) {
+        e.preventDefault();
+        confirmCheckbox.focus();
+        confirmCheckbox.parentElement.style.animation = 'shake 0.5s ease';
+        return;
+    }
+    
+    const btnText = fireButton.querySelector('.btn-text');
+    const btnLoading = fireButton.querySelector('.btn-loading');
+    
+    // Show loading state
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+    fireButton.disabled = true;
+    
+    // Add confirmation dialog
+    if (!confirm('Sind Sie absolut sicher? Diese Aktion kann nicht rückgängig gemacht werden!')) {
+        e.preventDefault();
+        // Reset button state
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        fireButton.disabled = false;
+    }
+});
+
+// Add shake animation for invalid attempts
+const style = document.createElement('style');
+style.textContent = `
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

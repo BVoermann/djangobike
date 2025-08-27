@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Session - BikeShop Pro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card delete-confirm-card">
+                <div class="card-header bg-transparent border-0 text-center pt-4">
+                    <div class="warning-icon mb-3">
+                        <i class="fas fa-exclamation-triangle fa-4x"></i>
+                    </div>
+                    <h3 class="fw-bold text-danger mb-0">Delete Session</h3>
+                </div>
+                
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <p class="fs-5 mb-3">
+                            Are you sure you want to delete <strong>"{{ session.name }}"</strong>?
+                        </p>
+                    </div>
+                    
+                    <div class="alert alert-danger border-0 mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-exclamation-circle me-3 mt-1"></i>
+                            <div>
+                                <strong>Warning:</strong> This action cannot be undone. All data from this session will be permanently lost, including:
+                                <ul class="mt-2 mb-0">
+                                    <li>Financial records and transactions</li>
+                                    <li>Inventory and production data</li>
+                                    <li>Employee and customer information</li>
+                                    <li>All progress and statistics</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="session-details-card mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Session Details
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Name:</span>
+                                    <span class="detail-value">{{ session.name }}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Current Period:</span>
+                                    <span class="detail-value">{{ session.current_month }}/{{ session.current_year }}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Balance:</span>
+                                    <span class="detail-value text-success">{{ session.balance|floatformat:2 }}€</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Created:</span>
+                                    <span class="detail-value">{{ session.created_at|date:"d.m.Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent border-0 p-4">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-lg px-4 me-md-2">
+                                <i class="fas fa-trash me-2"></i>Yes, Delete Forever
+                            </button>
+                        </form>
+                        <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel & Go Back
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Your other sessions will remain safe and unaffected
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.delete-confirm-card {
+    border: none;
+    border-radius: 25px;
+    box-shadow: 0 15px 35px rgba(220, 53, 69, 0.15);
+    border: 2px solid rgba(220, 53, 69, 0.1);
+}
+
+.warning-icon {
+    color: #dc3545;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(255, 193, 7, 0.1) 100%);
+    border-radius: 15px;
+}
+
+.session-details-card {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: #495057;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.btn-outline-secondary {
+    border-radius: 15px;
+    border-color: #ddd;
+    font-weight: 600;
+}
+
+.btn-outline-secondary:hover {
+    background: #f8f9fa;
+    border-color: #ddd;
+    color: #495057;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .card-footer {
+        padding: 1.5rem !important;
+    }
+    
+    .d-grid.gap-2.d-md-flex {
+        display: grid !important;
+        gap: 0.75rem !important;
+    }
+}
+</style>
+{% endblock %}

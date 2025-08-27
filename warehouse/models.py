@@ -22,7 +22,7 @@ class Warehouse(models.Model):
             for stock in self.component_stocks.all()
         ])
         bike_usage = sum([
-            1 * bike.bike_type.storage_space_per_unit
+            1 * bike.bike.bike_type.storage_space_per_unit
             for bike in self.stored_bikes.all()
         ])
         return component_usage + bike_usage

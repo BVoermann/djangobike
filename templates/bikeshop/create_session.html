@@ -1,33 +1,169 @@
 {% extends 'base.html' %}
 
-{% block title %}Session erstellen{% endblock %}
+{% block title %}Create Session - BikeShop Pro{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2>Neue Spielsession erstellen</h2>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="text-center">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-gamepad me-3"></i>Create New Session
+                </h1>
+                <p class="lead text-muted">Give your bike business simulation a name and get started!</p>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        {{ form.name.label_tag }}
-                        {{ form.name }}
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card create-session-card">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="session-icon mb-3">
+                            <i class="fas fa-rocket fa-3x"></i>
+                        </div>
+                        <h4 class="fw-bold">Launch Your Business</h4>
+                        <p class="text-muted">Choose a memorable name for your simulation session</p>
                     </div>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-play"></i> Session erstellen
-                    </button>
-                    <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-secondary">
-                        Abbrechen
-                    </a>
-                </form>
+                    
+                    <form method="post" class="session-form">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-tag me-2"></i>Session Name
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-light border-0">
+                                    <i class="fas fa-bicycle text-muted"></i>
+                                </span>
+                                {{ form.name }}
+                            </div>
+                            <div class="form-text">Choose a unique name that represents your business vision</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-play me-2"></i>Create & Start Session
+                            </button>
+                            <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Success Tips Card -->
+            <div class="card tips-card mt-4">
+                <div class="card-header bg-transparent border-0">
+                    <h6 class="fw-bold mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Tips for Success
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="tip-item">
+                        <i class="fas fa-chart-line text-success me-3"></i>
+                        <div>
+                            <strong>Monitor your finances:</strong> Keep track of income and expenses to maintain profitability
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-users text-primary me-3"></i>
+                        <div>
+                            <strong>Manage your workforce:</strong> Hire skilled workers to increase production efficiency
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <i class="fas fa-balance-scale text-warning me-3"></i>
+                        <div>
+                            <strong>Balance supply & demand:</strong> Keep optimal inventory levels to meet customer needs
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.create-session-card {
+    border: none;
+    border-radius: 25px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.session-icon {
+    color: #28a745;
+}
+
+.input-group-text {
+    border-radius: 12px 0 0 12px;
+}
+
+.form-control {
+    border-radius: 0 12px 12px 0;
+    border-left: none;
+}
+
+.form-control:focus {
+    border-left: none;
+    box-shadow: none;
+}
+
+.input-group:focus-within .input-group-text {
+    border-color: #667eea;
+    background-color: rgba(102, 126, 234, 0.1) !important;
+}
+
+.input-group:focus-within .input-group-text i {
+    color: #667eea !important;
+}
+
+.tips-card {
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tip-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.tip-item i {
+    margin-top: 0.25rem;
+    font-size: 1.1rem;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 15px;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.btn-outline-secondary {
+    border-radius: 15px;
+    border-color: #ddd;
+}
+
+.btn-outline-secondary:hover {
+    background: #f8f9fa;
+    border-color: #ddd;
+    color: #495057;
+}
+</style>
 {% endblock %}

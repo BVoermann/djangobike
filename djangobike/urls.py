@@ -29,6 +29,7 @@ urlpatterns = [
     path('finance/', include('finance.urls')),
     path('sales/', include('sales.urls')),
     path('simulation/', include('simulation.urls')),
+    path('workers/', include('workers.urls')),  # Neue workers URLs hinzugefügt
 ]
 
 if settings.DEBUG:

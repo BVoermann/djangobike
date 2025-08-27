@@ -1,81 +1,182 @@
 {% extends 'base.html' %}
 {% load math_filters %}
 
-{% block title %}Finanzen{% endblock %}
+{% block title %}Finanzen - BikeShop Pro{% endblock %}
 
 {% block content %}
-<div class="row">
+<!-- Header -->
+<div class="row mb-5">
     <div class="col-12">
-        <h2>Finanzen</h2>
-        <p>Verwalten Sie Ihre Finanzen und Kredite.</p>
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-euro-sign" style="background: var(--success-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Finanzen
+            </h1>
+            <p class="lead text-muted">Verwalten Sie Ihre Finanzen, Kredite und Transaktionen</p>
+        </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
+<!-- Finanz-Statistiken -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <h2 class="fw-bold">{{ session.balance|floatformat:2 }}€</h2>
+                <p class="mb-0 opacity-75">Aktueller Kontostand</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-credit-card"></i>
+                </div>
+                <h2 class="fw-bold">{{ active_credits|length }}</h2>
+                <p class="mb-0 opacity-75">Aktive Kredite</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h2 class="fw-bold">{{ current_transactions|length }}</h2>
+                <p class="mb-0 opacity-75">Transaktionen diesen Monat</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <h2 class="fw-bold">{% if active_credits %}{{ active_credits.0.interest_rate }}%{% else %}0%{% endif %}</h2>
+                <p class="mb-0 opacity-75">Durchschn. Zinssatz</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kredit-Management -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-8">
         <div class="card">
-            <div class="card-header">
-                <h5>Aktuelle Kredite</h5>
+            <div class="card-header border-0 pb-0">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-credit-card me-2"></i>Aktuelle Kredite
+                </h4>
             </div>
             <div class="card-body">
                 {% if active_credits %}
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                             <tr>
-                                <th>Typ</th>
-                                <th>Betrag</th>
-                                <th>Zinssatz</th>
-                                <th>Verbleibend</th>
-                                <th>Rate</th>
+                                <th class="border-0 fw-bold">Typ</th>
+                                <th class="border-0 fw-bold">Betrag</th>
+                                <th class="border-0 fw-bold">Zinssatz</th>
+                                <th class="border-0 fw-bold">Laufzeit</th>
+                                <th class="border-0 fw-bold">Monatsrate</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for credit in active_credits %}
-                            <tr>
-                                <td>{{ credit.get_credit_type_display }}</td>
-                                <td>{{ credit.amount|floatformat:2 }}€</td>
-                                <td>{{ credit.interest_rate }}%</td>
-                                <td>{{ credit.remaining_months }} Monate</td>
-                                <td>{{ credit.monthly_payment|floatformat:2 }}€</td>
+                            <tr class="border-bottom">
+                                <td class="py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="credit-icon me-3" style="width: 45px; height: 45px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                            <i class="fas fa-coins"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ credit.get_credit_type_display }}</div>
+                                            <small class="text-muted">Kredit-ID: #{{ credit.id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">{{ credit.amount|floatformat:2 }}€</span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill" style="background: var(--danger-gradient); color: white;">
+                                        {{ credit.interest_rate }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">{{ credit.remaining_months }}</span>
+                                    <small class="text-muted d-block">Monate verbleibend</small>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">{{ credit.monthly_payment|floatformat:2 }}€</span>
+                                    <small class="text-muted d-block">/Monat</small>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">Keine aktiven Kredite.</p>
+                <div class="text-center py-5">
+                    <div class="empty-state" style="opacity: 0.7;">
+                        <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            <i class="fas fa-piggy-bank"></i>
+                        </div>
+                        <h3 class="fw-bold mb-3">Schuldenfrei!</h3>
+                        <p class="text-muted mb-0">Sie haben derzeit keine aktiven Kredite. Ihre Finanzen sind in Ordnung!</p>
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-lg-4">
         <div class="card">
-            <div class="card-header">
-                <h5>Neuen Kredit aufnehmen</h5>
+            <div class="card-header border-0 pb-0">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-plus-circle me-2"></i>Neuer Kredit
+                </h4>
             </div>
             <div class="card-body">
                 <form id="credit-form">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Kredittyp</label>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-list me-2"></i>Kredittyp
+                        </label>
                         <select class="form-select" id="credit-type" required onchange="updateMaxAmount()">
-                            <option value="instant">Sofortkredit (15%, 1 Monat)</option>
+                            <option value="instant">
+                                <i class="fas fa-bolt"></i> Sofortkredit (15%, 1 Monat)
+                            </option>
                             <option value="short">Kurzfristig (10%, 3 Monate)</option>
                             <option value="medium">Mittelfristig (8%, 6 Monate)</option>
                             <option value="long">Langfristig (6%, 12 Monate)</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Betrag</label>
-                        <input type="number" class="form-control" id="credit-amount"
-                               min="1000" required>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-euro-sign me-2"></i>Betrag
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-euro-sign text-muted"></i>
+                            </span>
+                            <input type="number" class="form-control" id="credit-amount"
+                                   min="1000" required placeholder="Betrag eingeben">
+                        </div>
                         <small class="text-muted" id="max-amount-text">
+                            <i class="fas fa-info-circle me-1"></i>
                             Maximal: {{ session.balance|mul:0.15|floatformat:2 }}€ (15% des Guthabens)
                         </small>
                     </div>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-money-bill"></i> Kredit aufnehmen
+                    <button type="submit" class="btn btn-warning w-100 btn-lg">
+                        <i class="fas fa-money-bill-wave me-2"></i>Kredit aufnehmen
                     </button>
                 </form>
             </div>
@@ -83,65 +184,100 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-8">
+<!-- Transaktionen und Berichte -->
+<div class="row g-4">
+    <div class="col-lg-8">
         <div class="card">
-            <div class="card-header">
-                <h5>Transaktionen (aktueller Monat)</h5>
+            <div class="card-header border-0 pb-0">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-exchange-alt me-2"></i>Transaktionen ({{ session.current_month }}/{{ session.current_year }})
+                </h4>
             </div>
             <div class="card-body">
                 {% if current_transactions %}
                 <div class="table-responsive">
-                    <table class="table">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                             <tr>
-                                <th>Kategorie</th>
-                                <th>Beschreibung</th>
-                                <th>Betrag</th>
-                                <th>Datum</th>
+                                <th class="border-0 fw-bold">Kategorie</th>
+                                <th class="border-0 fw-bold">Beschreibung</th>
+                                <th class="border-0 fw-bold">Betrag</th>
+                                <th class="border-0 fw-bold">Datum</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for transaction in current_transactions %}
-                            <tr>
-                                <td>{{ transaction.category }}</td>
-                                <td>{{ transaction.description }}</td>
-                                <td class="{% if transaction.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %}">
-                                    {% if transaction.transaction_type == 'income' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:2 }}€
+                            <tr class="border-bottom">
+                                <td class="py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="transaction-icon me-3" style="width: 35px; height: 35px; background: {% if transaction.transaction_type == 'income' %}var(--success-gradient){% else %}var(--danger-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                            <i class="fas {% if transaction.transaction_type == 'income' %}fa-arrow-up{% else %}fa-arrow-down{% endif %}"></i>
+                                        </div>
+                                        <span class="fw-semibold">{{ transaction.category }}</span>
+                                    </div>
                                 </td>
-                                <td>{{ transaction.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>{{ transaction.description }}</td>
+                                <td>
+                                    <span class="fw-bold {% if transaction.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                        {% if transaction.transaction_type == 'income' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:2 }}€
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ transaction.created_at|date:"d.m.Y H:i" }}</small>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">Keine Transaktionen in diesem Monat.</p>
+                <div class="text-center py-5">
+                    <div class="empty-state" style="opacity: 0.7;">
+                        <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <h3 class="fw-bold mb-3">Noch keine Transaktionen</h3>
+                        <p class="text-muted mb-0">In diesem Monat sind noch keine Transaktionen angefallen.</p>
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-lg-4">
         <div class="card">
-            <div class="card-header">
-                <h5>Monatsberichte</h5>
+            <div class="card-header border-0 pb-0">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-chart-bar me-2"></i>Monatsberichte
+                </h4>
             </div>
             <div class="card-body">
                 {% if monthly_reports %}
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                             <tr>
-                                <th>Monat</th>
-                                <th>Bilanz</th>
+                                <th class="border-0 fw-bold">Zeitraum</th>
+                                <th class="border-0 fw-bold">Bilanz</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for report in monthly_reports %}
-                            <tr>
-                                <td>{{ report.month }}/{{ report.year }}</td>
-                                <td class="{% if report.closing_balance > report.opening_balance %}text-success{% else %}text-danger{% endif %}">
-                                    {{ report.closing_balance|sub:report.opening_balance|floatformat:2 }}€
+                            <tr class="border-bottom">
+                                <td class="py-3">
+                                    <div class="fw-semibold">{{ report.month }}/{{ report.year }}</div>
+                                </td>
+                                <td>
+                                    {% with difference=report.closing_balance|sub:report.opening_balance %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="result-icon me-2" style="width: 25px; height: 25px; background: {% if difference > 0 %}var(--success-gradient){% else %}var(--danger-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem;">
+                                            <i class="fas {% if difference > 0 %}fa-arrow-up{% else %}fa-arrow-down{% endif %}"></i>
+                                        </div>
+                                        <span class="fw-bold {% if difference > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ difference|floatformat:2 }}€
+                                        </span>
+                                    </div>
+                                    {% endwith %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -149,7 +285,15 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-muted">Keine Berichte verfügbar.</p>
+                <div class="text-center py-5">
+                    <div class="empty-state" style="opacity: 0.7;">
+                        <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h3 class="fw-bold mb-3">Keine Berichte</h3>
+                        <p class="text-muted mb-0">Berichte werden nach dem ersten Monat verfügbar.</p>
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -158,6 +302,85 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    transform: scale(1.01);
+}
+
+.credit-icon, .transaction-icon, .result-icon {
+    transition: all 0.3s ease;
+}
+
+.credit-icon:hover, .transaction-icon:hover, .result-icon:hover {
+    transform: scale(1.1);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+}
+
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+.input-group-text {
+    border: 2px solid #e2e8f0;
+    border-right: none;
+}
+
+.input-group .form-control {
+    border-left: none;
+}
+</style>
+
 <script>
 // Funktionen für die dynamische Anzeige der Maximalbeträge
 function updateMaxAmount() {
@@ -179,7 +402,7 @@ function updateMaxAmount() {
     }
 
     creditAmountInput.max = Math.floor(maxAmount);
-    maxAmountText.textContent = `Maximal: ${maxAmount.toFixed(2)}€ (${percentageText} des Guthabens)`;
+    maxAmountText.innerHTML = `<i class="fas fa-info-circle me-1"></i>Maximal: ${maxAmount.toFixed(2)}€ (${percentageText} des Guthabens)`;
 }
 
 document.getElementById('credit-form').addEventListener('submit', function(e) {

@@ -1,138 +1,457 @@
 {% extends 'base.html' %}
+{% load math_filters %}
 
-{% block title %}Produktion{% endblock %}
+{% block title %}Produktion - BikeShop Pro{% endblock %}
 
 {% block content %}
-<div class="row">
+<!-- Header -->
+<div class="row mb-5">
     <div class="col-12">
-        <h2>Produktion</h2>
-        <p>Planen Sie die Produktion für den aktuellen Monat.</p>
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-cogs" style="background: var(--warning-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Produktion
+            </h1>
+            <p class="lead text-muted">Planen und optimieren Sie Ihre Fahrradproduktion</p>
+        </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Arbeiterkapazität</h5>
-            </div>
-            <div class="card-body">
-                {% for worker in workers %}
-                <div class="row">
-                    <div class="col-8">{{ worker.get_worker_type_display }}</div>
-                    <div class="col-4">{{ worker.count }} x {{ worker.monthly_hours }}h</div>
+<!-- Produktions-Dashboard -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-users"></i>
                 </div>
-                {% endfor %}
+                <h2 class="fw-bold">
+                    {% for worker in workers %}
+                        {% if worker.get_worker_type_display == "Facharbeiter" %}{{ worker.count }}{% endif %}
+                    {% endfor %}
+                </h2>
+                <p class="mb-0 opacity-75">Facharbeiter verfügbar</p>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Materialbestände</h5>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-hard-hat"></i>
+                </div>
+                <h2 class="fw-bold">
+                    {% for worker in workers %}
+                        {% if worker.get_worker_type_display == "Hilfsarbeiter" %}{{ worker.count }}{% endif %}
+                    {% endfor %}
+                </h2>
+                <p class="mb-0 opacity-75">Hilfsarbeiter verfügbar</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h2 class="fw-bold">{{ component_stocks|length }}</h2>
+                <p class="mb-0 opacity-75">Komponenten im Lager</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-bicycle"></i>
+                </div>
+                <h2 class="fw-bold" id="planned-bikes">0</h2>
+                <p class="mb-0 opacity-75">Geplante Fahrräder</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kapazitäten & Materialien -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header border-0 pb-0">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-user-friends me-2"></i>Arbeiterkapazität
+                </h4>
             </div>
             <div class="card-body">
+                {% if workers %}
+                    {% for worker in workers %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);">
+                        <div class="d-flex align-items-center">
+                            <div class="worker-icon me-3" style="width: 40px; height: 40px; background: {% if worker.get_worker_type_display == 'Facharbeiter' %}var(--success-gradient){% else %}var(--primary-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                <i class="fas {% if worker.get_worker_type_display == 'Facharbeiter' %}fa-user-graduate{% else %}fa-user{% endif %}"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ worker.get_worker_type_display }}</div>
+                                <small class="text-muted">Verfügbare Kapazität</small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold fs-5">{{ worker.count }} Arbeiter</div>
+                            <small class="text-muted">{{ worker.monthly_hours }}h/Monat</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <div class="empty-state" style="opacity: 0.7;">
+                            <i class="fas fa-user-slash display-4 text-muted mb-3"></i>
+                            <h5 class="fw-bold mb-2">Keine Arbeiter verfügbar</h5>
+                            <p class="text-muted mb-0">Stellen Sie Arbeiter ein, um mit der Produktion zu beginnen.</p>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Worker Hiring Buttons -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-success w-100 hire-worker-btn" data-worker-type="skilled">
+                                <i class="fas fa-user-graduate me-2"></i>Facharbeiter einstellen
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary w-100 hire-worker-btn" data-worker-type="unskilled">
+                                <i class="fas fa-user me-2"></i>Hilfsarbeiter einstellen
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <a href="{% url 'workers:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-users me-2"></i>Zum Personalbereich
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header border-0 pb-0">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-warehouse me-2"></i>Materialbestände
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if component_stocks %}
                 <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                             <tr>
-                                <th>Komponente</th>
-                                <th>Bestand</th>
+                                <th class="border-0 fw-bold">Komponente</th>
+                                <th class="border-0 fw-bold">Bestand</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for stock in component_stocks %}
-                            <tr>
-                                <td>{{ stock.component.component_type.name }} - {{ stock.component.name }}</td>
-                                <td>{{ stock.quantity }}</td>
+                            <tr class="border-bottom">
+                                <td class="py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="component-icon me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                            <i class="fas fa-puzzle-piece"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ stock.component.component_type.name }}</div>
+                                            <small class="text-muted">{{ stock.component.name }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill fs-6 px-3 py-2 {% if stock.quantity > 50 %}bg-success{% elif stock.quantity > 10 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ stock.quantity }} Stück
+                                    </span>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <div class="empty-state" style="opacity: 0.7;">
+                            <i class="fas fa-box-open display-4 text-muted mb-3"></i>
+                            <h5 class="fw-bold mb-2">Keine Materialien verfügbar</h5>
+                            <p class="text-muted mb-0">Bestellen Sie Komponenten, um mit der Produktion zu beginnen.</p>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
+<!-- Produktionsplanung -->
 <form id="production-form">
     {% csrf_token %}
-    <div class="card">
-        <div class="card-header">
-            <h5>Produktionsplanung</h5>
+    <div class="card mb-4">
+        <div class="card-header border-0 pb-0">
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-calendar-check me-2"></i>Produktionsplanung
+            </h4>
+            <p class="text-muted mb-0 mt-2">Planen Sie Ihre Produktion nach Fahrradtyp und Preissegment</p>
         </div>
         <div class="card-body">
+            {% if bike_types %}
             <div class="table-responsive">
-                <table class="table">
-                    <thead>
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <tr>
-                            <th>Fahrradtyp</th>
-                            <th>Facharbeiter (h)</th>
-                            <th>Hilfsarbeiter (h)</th>
-                            <th>Günstig</th>
-                            <th>Standard</th>
-                            <th>Premium</th>
+                            <th class="border-0 fw-bold">Fahrradtyp</th>
+                            <th class="border-0 fw-bold text-center">Facharbeiter</th>
+                            <th class="border-0 fw-bold text-center">Hilfsarbeiter</th>
+                            <th class="border-0 fw-bold text-center">Günstig</th>
+                            <th class="border-0 fw-bold text-center">Standard</th>
+                            <th class="border-0 fw-bold text-center">Premium</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for bike_type in bike_types %}
-                        <tr>
-                            <td>{{ bike_type.name }}</td>
-                            <td>{{ bike_type.skilled_worker_hours }}</td>
-                            <td>{{ bike_type.unskilled_worker_hours }}</td>
-                            <td>
+                        <tr class="border-bottom">
+                            <td class="py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bike-icon me-3" style="width: 40px; height: 40px; background: var(--warning-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                        <i class="fas fa-bicycle"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ bike_type.name }}</div>
+                                        <small class="text-muted">Fahrradtyp</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success px-3 py-2">{{ bike_type.skilled_worker_hours }}h</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary px-3 py-2">{{ bike_type.unskilled_worker_hours }}h</span>
+                            </td>
+                            <td class="text-center">
                                 <input type="number" 
-                                       class="form-control production-input" 
+                                       class="form-control production-input text-center fw-bold" 
                                        min="0" 
                                        value="0"
                                        data-bike-type="{{ bike_type.id }}"
                                        data-segment="cheap"
                                        data-skilled="{{ bike_type.skilled_worker_hours }}"
-                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}">
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       placeholder="0">
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <input type="number" 
-                                       class="form-control production-input" 
+                                       class="form-control production-input text-center fw-bold" 
                                        min="0" 
                                        value="0"
                                        data-bike-type="{{ bike_type.id }}"
                                        data-segment="standard"
                                        data-skilled="{{ bike_type.skilled_worker_hours }}"
-                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}">
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       placeholder="0">
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <input type="number" 
-                                       class="form-control production-input" 
+                                       class="form-control production-input text-center fw-bold" 
                                        min="0" 
                                        value="0"
                                        data-bike-type="{{ bike_type.id }}"
                                        data-segment="premium"
                                        data-skilled="{{ bike_type.skilled_worker_hours }}"
-                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}">
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       placeholder="0">
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="3">Gesamt benötigte Stunden:</th>
-                            <th colspan="3">
-                                Facharbeiter: <span id="total-skilled">0</span>h | 
-                                Hilfsarbeiter: <span id="total-unskilled">0</span>h
-                            </th>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
-            <button type="submit" class="btn btn-success">
-                <i class="fas fa-cogs"></i> Produktion starten
-            </button>
+
+            <!-- Kapazitätsübersicht -->
+            <div class="row g-4 mt-4">
+                <div class="col-lg-8">
+                    <div class="card border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">
+                                <i class="fas fa-chart-bar me-2"></i>Kapazitätsauslastung
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-graduate text-success me-3 fs-4"></i>
+                                        <div>
+                                            <div class="fw-bold">Facharbeiter</div>
+                                            <div class="small text-muted">
+                                                <span id="total-skilled">0</span>h benötigt / 
+                                                {% for worker in workers %}
+                                                    {% if worker.get_worker_type_display == "Facharbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}
+                                                {% endfor %}h verfügbar
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user text-primary me-3 fs-4"></i>
+                                        <div>
+                                            <div class="fw-bold">Hilfsarbeiter</div>
+                                            <div class="small text-muted">
+                                                <span id="total-unskilled">0</span>h benötigt / 
+                                                {% for worker in workers %}
+                                                    {% if worker.get_worker_type_display == "Hilfsarbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}
+                                                {% endfor %}h verfügbar
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-0" style="background: var(--success-gradient); color: white;">
+                        <div class="card-body text-center">
+                            <h3 class="fw-bold mb-2">
+                                <i class="fas fa-play-circle me-2"></i>Bereit?
+                            </h3>
+                            <p class="mb-4 opacity-75">Starten Sie die Produktion</p>
+                            <button type="submit" class="btn btn-light btn-lg w-100">
+                                <i class="fas fa-cogs me-2"></i>Produktion starten
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="empty-state" style="opacity: 0.7;">
+                        <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            <i class="fas fa-bicycle"></i>
+                        </div>
+                        <h3 class="fw-bold mb-3">Keine Fahrradtypen verfügbar</h3>
+                        <p class="text-muted mb-0">Konfigurieren Sie zuerst Ihre Fahrradtypen für die Produktion.</p>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 </form>
 {% endblock %}
 
 {% block scripts %}
+<style>
+.worker-icon, .component-icon, .bike-icon {
+    transition: all 0.3s ease;
+}
+
+.worker-icon:hover, .component-icon:hover, .bike-icon:hover {
+    transform: scale(1.1);
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    transform: scale(1.01);
+}
+
+.production-input {
+    transition: all 0.3s ease;
+    border: 2px solid #e2e8f0;
+    font-weight: 600;
+}
+
+.production-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    transform: scale(1.05);
+}
+
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .production-input {
+        font-size: 0.9rem;
+    }
+}
+
+.production-input::-webkit-outer-spin-button,
+.production-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.production-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.capacity-warning {
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 20%, 40%, 60%, 80% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+}
+
+.capacity-exceeded {
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+.capacity-ok {
+    color: #198754 !important;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const productionInputs = document.querySelectorAll('.production-input');
@@ -144,6 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTotals() {
         let totalSkilled = 0;
         let totalUnskilled = 0;
+        let totalBikes = 0;
         
         productionInputs.forEach(input => {
             const quantity = parseInt(input.value) || 0;
@@ -152,10 +472,37 @@ document.addEventListener('DOMContentLoaded', function() {
             
             totalSkilled += quantity * skilled;
             totalUnskilled += quantity * unskilled;
+            totalBikes += quantity;
         });
         
         document.getElementById('total-skilled').textContent = totalSkilled.toFixed(1);
         document.getElementById('total-unskilled').textContent = totalUnskilled.toFixed(1);
+        document.getElementById('planned-bikes').textContent = totalBikes;
+
+        // Check capacity constraints and highlight if exceeded
+        const skilledCapacityElement = document.getElementById('total-skilled');
+        const unskilledCapacityElement = document.getElementById('total-unskilled');
+        
+        // Get available capacities (you may need to adjust these based on your data structure)
+        const maxSkilledHours = {% for worker in workers %}{% if worker.get_worker_type_display == "Facharbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}{% endfor %} || 0;
+        const maxUnskilledHours = {% for worker in workers %}{% if worker.get_worker_type_display == "Hilfsarbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}{% endfor %} || 0;
+        
+        // Apply warning styles if capacity exceeded
+        if (totalSkilled > maxSkilledHours) {
+            skilledCapacityElement.classList.add('capacity-exceeded');
+            skilledCapacityElement.classList.remove('capacity-ok');
+        } else {
+            skilledCapacityElement.classList.add('capacity-ok');
+            skilledCapacityElement.classList.remove('capacity-exceeded');
+        }
+        
+        if (totalUnskilled > maxUnskilledHours) {
+            unskilledCapacityElement.classList.add('capacity-exceeded');
+            unskilledCapacityElement.classList.remove('capacity-ok');
+        } else {
+            unskilledCapacityElement.classList.add('capacity-ok');
+            unskilledCapacityElement.classList.remove('capacity-exceeded');
+        }
     }
     
     document.getElementById('production-form').addEventListener('submit', function(e) {
@@ -181,6 +528,16 @@ document.addEventListener('DOMContentLoaded', function() {
             productionData.push(data);
         });
         
+        // Check if any production is planned
+        const hasProduction = productionData.some(item => 
+            Object.values(item).some(val => typeof val === 'number' && val > 0)
+        );
+        
+        if (!hasProduction) {
+            alert('Bitte planen Sie mindestens ein Fahrrad für die Produktion.');
+            return;
+        }
+        
         fetch('', {
             method: 'POST',
             headers: {
@@ -192,12 +549,159 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                alert('Produktion erfolgreich gestartet!');
                 location.reload();
             } else {
                 alert('Fehler: ' + data.error);
             }
         });
     });
+    
+    // Initialize totals on page load
+    updateTotals();
+    
+    // Worker hiring functionality
+    document.querySelectorAll('.hire-worker-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const workerType = this.dataset.workerType;
+            showHireModal(workerType);
+        });
+    });
+    
+    function showHireModal(workerType) {
+        const workerTypeName = workerType === 'skilled' ? 'Facharbeiter' : 'Hilfsarbeiter';
+        const workerTypeIcon = workerType === 'skilled' ? 'fa-user-graduate' : 'fa-user';
+        
+        const modalHTML = `
+            <div class="modal fade" id="hireWorkerModal" tabindex="-1" aria-labelledby="hireWorkerModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: var(--card-shadow);">
+                        <div class="modal-header border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 20px 20px 0 0;">
+                            <h5 class="modal-title fw-bold" id="hireWorkerModalLabel">
+                                <i class="fas ${workerTypeIcon} me-2"></i>${workerTypeName} einstellen
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <p class="text-muted mb-4">Wie viele ${workerTypeName} möchten Sie einstellen?</p>
+                            <div class="mb-3">
+                                <label for="workerCount" class="form-label fw-semibold">Anzahl:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0">
+                                        <i class="fas fa-users text-muted"></i>
+                                    </span>
+                                    <input type="number" class="form-control" id="workerCount" min="1" max="10" value="1" placeholder="Anzahl">
+                                </div>
+                                <div class="form-text">Sie können zwischen 1 und 10 ${workerTypeName} gleichzeitig einstellen.</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Abbrechen
+                            </button>
+                            <button type="button" class="btn btn-${workerType === 'skilled' ? 'success' : 'primary'}" onclick="hireWorkers('${workerType}')">
+                                <i class="fas fa-plus me-2"></i>Einstellen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('hireWorkerModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('hireWorkerModal'));
+        modal.show();
+    }
+    
+    // Global function to hire workers
+    window.hireWorkers = function(workerType) {
+        const count = parseInt(document.getElementById('workerCount').value) || 1;
+        
+        if (count < 1 || count > 10) {
+            alert('Bitte wählen Sie zwischen 1 und 10 Arbeitern.');
+            return;
+        }
+        
+        // Send hire request
+        fetch('{% url "production:hire_worker" session.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                worker_type: workerType,
+                count: count
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('hireWorkerModal'));
+                modal.hide();
+                
+                // Show success message and reload
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Fehler: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten.');
+        });
+    };
 });
 </script>
+
+<!-- Additional Modal Styles -->
+<style>
+.hire-worker-btn {
+    transition: all 0.3s ease;
+}
+
+.hire-worker-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.input-group-text {
+    border-radius: 12px 0 0 12px;
+}
+
+.form-control {
+    border-radius: 0 12px 12px 0;
+    border-left: none;
+}
+
+.form-control:focus {
+    border-left: none;
+    box-shadow: none;
+}
+
+.input-group:focus-within .input-group-text {
+    border-color: #667eea;
+    background-color: rgba(102, 126, 234, 0.1) !important;
+}
+
+.input-group:focus-within .input-group-text i {
+    color: #667eea !important;
+}
+</style>
 {% endblock %}

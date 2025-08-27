@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Entlassene Arbeiter - BikeShop Pro{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fas fa-archive" style="background: var(--dark-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Entlassene Arbeiter
+            </h1>
+            <p class="lead text-muted">Archiv der ehemaligen Teammitglieder</p>
+        </div>
+    </div>
+</div>
+<!-- Navigation -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'workers:dashboard' %}" class="text-decoration-none">
+                            <i class="fas fa-users me-1"></i>Arbeiterverwaltung
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Entlassene Arbeiter</li>
+                </ol>
+            </nav>
+            <a href="{% url 'workers:dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>Zurück zum Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if workers %}
+    <!-- Workers Archive -->
+    <div class="card border-0">
+        <div class="card-header border-0 bg-transparent pb-0">
+            <h4 class="fw-bold mb-0">
+                <i class="fas fa-users-slash me-2" style="color: #667eea;"></i>
+                Archivierte Mitarbeiter ({{ workers|length }})
+            </h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <tr>
+                            <th class="border-0 fw-bold">Mitarbeiter</th>
+                            <th class="border-0 fw-bold">Typ</th>
+                            <th class="border-0 fw-bold">Lohn</th>
+                            <th class="border-0 fw-bold">Effizienz</th>
+                            <th class="border-0 fw-bold">Level</th>
+                            <th class="border-0 fw-bold">Beschäftigt</th>
+                            <th class="border-0 fw-bold">Score</th>
+                            <th class="border-0 fw-bold">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for worker in workers %}
+                        <tr class="border-bottom archived-row" style="background: linear-gradient(135deg, rgba(67, 67, 67, 0.02) 0%, rgba(0, 0, 0, 0.02) 100%);">
+                            <td class="py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3" style="width: 45px; height: 45px; background: var(--dark-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; opacity: 0.7;">
+                                        {{ worker.name|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-muted">{{ worker.name }}</div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-times-circle text-danger me-1"></i>Entlassen
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if worker.worker_type == 'skilled' %}
+                                    <span class="badge rounded-pill" style="background: var(--dark-gradient); color: white; opacity: 0.8;">
+                                        <i class="fas fa-cog me-1"></i>Facharbeiter
+                                    </span>
+                                {% else %}
+                                    <span class="badge rounded-pill" style="background: var(--dark-gradient); color: white; opacity: 0.8;">
+                                        <i class="fas fa-hammer me-1"></i>Hilfsarbeiter
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ worker.hourly_wage }}€</span>
+                                <small class="text-muted d-block">/Stunde</small>
+                            </td>
+                            <td>
+                                <div class="progress mb-1" style="height: 8px; border-radius: 10px; background-color: #f8f9fa;">
+                                    <div class="progress-bar bg-secondary"
+                                        style="width: {{ worker.efficiency }}%; border-radius: 10px; opacity: 0.6;">
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ worker.efficiency }}%</small>
+                            </td>
+                            <td>
+                                <div class="level-badge" style="background: var(--dark-gradient); color: white; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; opacity: 0.7;">
+                                    L{{ worker.experience_level }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-muted">{{ worker.hired_date|date:"d.m.Y" }}</span>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill" style="background: var(--dark-gradient); color: white; opacity: 0.8;">
+                                    {{ worker.productivity_score|floatformat:1 }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'workers:worker_detail' worker.id %}"
+                                   class="btn btn-sm btn-outline-secondary" title="Details ansehen">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if workers.has_other_pages %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav>
+            <ul class="pagination pagination-lg">
+                {% if workers.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ workers.previous_page_number }}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link fw-bold">
+                        {{ workers.number }} von {{ workers.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if workers.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ workers.next_page_number }}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ workers.paginator.num_pages }}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+{% else %}
+    <!-- Empty State -->
+    <div class="card border-0">
+        <div class="card-body text-center py-5">
+            <div class="empty-state" style="opacity: 0.7;">
+                <div class="display-1 mb-4" style="background: var(--success-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h3 class="fw-bold mb-3">Perfekte Personalpolitik!</h3>
+                <p class="text-muted mb-4">
+                    Es wurden noch keine Arbeiter entlassen. Das spricht für ein harmonisches Arbeitsumfeld<br>
+                    und eine durchdachte Personalstrategie.
+                </p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{% url 'workers:dashboard' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-tachometer-alt me-2"></i>Zum Dashboard
+                    </a>
+                    <a href="{% url 'workers:add_worker' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Team erweitern
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Information Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="info-icon" style="width: 60px; height: 60px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                            <i class="fas fa-info fa-lg"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h5 class="fw-bold mb-2">Archiv-Informationen</h5>
+                        <p class="mb-0 text-muted">
+                            Entlassene Arbeiter werden permanent archiviert und können weiterhin eingesehen werden.
+                            Sie haben jedoch keinen Einfluss mehr auf die Produktion oder verursachen laufende Kosten.
+                            Die historischen Daten bleiben für Analysen und Nachverfolgung erhalten.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<style>
+.archived-row {
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.archived-row:hover {
+    opacity: 1;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+    transform: scale(1.01);
+}
+
+.avatar-circle {
+    transition: all 0.3s ease;
+}
+
+.level-badge {
+    transition: all 0.3s ease;
+}
+
+.level-badge:hover {
+    opacity: 1 !important;
+    transform: scale(1.1);
+}
+
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.info-icon {
+    transition: all 0.3s ease;
+}
+
+.info-icon:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.btn {
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+.breadcrumb-item a {
+    color: #667eea;
+    transition: all 0.3s ease;
+}
+
+.breadcrumb-item a:hover {
+    color: #4facfe;
+    text-decoration: underline !important;
+}
+
+@media (max-width: 768px) {
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .avatar-circle {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .info-icon {
+        width: 50px !important;
+        height: 50px !important;
+    }
+}
+
+/* Table enhancements for mobile */
+@media (max-width: 992px) {
+    .table-responsive {
+        border: none;
+    }
+    
+    .table td, .table th {
+        padding: 0.75rem 0.5rem;
+    }
+}
+</style>
+
+<script>
+// Enhanced table interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth hover effects for archived rows
+    const archivedRows = document.querySelectorAll('.archived-row');
+    
+    archivedRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.02)';
+            this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.1)';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+            this.style.boxShadow = 'none';
+        });
+    });
+    
+    // Add click functionality to table rows (optional navigation)
+    archivedRows.forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', function(e) {
+            // Check if the click was on a button or link
+            if (!e.target.closest('.btn')) {
+                const detailLink = this.querySelector('a[href*="worker_detail"]');
+                if (detailLink) {
+                    window.location.href = detailLink.href;
+                }
+            }
+        });
+    });
+    
+    // Animate progress bars on page load
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 500);
+    });
+    
+    // Add tooltips to badges (if you want to show more info on hover)
+    const badges = document.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+});
+
+// Add search functionality (if you want to implement client-side search)
+function addSearchFunctionality() {
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.className = 'form-control mb-3';
+    searchInput.placeholder = 'Suche in archivierten Arbeitern...';
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.archived-row');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+    
+    // Insert search input before the table (if table exists)
+    const table = document.querySelector('.table-responsive');
+    if (table && searchInput) {
+        table.parentNode.insertBefore(searchInput, table);
+    }
+}
+
+// Uncomment the line below if you want to add search functionality
+// addSearchFunctionality();
+</script>
+{% endblock %}

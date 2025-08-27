@@ -1,116 +1,596 @@
 {% extends 'base.html' %}
 {% load math_filters %}
 
-{% block title %}Einkauf{% endblock %}
+{% block title %}Einkauf - BikeShop Pro{% endblock %}
 
 {% block content %}
-<div class="row">
+<!-- Header -->
+<div class="row mb-5">
     <div class="col-12">
-        <h2>Einkauf</h2>
-        <p>Bestellen Sie Komponenten von Ihren Lieferanten.</p>
-    </div>
-</div>
-
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="alert alert-info">
-            <strong>Aktuelles Guthaben:</strong> {{ session.balance|floatformat:2 }}€
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-shopping-cart" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Einkauf
+            </h1>
+            <p class="lead text-muted">Bestellen Sie hochwertige Komponenten von Ihren Lieferanten</p>
         </div>
     </div>
 </div>
 
-<form id="procurement-form">
-    {% csrf_token %}
-    <div class="row">
-        {% for supplier_id, data in supplier_data.items %}
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5>{{ data.supplier.name }}</h5>
-                    <small class="text-muted">
-                        Qualität: {{ data.supplier.get_quality_display }} | 
-                        Lieferzeit: {{ data.supplier.delivery_time }} Tage | 
-                        Zahlungsziel: {{ data.supplier.payment_terms }} Tage
-                    </small>
-                </div>
-                <div class="card-body">
-                    {% if data.prices %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Komponente</th>
-                                    <th>Preis</th>
-                                    <th>Menge</th>
-                                    <th>Gesamt</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for price in data.prices %}
-                                <tr>
-                                    <td>
-                                        {{ price.component.component_type.name }}<br>
-                                        <small class="text-muted">{{ price.component.name }}</small>
-                                    </td>
-                                    <td>{{ price.price|floatformat:2 }}€</td>
-                                    <td>
-                                        <input type="number" 
-                                               class="form-control form-control-sm procurement-input" 
-                                               min="0" 
-                                               value="0"
-                                               data-supplier="{{ supplier_id }}"
-                                               data-component="{{ price.component.id }}"
-                                               data-price="{{ price.price }}">
-                                    </td>
-                                    <td class="total-cell">0.00€</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="3">Lieferant Gesamt:</th>
-                                    <th class="supplier-total">0.00€</th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">Keine Preise verfügbar.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5>Gesamtkosten: <span id="grand-total">0.00€</span></h5>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-shopping-cart"></i> Bestellung aufgeben
-                        </button>
-                    </div>
+<!-- Supplier Selection Dropdown -->
+{% if supplier_data %}
+<div class="row mb-4 dropdown-row">
+    <div class="col-12">
+        <div class="card border-0 dropdown-container" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); overflow: visible;">
+            <div class="card-body p-4" style="overflow: visible;">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-filter me-2"></i>Lieferant auswählen
+                </h5>
+                <div class="dropdown" style="position: relative; z-index: 99999;">
+                    <button class="btn btn-primary btn-lg dropdown-toggle w-100 w-md-auto" type="button" id="supplierDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative; z-index: 9998;">
+                        <i class="fas fa-industry me-2"></i>
+                        <span id="selected-supplier-name">Bitte Lieferant auswählen</span>
+                    </button>
+                    <ul class="dropdown-menu w-100" aria-labelledby="supplierDropdown" style="min-width: 400px; position: absolute; z-index: 99999;">
+                        {% for supplier_id, data in supplier_data.items %}
+                        <li>
+                            <a class="dropdown-item supplier-option p-3" href="#" data-supplier-id="{{ supplier_id }}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold mb-2">
+                                            <i class="fas fa-industry me-2"></i>{{ data.supplier.name }}
+                                        </h6>
+                                        <p class="text-muted mb-2 small">
+                                            {% if data.supplier.quality == 'basic' %}
+                                                <i class="fas fa-star text-warning me-1"></i>Günstige Preise, grundlegende Qualität
+                                            {% elif data.supplier.quality == 'standard' %}
+                                                <i class="fas fa-star-half-alt text-info me-1"></i>Ausgewogenes Preis-Leistungs-Verhältnis
+                                            {% elif data.supplier.quality == 'premium' %}
+                                                <i class="fas fa-crown text-success me-1"></i>Höchste Qualität, premium Komponenten
+                                            {% endif %}
+                                        </p>
+                                        <div class="supplier-info-badges">
+                                            <span class="badge bg-primary me-1">
+                                                <i class="fas fa-truck me-1"></i>{{ data.supplier.delivery_time }}T
+                                            </span>
+                                            <span class="badge bg-success me-1">
+                                                <i class="fas fa-calendar me-1"></i>{{ data.supplier.payment_terms }}T Ziel
+                                            </span>
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>{{ data.supplier.complaint_probability|floatformat:1 }}% Rekl.
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        {% if not forloop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
-</form>
+</div>
+{% endif %}
+
+<!-- Einkaufs-Statistiken -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <h2 class="fw-bold">{{ session.balance|floatformat:2 }}€</h2>
+                <p class="mb-0 opacity-75">Verfügbares Budget</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <h2 class="fw-bold">{{ supplier_data|length }}</h2>
+                <p class="mb-0 opacity-75">Verfügbare Lieferanten</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h2 class="fw-bold" id="component-count">
+                    {% for supplier_id, data in supplier_data.items %}
+                        {% if forloop.first %}{{ data.prices|length }}{% endif %}
+                    {% endfor %}
+                </h2>
+                <p class="mb-0 opacity-75">Komponenten verfügbar</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <h2 class="fw-bold" id="stats-total">0.00€</h2>
+                <p class="mb-0 opacity-75">Bestellwert gesamt</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Selected Supplier Details -->
+<div id="supplier-details" style="display: none;">
+    <form id="procurement-form">
+        {% csrf_token %}
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card h-100 supplier-card">
+                    <div class="card-header border-0 pb-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h4 class="fw-bold mb-1" id="supplier-name">
+                                    <i class="fas fa-industry me-2"></i>
+                                </h4>
+                                <div class="supplier-badges" id="supplier-badges">
+                                    <!-- Badges will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <div class="supplier-total-display">
+                                <span class="fs-4 fw-bold text-primary" id="supplier-total">0.00€</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="supplier-components">
+                            <!-- Components table will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bestellübersicht -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="fw-bold mb-1">
+                                    <i class="fas fa-shopping-basket me-2"></i>Bestellübersicht
+                                </h3>
+                                <p class="text-muted mb-0">Gesamtkosten Ihrer Bestellung</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="display-5 fw-bold text-primary mb-2" id="grand-total">0.00€</div>
+                                <button type="submit" class="btn btn-primary btn-lg px-4">
+                                    <i class="fas fa-paper-plane me-2"></i>Bestellung aufgeben
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Initial State Message -->
+<div id="no-supplier-selected" class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="empty-state" style="opacity: 0.7;">
+                    <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <i class="fas fa-hand-point-up"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Lieferant auswählen</h3>
+                    <p class="text-muted mb-4">Wählen Sie oben einen Lieferanten aus, um mit der Bestellung zu beginnen.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not supplier_data %}
+<!-- Empty State für keine Lieferanten -->
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="empty-state" style="opacity: 0.7;">
+                    <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <i class="fas fa-store-slash"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Keine Lieferanten verfügbar</h3>
+                    <p class="text-muted mb-4">Derzeit sind keine Lieferanten verfügbar. Versuchen Sie es später erneut.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Hidden supplier data for JavaScript -->
+<script type="application/json" id="supplier-data">
+{{ supplier_data_json|safe }}
+</script>
+
 {% endblock %}
 
 {% block scripts %}
+<style>
+.supplier-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.supplier-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.component-icon {
+    transition: all 0.3s ease;
+}
+
+.component-icon:hover {
+    transform: scale(1.1);
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    transform: scale(1.01);
+}
+
+.procurement-input {
+    transition: all 0.3s ease;
+    text-align: center;
+    font-weight: 600;
+}
+
+.procurement-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    transform: scale(1.05);
+}
+
+.supplier-badges .badge {
+    transition: all 0.3s ease;
+}
+
+.supplier-badges .badge:hover {
+    transform: scale(1.05);
+}
+
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.supplier-total-display {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.dropdown-item {
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    transform: translateX(5px);
+}
+
+.supplier-info-badges .badge {
+    font-size: 0.7rem;
+}
+
+/* Fix dropdown z-index to appear above everything */
+.dropdown {
+    position: relative;
+    z-index: 9999 !important;
+}
+
+.dropdown-menu {
+    position: absolute !important;
+    z-index: 99999 !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+    border: none !important;
+    border-radius: 15px !important;
+    background: white !important;
+    transform: translateY(0) !important;
+    will-change: transform;
+}
+
+.dropdown-menu.show {
+    z-index: 99999 !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    display: block !important;
+}
+
+/* Ensure dropdown button has proper z-index */
+.dropdown-toggle {
+    position: relative;
+    z-index: 9998 !important;
+}
+
+/* Reset card z-index to prevent interference */
+.card {
+    position: relative;
+    z-index: auto !important;
+}
+
+/* Ensure the dropdown container doesn't get clipped */
+.dropdown-container {
+    position: relative;
+    z-index: 9999;
+    overflow: visible !important;
+}
+
+/* Force the row containing dropdown to have higher z-index */
+.dropdown-row {
+    position: relative;
+    z-index: 9999 !important;
+    overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .supplier-badges {
+        margin-top: 1rem;
+    }
+    
+    .supplier-total-display {
+        margin-top: 1rem;
+    }
+    
+    .dropdown-menu {
+        min-width: 100% !important;
+    }
+}
+
+.quantity-input input::-webkit-outer-spin-button,
+.quantity-input input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-input input[type=number] {
+    -moz-appearance: textfield;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const procurementInputs = document.querySelectorAll('.procurement-input');
+    // Get supplier data from Django
+    const supplierDataElement = document.getElementById('supplier-data');
+    let supplierData = {};
     
-    procurementInputs.forEach(input => {
-        input.addEventListener('input', updateTotals);
+    if (supplierDataElement) {
+        try {
+            supplierData = JSON.parse(supplierDataElement.textContent);
+            console.log('Supplier data loaded:', supplierData);
+        } catch (e) {
+            console.error('Error parsing supplier data:', e);
+            console.log('Raw content:', supplierDataElement.textContent);
+        }
+    } else {
+        console.error('supplier-data element not found');
+    }
+    
+    const supplierDetails = document.getElementById('supplier-details');
+    const noSupplierSelected = document.getElementById('no-supplier-selected');
+    const selectedSupplierName = document.getElementById('selected-supplier-name');
+    const supplierName = document.getElementById('supplier-name');
+    const supplierBadges = document.getElementById('supplier-badges');
+    const supplierComponents = document.getElementById('supplier-components');
+    const componentCount = document.getElementById('component-count');
+    
+    let currentSupplier = null;
+    let procurementInputs = [];
+    
+    // Supplier selection handling
+    console.log('Setting up supplier option handlers...');
+    const supplierOptions = document.querySelectorAll('.supplier-option');
+    console.log('Found supplier options:', supplierOptions.length);
+    
+    supplierOptions.forEach((option, index) => {
+        console.log(`Setting up option ${index}:`, option.dataset.supplierId);
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Supplier option clicked:', this.dataset.supplierId);
+            const supplierId = this.dataset.supplierId;
+            selectSupplier(supplierId);
+        });
     });
     
+    function selectSupplier(supplierId) {
+        console.log('selectSupplier called with:', supplierId);
+        console.log('Available supplier data:', Object.keys(supplierData));
+        
+        currentSupplier = supplierData[supplierId];
+        console.log('Selected supplier:', currentSupplier);
+        
+        if (!currentSupplier) {
+            console.error('Supplier not found:', supplierId);
+            return;
+        }
+        
+        // Update dropdown button text
+        selectedSupplierName.textContent = currentSupplier.supplier.name;
+        console.log('Updated dropdown button text to:', currentSupplier.supplier.name);
+        
+        // Show supplier details, hide no selection message
+        supplierDetails.style.display = 'block';
+        noSupplierSelected.style.display = 'none';
+        
+        // Update supplier info
+        supplierName.innerHTML = `<i class="fas fa-industry me-2"></i>${currentSupplier.supplier.name}`;
+        
+        // Update badges
+        let qualityBadge = '';
+        let qualityIcon = '';
+        if (currentSupplier.supplier.quality === 'basic') {
+            qualityBadge = 'Basic Qualität';
+            qualityIcon = 'fas fa-star';
+        } else if (currentSupplier.supplier.quality === 'standard') {
+            qualityBadge = 'Standard Qualität';
+            qualityIcon = 'fas fa-star-half-alt';
+        } else if (currentSupplier.supplier.quality === 'premium') {
+            qualityBadge = 'Premium Qualität';
+            qualityIcon = 'fas fa-crown';
+        }
+        
+        supplierBadges.innerHTML = `
+            <span class="badge rounded-pill me-2" style="background: var(--success-gradient); color: white;">
+                <i class="${qualityIcon} me-1"></i>${qualityBadge}
+            </span>
+            <span class="badge rounded-pill me-2" style="background: var(--primary-gradient); color: white;">
+                <i class="fas fa-truck me-1"></i>${currentSupplier.supplier.delivery_time} Tage
+            </span>
+            <span class="badge rounded-pill" style="background: var(--warning-gradient); color: white;">
+                <i class="fas fa-calendar me-1"></i>${currentSupplier.supplier.payment_terms} Tage Zahlungsziel
+            </span>
+        `;
+        
+        // Update component count
+        componentCount.textContent = currentSupplier.prices.length;
+        
+        // Build components table
+        buildComponentsTable();
+        
+        // Reset totals
+        updateTotals();
+    }
+    
+    function buildComponentsTable() {
+        if (!currentSupplier.prices || currentSupplier.prices.length === 0) {
+            supplierComponents.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="empty-state" style="opacity: 0.7;">
+                        <i class="fas fa-exclamation-triangle display-4 text-warning mb-3"></i>
+                        <h5 class="fw-bold mb-2">Keine Preise verfügbar</h5>
+                        <p class="text-muted mb-0">Dieser Lieferant hat derzeit keine Komponenten im Angebot.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        let tableHTML = `
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <tr>
+                            <th class="border-0 fw-bold">Komponente</th>
+                            <th class="border-0 fw-bold">Preis</th>
+                            <th class="border-0 fw-bold">Menge</th>
+                            <th class="border-0 fw-bold">Gesamt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        currentSupplier.prices.forEach(price => {
+            tableHTML += `
+                <tr class="border-bottom">
+                    <td class="py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="component-icon me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">${price.component.component_type.name}</div>
+                                <small class="text-muted">${price.component.name}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-success">${parseFloat(price.price).toFixed(2)}€</span>
+                    </td>
+                    <td>
+                        <div class="quantity-input">
+                            <input type="number" 
+                                   class="form-control procurement-input" 
+                                   min="0" 
+                                   value="0"
+                                   data-supplier="${currentSupplier.supplier.id}"
+                                   data-component="${price.component.id}"
+                                   data-price="${price.price}"
+                                   placeholder="0">
+                        </div>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-primary total-cell">0.00€</span>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tableHTML += '</tbody></table></div>';
+        supplierComponents.innerHTML = tableHTML;
+        
+        // Update procurement inputs reference and add event listeners
+        procurementInputs = document.querySelectorAll('.procurement-input');
+        procurementInputs.forEach(input => {
+            input.addEventListener('input', updateTotals);
+        });
+    }
+    
     function updateTotals() {
-        let grandTotal = 0;
+        let supplierTotal = 0;
         
         // Update individual row totals
         procurementInputs.forEach(input => {
@@ -119,42 +599,37 @@ document.addEventListener('DOMContentLoaded', function() {
             const total = quantity * price;
             
             const totalCell = input.closest('tr').querySelector('.total-cell');
-            totalCell.textContent = total.toFixed(2) + '€';
+            if (totalCell) {
+                totalCell.textContent = total.toFixed(2) + '€';
+            }
+            
+            supplierTotal += total;
         });
         
-        // Update supplier totals
-        const suppliers = new Set();
-        procurementInputs.forEach(input => {
-            suppliers.add(input.dataset.supplier);
-        });
+        // Update supplier total
+        document.getElementById('supplier-total').textContent = supplierTotal.toFixed(2) + '€';
         
-        suppliers.forEach(supplierId => {
-            let supplierTotal = 0;
-            const supplierInputs = document.querySelectorAll(`[data-supplier="${supplierId}"]`);
-            
-            supplierInputs.forEach(input => {
-                const quantity = parseInt(input.value) || 0;
-                const price = parseFloat(input.dataset.price);
-                supplierTotal += quantity * price;
-            });
-            
-            const supplierTotalCell = supplierInputs[0].closest('.card').querySelector('.supplier-total');
-            supplierTotalCell.textContent = supplierTotal.toFixed(2) + '€';
-            
-            grandTotal += supplierTotal;
-        });
-        
-        document.getElementById('grand-total').textContent = grandTotal.toFixed(2) + '€';
+        // Update grand total (same as supplier total since we only show one supplier)
+        document.getElementById('grand-total').textContent = supplierTotal.toFixed(2) + '€';
+        document.getElementById('stats-total').textContent = supplierTotal.toFixed(2) + '€';
     }
     
+    // Form submission handling
     document.getElementById('procurement-form').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        if (!currentSupplier) {
+            alert('Bitte wählen Sie zuerst einen Lieferanten aus.');
+            return;
+        }
+        
         const orderData = {};
+        let hasItems = false;
         
         procurementInputs.forEach(input => {
             const quantity = parseInt(input.value) || 0;
             if (quantity > 0) {
+                hasItems = true;
                 const supplierId = input.dataset.supplier;
                 const componentId = input.dataset.component;
                 
@@ -169,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        if (Object.keys(orderData).length === 0) {
+        if (!hasItems) {
             alert('Bitte wählen Sie mindestens eine Komponente aus.');
             return;
         }
@@ -190,8 +665,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 alert('Fehler: ' + data.error);
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten.');
         });
     });
 });
 </script>
-{% endblock %} 
+{% endblock %}

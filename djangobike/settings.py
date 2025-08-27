@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'finance',
     'sales',
     'simulation',
+    'workers',  # Neue workers App hinzugefügt
 ]
 
 MIDDLEWARE = [

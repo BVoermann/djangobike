@@ -1,0 +1,506 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ worker.name }} - BikeShop Pro{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fas fa-user-cog" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Arbeiter-Details
+            </h1>
+            <p class="lead text-muted">Verwalten und bearbeiten Sie die Mitarbeiterinformationen</p>
+        </div>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-lg-4">
+        <!-- Worker Profile Card -->
+        <div class="card border-0 h-100">
+            <div class="card-body p-4 text-center">
+                <div class="avatar-circle mx-auto mb-4" style="width: 120px; height: 120px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 2.5rem;">
+                    {{ worker.name|slice:":1"|upper }}
+                </div>
+                
+                <h3 class="fw-bold mb-3">{{ worker.name }}</h3>
+                
+                <div class="mb-3">
+                    {% if worker.worker_type == 'skilled' %}
+                        <span class="badge rounded-pill px-4 py-2" style="background: var(--success-gradient); color: white; font-size: 1rem;">
+                            <i class="fas fa-cog me-2"></i>Facharbeiter
+                        </span>
+                    {% else %}
+                        <span class="badge rounded-pill px-4 py-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1rem;">
+                            <i class="fas fa-hammer me-2"></i>Hilfsarbeiter
+                        </span>
+                    {% endif %}
+                    
+                    {% if not worker.is_active %}
+                        <br><span class="badge rounded-pill px-4 py-2 mt-2" style="background: var(--danger-gradient); color: white; font-size: 1rem;">
+                            <i class="fas fa-times-circle me-2"></i>Entlassen
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item mb-3 p-3 rounded" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-euro-sign" style="color: #4facfe;"></i>
+                                <span class="ms-2 text-muted">Stundenlohn</span>
+                            </div>
+                            <span class="fw-bold fs-5">{{ worker.hourly_wage }}€/h</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item mb-3 p-3 rounded" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%);">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div>
+                                <i class="fas fa-tachometer-alt" style="color: #f093fb;"></i>
+                                <span class="ms-2 text-muted">Effizienz</span>
+                            </div>
+                            <span class="fw-bold fs-5">{{ worker.efficiency }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 10px;">
+                            <div class="progress-bar
+                                {% if worker.efficiency >= 120 %}bg-success
+                                {% elif worker.efficiency >= 100 %}bg-primary
+                                {% else %}bg-warning{% endif %}"
+                                style="width: {{ worker.efficiency }}%; border-radius: 10px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item mb-3 p-3 rounded" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-medal" style="color: #667eea;"></i>
+                                <span class="ms-2 text-muted">Erfahrung</span>
+                            </div>
+                            <span class="fw-bold fs-5">Level {{ worker.experience_level }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item mb-3 p-3 rounded" style="background: linear-gradient(135deg, rgba(67, 67, 67, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-calendar-alt" style="color: #434343;"></i>
+                                <span class="ms-2 text-muted">Eingestellt</span>
+                            </div>
+                            <span class="fw-bold">{{ worker.hired_date|date:"d.m.Y" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item mb-3 p-3 rounded" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-coins" style="color: #4facfe;"></i>
+                                <span class="ms-2 text-muted">Monatlich</span>
+                            </div>
+                            <span class="fw-bold fs-5 text-success">{{ worker.monthly_cost }}€</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item mb-4 p-3 rounded" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-chart-line" style="color: #f093fb;"></i>
+                                <span class="ms-2 text-muted">Produktivität</span>
+                            </div>
+                            <span class="badge rounded-pill px-3 py-2 fs-6
+                                {% if worker.productivity_score >= 8 %}" style="background: var(--success-gradient); color: white;
+                                {% elif worker.productivity_score >= 5 %}" style="background: var(--primary-gradient); color: white;
+                                {% else %}" style="background: var(--warning-gradient); color: white;{% endif %}">
+                                {{ worker.productivity_score|floatformat:1 }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if worker.is_active %}
+                    <div class="d-grid">
+                        <a href="{% url 'workers:fire_worker' worker.id %}"
+                           class="btn btn-outline-danger btn-lg">
+                            <i class="fas fa-user-times me-2"></i>Arbeiter entlassen
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Edit Form Card -->
+        <div class="card border-0">
+            <div class="card-header border-0 bg-transparent pb-0">
+                <h4 class="fw-bold mb-0">
+                    <i class="fas fa-edit me-2" style="color: #667eea;"></i>
+                    Arbeiter bearbeiten
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                {% if not worker.is_active %}
+                    <div class="alert border-0 mb-4" style="background: linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 225, 64, 0.1) 100%); border-left: 4px solid #fa709a !important;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3" style="color: #fa709a;"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Entlassener Arbeiter</h6>
+                                <p class="mb-0 text-muted">Dieser Arbeiter ist bereits entlassen. Änderungen haben keine Auswirkung auf die aktuelle Produktion.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.name }}
+                                <label for="{{ form.name.id_for_label }}">
+                                    <i class="fas fa-user me-2"></i>{{ form.name.label }}
+                                </label>
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.worker_type.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-briefcase me-2" style="color: #667eea;"></i>{{ form.worker_type.label }}
+                                </label>
+                                {{ form.worker_type }}
+                                {% if form.worker_type.errors %}
+                                    <div class="text-danger small mt-1">{{ form.worker_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mt-2">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.hourly_wage.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-euro-sign me-2" style="color: #4facfe;"></i>{{ form.hourly_wage.label }}
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-euro-sign text-success"></i>
+                                    </span>
+                                    {{ form.hourly_wage }}
+                                    <span class="input-group-text bg-light">/h</span>
+                                </div>
+                                {% if form.hourly_wage.errors %}
+                                    <div class="text-danger small mt-1">{{ form.hourly_wage.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.efficiency.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-tachometer-alt me-2" style="color: #f093fb;"></i>{{ form.efficiency.label }}
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-percent text-primary"></i>
+                                    </span>
+                                    {{ form.efficiency }}
+                                    <span class="input-group-text bg-light">%</span>
+                                </div>
+                                {% if form.efficiency.errors %}
+                                    <div class="text-danger small mt-1">{{ form.efficiency.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="{{ form.experience_level.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-medal me-2" style="color: #667eea;"></i>{{ form.experience_level.label }}
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-star text-warning"></i>
+                                    </span>
+                                    {{ form.experience_level }}
+                                </div>
+                                {% if form.experience_level.errors %}
+                                    <div class="text-danger small mt-1">{{ form.experience_level.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-end flex-wrap">
+                        <a href="{% url 'workers:dashboard' %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>Zurück
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-save me-2"></i>Änderungen speichern
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="card border-0 mt-4">
+            <div class="card-header border-0 bg-transparent pb-0">
+                <h5 class="fw-bold mb-0">
+                    <i class="fas fa-calculator me-2" style="color: #4facfe;"></i>
+                    Berechnungen & Statistiken
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="text-center p-4 rounded h-100" style="background: var(--warning-gradient); color: white;">
+                            <div class="display-6 mb-3">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <h4 class="fw-bold">{{ worker.monthly_cost }}€</h4>
+                            <h6 class="opacity-75">Monatliche Kosten</h6>
+                            <small class="opacity-75">bei 160h/Monat</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 rounded h-100" style="background: var(--primary-gradient); color: white;">
+                            <div class="display-6 mb-3">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h4 class="fw-bold">{{ worker.productivity_score|floatformat:1 }}</h4>
+                            <h6 class="opacity-75">Produktivitätswert</h6>
+                            <small class="opacity-75">Effizienz × Erfahrung ÷ 100</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 rounded h-100" style="background: var(--success-gradient); color: white;">
+                            <div class="display-6 mb-3">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <h4 class="fw-bold">{{ worker.hired_date|timesince|slice:":3" }}</h4>
+                            <h6 class="opacity-75">Im Unternehmen</h6>
+                            <small class="opacity-75">seit {{ worker.hired_date|date:"d.m.Y" }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<style>
+.form-floating > .form-control {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+    font-size: 1.1rem;
+}
+
+.form-floating > .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.form-floating > label {
+    padding: 1rem 0.75rem 0.25rem;
+    font-weight: 600;
+}
+
+.input-group-lg > .form-control {
+    font-size: 1.1rem;
+    border: 2px solid #e9ecef;
+}
+
+.input-group-lg > .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    padding: 0.75rem 1rem;
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+.avatar-circle {
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-circle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.stat-item {
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.stat-item:hover {
+    border-color: rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.btn {
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+@media (max-width: 768px) {
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .avatar-circle {
+        width: 80px !important;
+        height: 80px !important;
+        font-size: 2rem !important;
+    }
+    
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1.25rem;
+    }
+    
+    .stat-item {
+        margin-bottom: 1rem !important;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stats-grid {
+    animation: fadeInUp 0.6s ease;
+}
+</style>
+
+<script>
+// Form validation with real-time feedback
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input, select');
+    
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            validateField(this);
+        });
+        
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+    });
+    
+    function validateField(field) {
+        const value = field.value.trim();
+        
+        // Remove existing validation classes
+        field.classList.remove('is-valid', 'is-invalid');
+        
+        // Basic validation
+        if (field.hasAttribute('required') && !value) {
+            field.classList.add('is-invalid');
+            return false;
+        }
+        
+        // Number validation for wage and efficiency
+        if (field.type === 'number') {
+            const numValue = parseFloat(value);
+            if (isNaN(numValue) || numValue <= 0) {
+                field.classList.add('is-invalid');
+                return false;
+            }
+            
+            // Specific validation for efficiency (shouldn't be too high)
+            if (field.name === 'efficiency' && numValue > 200) {
+                field.classList.add('is-invalid');
+                return false;
+            }
+            
+            // Specific validation for wage (reasonable limits)
+            if (field.name === 'hourly_wage' && (numValue < 10 || numValue > 100)) {
+                field.classList.add('is-invalid');
+                return false;
+            }
+        }
+        
+        field.classList.add('is-valid');
+        return true;
+    }
+    
+    // Form submission validation
+    form.addEventListener('submit', function(e) {
+        let isFormValid = true;
+        
+        inputs.forEach(input => {
+            if (!validateField(input)) {
+                isFormValid = false;
+            }
+        });
+        
+        if (!isFormValid) {
+            e.preventDefault();
+            const firstInvalid = form.querySelector('.is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+            }
+        }
+    });
+});
+
+// Add smooth hover effects for stats
+document.querySelectorAll('.stat-item').forEach(item => {
+    item.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px) scale(1.02)';
+    });
+    
+    item.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+    });
+});
+</script>
+{% endblock %}

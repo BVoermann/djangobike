@@ -1,0 +1,926 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Interaktive Guides{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'help_system/css/help-system.css' %}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/css/shepherd.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="card-title mb-0">
+                            <i class="fas fa-route me-2"></i>
+                            Interaktive Guides
+                        </h1>
+                        <a href="{% url 'help_system:dashboard' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Zurück zur Übersicht
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Lass dich Schritt für Schritt durch die wichtigsten Funktionen des Simulators führen.</p>
+                    
+                    <!-- Filters -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="category-filter" class="form-label">Kategorie</label>
+                            <select class="form-select" id="category-filter">
+                                <option value="">Alle Kategorien</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="type-filter" class="form-label">Guide-Typ</label>
+                            <select class="form-select" id="type-filter">
+                                <option value="">Alle Typen</option>
+                                <option value="onboarding">Einführung</option>
+                                <option value="walkthrough">Feature-Tour</option>
+                                <option value="feature_intro">Neue Features</option>
+                                <option value="troubleshooting">Problemlösung</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="difficulty-filter" class="form-label">Schwierigkeitsgrad</label>
+                            <select class="form-select" id="difficulty-filter">
+                                <option value="">Alle Level</option>
+                                <option value="beginner">Anfänger</option>
+                                <option value="intermediate">Fortgeschritten</option>
+                                <option value="advanced">Experte</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Guide Cards -->
+                    <div class="row" id="guides-grid">
+                        {% for guide in guides %}
+                        <div class="col-lg-6 col-xl-4 mb-4 guide-card" 
+                             data-category="{{ guide.category.id }}" 
+                             data-type="{{ guide.guide_type }}"
+                             data-difficulty="{{ guide.user_level_required }}">
+                            <div class="card h-100 border-2 d-flex flex-column">
+                                <div class="card-header bg-light">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="card-title mb-0">{{ guide.title }}</h5>
+                                        {% if guide.guide_type == 'onboarding' %}
+                                        <span class="badge bg-primary">
+                                            {{ guide.get_guide_type_display }}
+                                        </span>
+                                        {% elif guide.guide_type == 'walkthrough' %}
+                                        <span class="badge bg-info">
+                                            {{ guide.get_guide_type_display }}
+                                        </span>
+                                        {% elif guide.guide_type == 'feature_intro' %}
+                                        <span class="badge bg-success">
+                                            {{ guide.get_guide_type_display }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-warning">
+                                            {{ guide.get_guide_type_display }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-body d-flex flex-column flex-grow-1">
+                                    <p class="card-text flex-grow-1">{{ guide.description }}</p>
+                                    
+                                    <div class="guide-stats mb-3">
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <small class="text-muted">Schritte</small>
+                                                <div class="fw-bold">{{ guide.steps|length }}</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Starts</small>
+                                                <div class="fw-bold">{{ guide.start_count }}</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Erfolgsrate</small>
+                                                <div class="fw-bold">{{ guide.completion_rate|floatformat:0 }}%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <small class="text-primary">
+                                            <i class="fas fa-folder me-1"></i>{{ guide.category.name }}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mb-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-signal me-1"></i>{{ guide.get_user_level_required_display }}
+                                        </small>
+                                    </div>
+                                    
+                                    {% if guide.target_url_pattern %}
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-link me-1"></i>Verfügbar auf: {{ guide.target_url_pattern }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- User Progress -->
+                                    {% if user.is_authenticated %}
+                                    <div class="mb-3">
+                                        {% if guide in user_progress.guides_completed.all %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Abgeschlossen
+                                        </span>
+                                        {% elif guide in user_progress.guides_started.all %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-play me-1"></i>Begonnen
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-transparent mt-auto">
+                                    <div class="d-grid">
+                                        <button class="btn btn-success" onclick="startGuide({{ guide.id }})">
+                                            <i class="fas fa-play me-2"></i>Guide starten
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info text-center">
+                                <i class="fas fa-route fa-3x mb-3"></i>
+                                <h5>Keine Guides verfügbar</h5>
+                                <p>Momentan sind keine interaktiven Guides verfügbar. Füge Inhalte über das Admin-Panel hinzu.</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Guide Preview Modal -->
+<div class="modal fade" id="guidePreviewModal" tabindex="-1" aria-labelledby="guidePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="guidePreviewModalLabel">Guide Vorschau</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="guide-preview-content">
+                    <!-- Guide preview will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                <button type="button" class="btn btn-success" id="start-guide-btn">
+                    <i class="fas fa-play me-2"></i>Guide starten
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'help_system/js/help-system.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we need to continue a guide from another page
+    const continueGuideData = sessionStorage.getItem('continueGuide');
+    if (continueGuideData) {
+        try {
+            const guideInfo = JSON.parse(continueGuideData);
+            sessionStorage.removeItem('continueGuide'); // Clean up
+            
+            console.log('🔄 Continuing guide from navigation:', guideInfo);
+            
+            // Small delay to let page settle
+            setTimeout(() => {
+                createInteractiveGuide(guideInfo.guide, guideInfo.stepIndex);
+            }, 1000);
+            
+            return; // Skip normal page initialization
+        } catch (error) {
+            console.error('Error continuing guide:', error);
+            sessionStorage.removeItem('continueGuide');
+        }
+    }
+    
+    const categoryFilter = document.getElementById('category-filter');
+    const typeFilter = document.getElementById('type-filter');
+    const difficultyFilter = document.getElementById('difficulty-filter');
+    const guideCards = document.querySelectorAll('.guide-card');
+    
+    // Filter functionality
+    function applyFilters() {
+        const category = categoryFilter.value;
+        const type = typeFilter.value;
+        const difficulty = difficultyFilter.value;
+        
+        guideCards.forEach(card => {
+            let show = true;
+            
+            if (category && card.dataset.category !== category) {
+                show = false;
+            }
+            
+            if (type && card.dataset.type !== type) {
+                show = false;
+            }
+            
+            if (difficulty && card.dataset.difficulty !== difficulty) {
+                show = false;
+            }
+            
+            card.style.display = show ? 'block' : 'none';
+        });
+    }
+    
+    // Event listeners
+    categoryFilter.addEventListener('change', applyFilters);
+    typeFilter.addEventListener('change', applyFilters);
+    difficultyFilter.addEventListener('change', applyFilters);
+    
+    // Help system initialization removed - using direct approach instead
+    console.log('Interactive guides page loaded');
+    
+    // Store current guide ID for modal
+    window.currentGuideId = null;
+    
+    // Start guide button in modal
+    document.getElementById('start-guide-btn').addEventListener('click', function() {
+        if (window.currentGuideId && window.helpSystem) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('guidePreviewModal'));
+            modal.hide();
+            window.helpSystem.startGuide(window.currentGuideId);
+        }
+    });
+});
+
+// Helper function to get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+async function startGuide(guideId) {
+    console.log('🚀 Starting interactive guide:', guideId);
+    
+    // Show loading message
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'guide-loading';
+    loadingDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        z-index: 10000;
+        text-align: center;
+    `;
+    loadingDiv.innerHTML = `
+        <div style="margin-bottom: 15px;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+        <div>Mock-Simulation wird geöffnet...</div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    document.body.appendChild(loadingDiv);
+    
+    try {
+        // Get CSRF token
+        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (!csrfToken) {
+            // Try to get from meta tag
+            csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        }
+        if (!csrfToken) {
+            // Try to get from cookie as fallback
+            csrfToken = getCookie('csrftoken');
+        }
+        if (!csrfToken) {
+            throw new Error('CSRF token not found - please reload the page');
+        }
+        
+        console.log('📡 Fetching guide data...');
+        const response = await fetch(`/help/api/guides/${guideId}/start/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        console.log('📊 Response status:', response.status);
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                const errorData = await response.json().catch(() => ({ error: 'Authentication required' }));
+                throw new Error(`Sie müssen sich anmelden, um die Anleitungen zu verwenden.\\n\\nFehler: ${errorData.message || errorData.error}`);
+            }
+            const errorText = await response.text();
+            console.error('HTTP Error:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}\\nResponse: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📋 Guide data received:', data);
+        
+        if (data.success && data.guide) {
+            // Remove loading
+            loadingDiv.remove();
+            
+            // Open mock simulation in new tab
+            const mockUrl = '/help/mock-simulation/';
+            const mockWindow = window.open(mockUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+            
+            if (mockWindow) {
+                // Wait for mock window to load, then start guide there
+                const checkLoaded = setInterval(() => {
+                    try {
+                        if (mockWindow.document.readyState === 'complete') {
+                            clearInterval(checkLoaded);
+                            
+                            // Start guide in mock window
+                            setTimeout(() => {
+                                if (mockWindow.createInteractiveGuide) {
+                                    // Switch to appropriate view if guide has navigation
+                                    const firstStep = data.guide.steps[0];
+                                    if (firstStep && firstStep.navigate_to && mockWindow.switchMockView) {
+                                        const targetView = extractViewFromUrl(firstStep.navigate_to);
+                                        mockWindow.switchMockView(targetView);
+                                    }
+                                    
+                                    mockWindow.createInteractiveGuide(data.guide);
+                                } else {
+                                    console.error('Mock window not ready for guides');
+                                }
+                            }, 1000);
+                        }
+                    } catch (e) {
+                        // Window might not be accessible yet
+                        console.log('Waiting for mock window to load...');
+                    }
+                }, 500);
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    clearInterval(checkLoaded);
+                }, 10000);
+            } else {
+                throw new Error('Pop-up wurde blockiert. Bitte erlauben Sie Pop-ups für diese Seite.');
+            }
+        } else {
+            throw new Error('Anleitung nicht gefunden oder ungültig');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error starting guide:', error);
+        loadingDiv.remove();
+        
+        // Show error message
+        alert(`❌ Die Anleitung konnte nicht geladen werden.\\n\\nFehler: ${error.message}\\n\\nBitte laden Sie die Seite neu.`);
+    }
+}
+
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+async function createInteractiveGuide(guide, startStep = 0) {
+    console.log('🎬 Creating interactive guide:', guide.title, 'starting at step', startStep);
+    
+    // Create grey overlay that covers entire page
+    const overlay = document.createElement('div');
+    overlay.id = 'guide-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        pointer-events: none;
+    `;
+    document.body.appendChild(overlay);
+    
+    // Create guide container
+    const guideContainer = document.createElement('div');
+    guideContainer.id = 'guide-container';
+    guideContainer.style.cssText = `
+        position: absolute;
+        width: 350px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        z-index: 10001;
+        font-family: Arial, sans-serif;
+        pointer-events: auto;
+    `;
+    document.body.appendChild(guideContainer);
+    
+    let currentStep = startStep;
+    let currentHighlight = null;
+    let currentTargetElement = null;
+    let currentPlacement = 'right';
+    
+    const positionGuideContainer = (targetElement, placement = 'right') => {
+        if (!targetElement) {
+            // Default position if no target element
+            guideContainer.style.top = '20px';
+            guideContainer.style.right = '20px';
+            guideContainer.style.left = 'auto';
+            guideContainer.style.bottom = 'auto';
+            return;
+        }
+        
+        const rect = targetElement.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        const containerWidth = 350;
+        const containerHeight = 300; // Approximate height
+        const margin = 15; // Space between target and container
+        
+        let top, left;
+        
+        switch (placement) {
+            case 'top':
+                top = rect.top + scrollTop - containerHeight - margin;
+                left = rect.left + scrollLeft + (rect.width / 2) - (containerWidth / 2);
+                break;
+            case 'bottom':
+                top = rect.bottom + scrollTop + margin;
+                left = rect.left + scrollLeft + (rect.width / 2) - (containerWidth / 2);
+                break;
+            case 'left':
+                top = rect.top + scrollTop + (rect.height / 2) - (containerHeight / 2);
+                left = rect.left + scrollLeft - containerWidth - margin;
+                break;
+            case 'right':
+            default:
+                top = rect.top + scrollTop + (rect.height / 2) - (containerHeight / 2);
+                left = rect.right + scrollLeft + margin;
+                break;
+        }
+        
+        // Ensure container stays within viewport
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Adjust horizontal position
+        if (left < 0) {
+            left = margin;
+        } else if (left + containerWidth > viewportWidth) {
+            left = viewportWidth - containerWidth - margin;
+        }
+        
+        // Adjust vertical position
+        if (top < scrollTop) {
+            top = scrollTop + margin;
+        } else if (top + containerHeight > scrollTop + viewportHeight) {
+            top = scrollTop + viewportHeight - containerHeight - margin;
+        }
+        
+        guideContainer.style.top = top + 'px';
+        guideContainer.style.left = left + 'px';
+        guideContainer.style.right = 'auto';
+        guideContainer.style.bottom = 'auto';
+        
+        // Add pointer arrow
+        addPointerArrow(placement);
+    };
+    
+    const addPointerArrow = (placement) => {
+        // Remove existing arrow
+        const existingArrow = guideContainer.querySelector('.guide-arrow');
+        if (existingArrow) {
+            existingArrow.remove();
+        }
+        
+        // Create new arrow
+        const arrow = document.createElement('div');
+        arrow.className = 'guide-arrow';
+        
+        const arrowSize = 12;
+        let arrowStyles = `
+            position: absolute;
+            width: 0;
+            height: 0;
+            z-index: 10002;
+        `;
+        
+        switch (placement) {
+            case 'top':
+                arrowStyles += `
+                    bottom: -${arrowSize}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    border-left: ${arrowSize}px solid transparent;
+                    border-right: ${arrowSize}px solid transparent;
+                    border-top: ${arrowSize}px solid white;
+                    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+                `;
+                break;
+            case 'bottom':
+                arrowStyles += `
+                    top: -${arrowSize}px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    border-left: ${arrowSize}px solid transparent;
+                    border-right: ${arrowSize}px solid transparent;
+                    border-bottom: ${arrowSize}px solid white;
+                    filter: drop-shadow(0 -2px 4px rgba(0,0,0,0.1));
+                `;
+                break;
+            case 'left':
+                arrowStyles += `
+                    right: -${arrowSize}px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    border-top: ${arrowSize}px solid transparent;
+                    border-bottom: ${arrowSize}px solid transparent;
+                    border-left: ${arrowSize}px solid white;
+                    filter: drop-shadow(2px 0 4px rgba(0,0,0,0.1));
+                `;
+                break;
+            case 'right':
+            default:
+                arrowStyles += `
+                    left: -${arrowSize}px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    border-top: ${arrowSize}px solid transparent;
+                    border-bottom: ${arrowSize}px solid transparent;
+                    border-right: ${arrowSize}px solid white;
+                    filter: drop-shadow(-2px 0 4px rgba(0,0,0,0.1));
+                `;
+                break;
+        }
+        
+        arrow.style.cssText = arrowStyles;
+        guideContainer.appendChild(arrow);
+    };
+    
+    const showStep = async (stepIndex) => {
+        if (stepIndex >= guide.steps.length) {
+            // Guide completed
+            endGuide();
+            alert('🎉 Anleitung erfolgreich abgeschlossen!\\n\\nSie haben alle Schritte durchlaufen. Viel Erfolg bei der Simulation!');
+            return;
+        }
+        
+        const step = guide.steps[stepIndex];
+        console.log(`📍 Showing step ${stepIndex + 1}: ${step.title}`);
+        
+        // Remove previous highlight
+        if (currentHighlight) {
+            currentHighlight.remove();
+        }
+        
+        // Navigate to target page if specified
+        if (step.navigate_to) {
+            console.log(`🧭 Navigating to: ${step.navigate_to}`);
+            
+            // Replace {{ session_id }} with actual session ID from current URL
+            let navigationUrl = step.navigate_to;
+            const currentUrl = window.location.pathname;
+            const sessionIdMatch = currentUrl.match(/([a-f0-9-]{36})/);
+            
+            if (sessionIdMatch && navigationUrl.includes('{{ session_id }}')) {
+                navigationUrl = navigationUrl.replace('{{ session_id }}', sessionIdMatch[1]);
+                console.log(`🔄 Replaced session ID: ${navigationUrl}`);
+            }
+            
+            // Store guide continuation data
+            sessionStorage.setItem('continueGuide', JSON.stringify({
+                guideId: guide.id,
+                stepIndex: stepIndex + 1,
+                guide: guide
+            }));
+            
+            window.location.href = navigationUrl;
+            return; // Let the page load and continue guide there
+        }
+        
+        // Find and highlight target element
+        let targetElement = null;
+        if (step.target && step.target !== 'body') {
+            targetElement = document.querySelector(step.target);
+            if (targetElement) {
+                currentTargetElement = targetElement;
+                currentPlacement = step.placement || 'right';
+                highlightElement(targetElement);
+                // Position guide container next to target element
+                positionGuideContainer(targetElement, currentPlacement);
+            } else {
+                console.warn(`⚠️ Target element not found: ${step.target}`);
+                currentTargetElement = null;
+                // Use default positioning if target not found
+                positionGuideContainer(null);
+            }
+        } else {
+            // Center the guide for body/general steps
+            currentTargetElement = null;
+            guideContainer.style.top = '50%';
+            guideContainer.style.left = '50%';
+            guideContainer.style.transform = 'translate(-50%, -50%)';
+            guideContainer.style.right = 'auto';
+            guideContainer.style.bottom = 'auto';
+            
+            // Remove arrow for centered guides
+            const existingArrow = guideContainer.querySelector('.guide-arrow');
+            if (existingArrow) {
+                existingArrow.remove();
+            }
+        }
+        
+        // Update guide container content
+        const isLastStep = stepIndex === guide.steps.length - 1;
+        const progress = Math.round(((stepIndex + 1) / guide.steps.length) * 100);
+        
+        guideContainer.innerHTML = `
+            <div style="padding: 20px;">
+                <!-- Progress bar -->
+                <div style="margin-bottom: 15px;">
+                    <div style="background: #f0f0f0; height: 4px; border-radius: 2px; overflow: hidden;">
+                        <div style="background: #007bff; height: 100%; width: ${progress}%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="text-align: center; font-size: 12px; color: #666; margin-top: 5px;">
+                        Schritt ${stepIndex + 1} von ${guide.steps.length}
+                    </div>
+                </div>
+                
+                <!-- Guide content -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 18px;">
+                        ${step.title}
+                    </h4>
+                    <p style="margin: 0; color: #555; line-height: 1.5; font-size: 14px;">
+                        ${step.content}
+                    </p>
+                    ${step.target && step.target !== 'body' ? `
+                        <div style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px; font-size: 12px; color: #1976d2;">
+                            💡 <strong>Schauen Sie sich an:</strong> ${step.target}
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <!-- Buttons -->
+                <div style="display: flex; gap: 8px;">
+                    ${stepIndex > 0 ? `
+                        <button onclick="window.previousStep()" style="flex: 1; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                            ← Zurück
+                        </button>
+                    ` : ''}
+                    <button onclick="window.nextStep()" style="flex: 2; padding: 8px 16px; background: ${isLastStep ? '#28a745' : '#007bff'}; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                        ${isLastStep ? '🎉 Fertig' : 'Weiter →'}
+                    </button>
+                    <button onclick="window.endGuide()" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        ✕
+                    </button>
+                </div>
+            </div>
+        `;
+    };
+    
+    const highlightElement = (element) => {
+        const rect = element.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        
+        // Create highlight box
+        currentHighlight = document.createElement('div');
+        currentHighlight.style.cssText = `
+            position: absolute;
+            top: ${rect.top + scrollTop - 5}px;
+            left: ${rect.left + scrollLeft - 5}px;
+            width: ${rect.width + 10}px;
+            height: ${rect.height + 10}px;
+            border: 3px solid #007bff;
+            border-radius: 8px;
+            background: rgba(0, 123, 255, 0.1);
+            z-index: 10000;
+            pointer-events: none;
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+            animation: guidePulse 2s infinite;
+        `;
+        
+        // Add pulsing animation
+        if (!document.getElementById('guide-animations')) {
+            const style = document.createElement('style');
+            style.id = 'guide-animations';
+            style.textContent = `
+                @keyframes guidePulse {
+                    0% { box-shadow: 0 0 20px rgba(0, 123, 255, 0.5); }
+                    50% { box-shadow: 0 0 30px rgba(0, 123, 255, 0.8); }
+                    100% { box-shadow: 0 0 20px rgba(0, 123, 255, 0.5); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(currentHighlight);
+        
+        // Scroll element into view
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    
+    // Global functions for buttons
+    window.nextStep = () => {
+        console.log('Next step clicked, current:', currentStep);
+        currentStep++;
+        showStep(currentStep);
+    };
+    
+    window.previousStep = () => {
+        console.log('Previous step clicked, current:', currentStep);
+        currentStep--;
+        showStep(currentStep);
+    };
+    
+    window.endGuide = () => {
+        console.log('🏁 Ending guide');
+        if (overlay) overlay.remove();
+        if (guideContainer) guideContainer.remove();
+        if (currentHighlight) currentHighlight.remove();
+        
+        // Remove resize listener
+        window.removeEventListener('resize', repositionGuide);
+        window.removeEventListener('scroll', repositionGuide);
+        
+        // Clean up global functions
+        delete window.nextStep;
+        delete window.previousStep;
+        delete window.endGuide;
+        delete window.repositionGuide;
+    };
+    
+    // Reposition guide when window resizes or scrolls
+    window.repositionGuide = () => {
+        if (currentTargetElement) {
+            positionGuideContainer(currentTargetElement, currentPlacement);
+            // Also update highlight position
+            if (currentHighlight) {
+                currentHighlight.remove();
+                highlightElement(currentTargetElement);
+            }
+        }
+    };
+    
+    // Add event listeners for repositioning
+    window.addEventListener('resize', window.repositionGuide);
+    window.addEventListener('scroll', window.repositionGuide);
+    
+    // Start with first step
+    showStep(0);
+}
+
+
+function extractViewFromUrl(url) {
+    // Extract view type from URL patterns like '/procurement/...' -> 'procurement'
+    const patterns = {
+        'procurement': 'procurement',
+        'production': 'production', 
+        'sales': 'sales',
+        'finance': 'finance',
+        'warehouse': 'warehouse'
+    };
+    
+    for (const [key, value] of Object.entries(patterns)) {
+        if (url.includes(key)) {
+            return value;
+        }
+    }
+    return 'overview';
+}
+
+async function createFallbackGuide(guideId) {
+    console.log('Using fallback guide system');
+    
+    try {
+        // Get guide data without starting
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        const response = await fetch(`/help/api/guides/${guideId}/start/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const guide = data.guide;
+            let currentStep = 0;
+            
+            function showStep() {
+                if (currentStep >= guide.steps.length) {
+                    alert('Anleitung abgeschlossen! 🎉');
+                    return;
+                }
+                
+                const step = guide.steps[currentStep];
+                const stepText = `${guide.title}\n\nSchritt ${currentStep + 1} von ${guide.steps.length}\n\n${step.title}\n\n${step.content}\n\nWeiter?`;
+                
+                if (confirm(stepText)) {
+                    currentStep++;
+                    showStep();
+                }
+            }
+            
+            showStep();
+        }
+    } catch (error) {
+        console.error('Fallback guide failed:', error);
+        alert('Die Anleitung konnte leider nicht geladen werden.');
+    }
+}
+
+
+function previewGuide(guideId) {
+    // Store guide ID for later use
+    window.currentGuideId = guideId;
+    
+    // Fetch guide details
+    fetch(`/help/api/guides/${guideId}/preview/`)
+        .then(response => response.json())
+        .then(data => {
+            const content = document.getElementById('guide-preview-content');
+            content.innerHTML = `
+                <div class="mb-3">
+                    <h6>${data.title}</h6>
+                    <p>${data.description}</p>
+                </div>
+                <div class="mb-3">
+                    <h6>Schritte:</h6>
+                    <div class="list-group">
+                        ${data.steps.map((step, index) => `
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Schritt ${index + 1}: ${step.title || 'Ohne Titel'}</h6>
+                                    <small>${step.target || 'Allgemein'}</small>
+                                </div>
+                                <p class="mb-1">${step.content || 'Keine Beschreibung'}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Dieser Guide führt dich interaktiv durch die Anwendung. 
+                    Folge den Anweisungen und klicke auf die hervorgehobenen Elemente.
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('guidePreviewModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error fetching guide preview:', error);
+            // Fallback: just start the guide
+            startGuide(guideId);
+        });
+}
+</script>
+{% endblock %}

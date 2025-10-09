@@ -78,9 +78,10 @@
 </div>
 
 <!-- Lager-Übersicht -->
-<div class="row g-4">
-    {% for data in warehouse_data %}
-    <div class="col-lg-6">
+<div class="container-fluid px-4 py-4">
+    <div class="row g-4">
+        {% for data in warehouse_data %}
+        <div class="col-12">
         <div class="card h-100 warehouse-card">
             <div class="card-header border-0 pb-0">
                 <div class="d-flex justify-content-between align-items-start">
@@ -124,130 +125,137 @@
                     {% endwith %}
                 </div>
                 
-                <!-- Komponenten-Übersicht -->
-                <h6 class="fw-bold mb-3">
-                    <i class="fas fa-cogs me-2"></i>Gelagerte Komponenten
-                </h6>
-                {% if data.stocks %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
-                            <tr>
-                                <th class="border-0 fw-bold">Komponente</th>
-                                <th class="border-0 fw-bold">Menge</th>
-                                <th class="border-0 fw-bold">Platzbedarf</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for stock in data.stocks %}
-                            {% with space_used=stock.quantity|mul:stock.component.component_type.storage_space_per_unit %}
-                            <tr class="border-bottom">
-                                <td class="py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="component-icon me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
-                                            <i class="fas fa-puzzle-piece"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">{{ stock.component.component_type.name }}</div>
-                                            <small class="text-muted">{{ stock.component.name }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge rounded-pill fs-6 px-3 py-2 {% if stock.quantity > 100 %}bg-success{% elif stock.quantity > 20 %}bg-warning{% else %}bg-danger{% endif %}">
-                                        {{ stock.quantity }} Stück
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="space-indicator me-2" style="width: 20px; height: 20px; background: {% if space_used < 5 %}var(--success-gradient){% elif space_used < 15 %}var(--warning-gradient){% else %}var(--danger-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem;">
-                                            <i class="fas fa-cube"></i>
-                                        </div>
-                                        <span class="fw-semibold">{{ space_used|floatformat:2 }}m²</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endwith %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <div class="empty-state" style="opacity: 0.7;">
-                        <i class="fas fa-box-open display-4 text-muted mb-3"></i>
-                        <h5 class="fw-bold mb-2">Lager ist leer</h5>
-                        <p class="text-muted mb-0">Dieses Lager enthält derzeit keine Komponenten.</p>
+                <!-- Two-column layout for components and bicycles -->
+                <div class="row g-3">
+                    <!-- Left column: Components -->
+                    <div class="col-lg-6 col-md-12" style="background: rgba(0, 123, 255, 0.05); padding: 15px; border-radius: 8px;">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-cogs me-2"></i>Gelagerte Komponenten
+                        </h6>
+                        {% if data.stocks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                    <tr>
+                                        <th class="border-0 fw-bold">Komponente</th>
+                                        <th class="border-0 fw-bold">Menge</th>
+                                        <th class="border-0 fw-bold">Platzbedarf</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stock in data.stocks %}
+                                    {% with space_used=stock.quantity|mul:stock.component.component_type.storage_space_per_unit %}
+                                    <tr class="border-bottom">
+                                        <td class="py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="component-icon me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                    <i class="fas fa-puzzle-piece"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ stock.component.component_type.name }}</div>
+                                                    <small class="text-muted">{{ stock.component.name }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge rounded-pill fs-6 px-3 py-2 {% if stock.quantity > 100 %}bg-success{% elif stock.quantity > 20 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ stock.quantity }} Stück
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="space-indicator me-2" style="width: 20px; height: 20px; background: {% if space_used < 5 %}var(--success-gradient){% elif space_used < 15 %}var(--warning-gradient){% else %}var(--danger-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem;">
+                                                    <i class="fas fa-cube"></i>
+                                                </div>
+                                                <span class="fw-semibold">{{ space_used|floatformat:2 }}m²</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endwith %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <div class="empty-state" style="opacity: 0.7;">
+                                <i class="fas fa-box-open display-4 text-muted mb-3"></i>
+                                <h5 class="fw-bold mb-2">Lager ist leer</h5>
+                                <p class="text-muted mb-0">Dieses Lager enthält derzeit keine Komponenten.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Right column: Bicycles -->
+                    <div class="col-lg-6 col-md-12" style="background: rgba(40, 167, 69, 0.05); padding: 15px; border-radius: 8px;">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-bicycle me-2"></i>Gelagerte Fahrräder
+                        </h6>
+                        {% if data.bike_stocks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                    <tr>
+                                        <th class="border-0 fw-bold">Fahrrad</th>
+                                        <th class="border-0 fw-bold">Segment</th>
+                                        <th class="border-0 fw-bold">Datum</th>
+                                        <th class="border-0 fw-bold">Platz</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bike_stock in data.bike_stocks %}
+                                    <tr class="border-bottom">
+                                        <td class="py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bike-icon me-3" style="width: 35px; height: 35px; background: var(--success-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                    <i class="fas fa-bicycle"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ bike_stock.bike.bike_type.name }}</div>
+                                                    <small class="text-muted">ID: {{ bike_stock.bike.id }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if bike_stock.bike.price_segment == 'cheap' %}
+                                                <span class="badge rounded-pill fs-6 px-2 py-1 bg-secondary">Günstig</span>
+                                            {% elif bike_stock.bike.price_segment == 'standard' %}
+                                                <span class="badge rounded-pill fs-6 px-2 py-1 bg-primary">Standard</span>
+                                            {% elif bike_stock.bike.price_segment == 'premium' %}
+                                                <span class="badge rounded-pill fs-6 px-2 py-1 bg-warning text-dark">Premium</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-calendar text-muted me-1"></i>
+                                                <span style="font-size: 0.85rem;">{{ bike_stock.bike.production_month }}/{{ bike_stock.bike.production_year }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="space-indicator me-2" style="width: 20px; height: 20px; background: var(--warning-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem;">
+                                                    <i class="fas fa-cube"></i>
+                                                </div>
+                                                <span class="fw-semibold" style="font-size: 0.85rem;">{{ bike_stock.bike.bike_type.storage_space_per_unit|floatformat:1 }}m²</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <div class="empty-state" style="opacity: 0.7;">
+                                <i class="fas fa-bicycle display-4 text-muted mb-3"></i>
+                                <h5 class="fw-bold mb-2">Keine Fahrräder im Lager</h5>
+                                <p class="text-muted mb-0">Produzieren Sie Fahrräder, um sie hier zu sehen.</p>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                {% endif %}
-                
-                <!-- Fahrräder-Übersicht -->
-                <h6 class="fw-bold mb-3 mt-4">
-                    <i class="fas fa-bicycle me-2"></i>Gelagerte Fahrräder
-                </h6>
-                {% if data.bike_stocks %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
-                            <tr>
-                                <th class="border-0 fw-bold">Fahrrad</th>
-                                <th class="border-0 fw-bold">Preissegment</th>
-                                <th class="border-0 fw-bold">Produktionsdatum</th>
-                                <th class="border-0 fw-bold">Platzbedarf</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for bike_stock in data.bike_stocks %}
-                            <tr class="border-bottom">
-                                <td class="py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bike-icon me-3" style="width: 35px; height: 35px; background: var(--success-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
-                                            <i class="fas fa-bicycle"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">{{ bike_stock.bike.bike_type.name }}</div>
-                                            <small class="text-muted">ID: {{ bike_stock.bike.id }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    {% if bike_stock.bike.price_segment == 'cheap' %}
-                                        <span class="badge rounded-pill fs-6 px-3 py-2 bg-secondary">Günstig</span>
-                                    {% elif bike_stock.bike.price_segment == 'standard' %}
-                                        <span class="badge rounded-pill fs-6 px-3 py-2 bg-primary">Standard</span>
-                                    {% elif bike_stock.bike.price_segment == 'premium' %}
-                                        <span class="badge rounded-pill fs-6 px-3 py-2 bg-warning text-dark">Premium</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-calendar text-muted me-2"></i>
-                                        <span>{{ bike_stock.bike.production_month }}/{{ bike_stock.bike.production_year }}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="space-indicator me-2" style="width: 20px; height: 20px; background: var(--warning-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem;">
-                                            <i class="fas fa-cube"></i>
-                                        </div>
-                                        <span class="fw-semibold">{{ bike_stock.bike.bike_type.storage_space_per_unit|floatformat:2 }}m²</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="text-center py-4">
-                    <div class="empty-state" style="opacity: 0.7;">
-                        <i class="fas fa-bicycle display-4 text-muted mb-3"></i>
-                        <h5 class="fw-bold mb-2">Keine Fahrräder im Lager</h5>
-                        <p class="text-muted mb-0">Produzieren Sie Fahrräder, um sie hier zu sehen.</p>
-                    </div>
-                </div>
-                {% endif %}
             </div>
             
             <!-- Lager-Footer mit Aktionen -->
@@ -274,14 +282,16 @@
                 </div>
             </div>
         </div>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 
 {% if not warehouse_data %}
 <!-- Empty State für keine Lager -->
-<div class="row justify-content-center">
-    <div class="col-md-8">
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
         <div class="card">
             <div class="card-body text-center py-5">
                 <div class="empty-state" style="opacity: 0.7;">
@@ -292,6 +302,7 @@
                     <p class="text-muted mb-4">Derzeit sind keine Lagerhallen konfiguriert. Kontaktieren Sie die Administration, um Lager hinzuzufügen.</p>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </div>
@@ -482,6 +493,64 @@
 .fw-bold.text-warning,
 .fw-bold.text-success {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Two-column layout enhancements */
+.row.g-3 > [class*="col-"] {
+    min-height: 200px;
+}
+
+.col-lg-6 {
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.col-lg-6:last-child {
+    border-right: none;
+}
+
+@media (max-width: 991.98px) {
+    .col-lg-6 {
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .col-lg-6:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+}
+
+/* Full-width warehouse layout enhancements */
+.warehouse-card .row.g-3 {
+    align-items: stretch;
+}
+
+.warehouse-card .col-lg-6 {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure proper spacing for full-width cards */
+.container-fluid.px-4.py-4 {
+    margin-top: 1rem;
+}
+
+/* Optimize two-column layout within full-width cards */
+@media (min-width: 992px) {
+    .warehouse-card .row.g-3 > .col-lg-6 {
+        min-height: 300px;
+    }
+}
+
+/* Full-width card styling improvements */
+.col-12 .warehouse-card {
+    max-width: none;
+    width: 100%;
+}
+
+.col-12 .warehouse-card .card-body {
+    padding: 2rem;
 }
 </style>
 

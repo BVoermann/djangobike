@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guides Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/css/shepherd.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .test-area { min-height: 400px; padding: 20px; border: 1px solid #ddd; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Interactive Guides Test Page</h1>
+        
+        <div class="test-area">
+            <h2>Test Area</h2>
+            <p>This is a test page to verify that interactive guides work.</p>
+            
+            <div class="card">
+                <div class="card-header">Sample Card</div>
+                <div class="card-body">
+                    <p>This card has various elements that can be targeted by guides.</p>
+                    <button class="btn btn-primary">Sample Button</button>
+                    <input type="text" class="form-control mt-2" placeholder="Sample Input">
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <button class="btn btn-success" onclick="testGuide()">Test Simple Guide</button>
+            <button class="btn btn-info" onclick="testComplexGuide()">Test Complex Guide</button>
+            <button class="btn btn-warning" onclick="testFallbackGuide()">Test Fallback Guide</button>
+        </div>
+        
+        <div id="debug-output" class="alert alert-info">
+            <h5>Debug Output:</h5>
+            <div id="debug-content">Click a test button to see debug information...</div>
+        </div>
+    </div>
+    
+    <!-- CSRF Token for testing -->
+    <input type="hidden" name="csrfmiddlewaretoken" value="test-token">
+
+    <script src="https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/js/shepherd.min.js"></script>
+    <script>
+        // Mock the help system for testing
+        class MockHelpSystem {
+            constructor() {
+                this.currentGuide = null;
+            }
+            
+            async startGuide(guideData) {
+                console.log('Starting mock guide:', guideData.title);
+                this.debug('Starting guide: ' + guideData.title);
+                
+                try {
+                    this.currentGuide = new Shepherd.Tour({
+                        useModalOverlay: true,
+                        defaultStepOptions: {
+                            cancelIcon: { enabled: true },
+                            scrollTo: { behavior: 'smooth', block: 'center' }
+                        }
+                    });
+                    
+                    guideData.steps.forEach((step, index) => {
+                        this.currentGuide.addStep({
+                            title: step.title,
+                            text: step.content,
+                            attachTo: step.target ? {
+                                element: step.target,
+                                on: step.placement || 'bottom'
+                            } : undefined,
+                            buttons: this.createButtons(guideData, index),
+                            id: `step-${index}`
+                        });
+                    });
+                    
+                    this.currentGuide.on('complete', () => {
+                        this.debug('Guide completed successfully!');
+                        this.currentGuide = null;
+                    });
+                    
+                    this.currentGuide.on('cancel', () => {
+                        this.debug('Guide cancelled by user');
+                        this.currentGuide = null;
+                    });
+                    
+                    this.currentGuide.start();
+                    this.debug('Shepherd tour started successfully');
+                    
+                } catch (error) {
+                    console.error('Error creating guide:', error);
+                    this.debug('Error: ' + error.message);
+                    this.fallbackGuide(guideData);
+                }
+            }
+            
+            createButtons(guide, stepIndex) {
+                const buttons = [];
+                const isLastStep = stepIndex === guide.steps.length - 1;
+                
+                if (stepIndex > 0) {
+                    buttons.push({
+                        text: 'Zurück',
+                        classes: 'btn btn-secondary',
+                        action: () => this.currentGuide.back()
+                    });
+                }
+                
+                buttons.push({
+                    text: isLastStep ? 'Fertig' : 'Weiter',
+                    classes: `btn ${isLastStep ? 'btn-success' : 'btn-primary'}`,
+                    action: () => {
+                        if (isLastStep) {
+                            this.currentGuide.complete();
+                        } else {
+                            this.currentGuide.next();
+                        }
+                    }
+                });
+                
+                return buttons;
+            }
+            
+            fallbackGuide(guideData) {
+                this.debug('Using fallback guide system');
+                let currentStep = 0;
+                
+                const showStep = () => {
+                    if (currentStep >= guideData.steps.length) {
+                        alert('Guide completed!');
+                        return;
+                    }
+                    
+                    const step = guideData.steps[currentStep];
+                    const result = confirm(`Step ${currentStep + 1}: ${step.title}\n\n${step.content}\n\nContinue?`);
+                    
+                    if (result) {
+                        currentStep++;
+                        showStep();
+                    }
+                };
+                
+                showStep();
+            }
+            
+            debug(message) {
+                const debugContent = document.getElementById('debug-content');
+                const timestamp = new Date().toLocaleTimeString();
+                debugContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+                console.log(message);
+            }
+        }
+        
+        const mockHelpSystem = new MockHelpSystem();
+        
+        function testGuide() {
+            const guideData = {
+                title: 'Simple Test Guide',
+                steps: [
+                    {
+                        title: 'Welcome',
+                        content: 'This is a simple test guide to verify that Shepherd.js is working.',
+                        target: 'h1',
+                        placement: 'bottom'
+                    },
+                    {
+                        title: 'Card Example',
+                        content: 'This step highlights the card element.',
+                        target: '.card',
+                        placement: 'top'
+                    },
+                    {
+                        title: 'Button Example',
+                        content: 'This step highlights the button.',
+                        target: '.btn-primary',
+                        placement: 'right'
+                    }
+                ]
+            };
+            
+            mockHelpSystem.startGuide(guideData);
+        }
+        
+        function testComplexGuide() {
+            const guideData = {
+                title: 'Complex Test Guide',
+                steps: [
+                    {
+                        title: 'Step 1',
+                        content: 'This is the first step of a more complex guide.',
+                        target: '.container',
+                        placement: 'center'
+                    },
+                    {
+                        title: 'Step 2',
+                        content: 'This step has no specific target.',
+                        target: null,
+                        placement: 'center'
+                    },
+                    {
+                        title: 'Step 3',
+                        content: 'This step targets an input field.',
+                        target: 'input',
+                        placement: 'top'
+                    },
+                    {
+                        title: 'Final Step',
+                        content: 'Congratulations! You have completed the complex guide.',
+                        target: 'body',
+                        placement: 'center'
+                    }
+                ]
+            };
+            
+            mockHelpSystem.startGuide(guideData);
+        }
+        
+        function testFallbackGuide() {
+            // Force fallback by breaking Shepherd temporarily
+            const originalShepherd = window.Shepherd;
+            window.Shepherd = undefined;
+            
+            const guideData = {
+                title: 'Fallback Test Guide',
+                steps: [
+                    {
+                        title: 'Fallback Step 1',
+                        content: 'This guide uses the fallback system when Shepherd.js is not available.'
+                    },
+                    {
+                        title: 'Fallback Step 2',
+                        content: 'Fallback guides use simple alert/confirm dialogs.'
+                    }
+                ]
+            };
+            
+            mockHelpSystem.startGuide(guideData);
+            
+            // Restore Shepherd
+            window.Shepherd = originalShepherd;
+        }
+        
+        // Test Shepherd availability on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            mockHelpSystem.debug('Page loaded');
+            if (typeof Shepherd !== 'undefined') {
+                mockHelpSystem.debug('✅ Shepherd.js is available');
+            } else {
+                mockHelpSystem.debug('❌ Shepherd.js is NOT available');
+            }
+        });
+    </script>
+</body>
+</html>

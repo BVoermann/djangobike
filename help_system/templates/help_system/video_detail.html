@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ video.title }} - Video Tutorial{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'help_system/css/help-system.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="card-title mb-0">{{ video.title }}</h1>
+                        <a href="{% url 'help_system:video_library' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Zurück zur Bibliothek
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Video Player -->
+                    <div class="video-container mb-4">
+                        {% if video.video_embed_code %}
+                            {{ video.video_embed_code|safe }}
+                        {% else %}
+                            <div class="ratio ratio-16x9">
+                                <iframe src="{{ video.video_url }}" 
+                                        title="{{ video.title }}" 
+                                        allowfullscreen></iframe>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Video Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h5>Beschreibung</h5>
+                            <p>{{ video.description|linebreaks }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Video Details</h6>
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2">
+                                            <i class="fas fa-clock text-primary me-2"></i>
+                                            <strong>Dauer:</strong> {{ video.duration_minutes }} Minuten
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-signal text-primary me-2"></i>
+                                            <strong>Level:</strong> 
+                                            <span class="badge bg-{{ video.difficulty_level == 'beginner' and 'success' or video.difficulty_level == 'intermediate' and 'warning' or 'danger' }}">
+                                                {{ video.get_difficulty_level_display }}
+                                            </span>
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-folder text-primary me-2"></i>
+                                            <strong>Kategorie:</strong> {{ video.category.name }}
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-eye text-primary me-2"></i>
+                                            <strong>Aufrufe:</strong> {{ video.view_count }}
+                                        </li>
+                                        {% if video.tags %}
+                                        <li>
+                                            <i class="fas fa-tags text-primary me-2"></i>
+                                            <strong>Tags:</strong>
+                                            <div class="mt-1">
+                                                {% for tag in video.tags|split:"," %}
+                                                <span class="badge bg-secondary me-1">{{ tag|strip }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Prerequisites and Learning Objectives -->
+                    <div class="row mb-4">
+                        {% if video.prerequisites %}
+                        <div class="col-md-6">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>Voraussetzungen
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    {{ video.prerequisites|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-bullseye me-2"></i>Lernziele
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    {{ video.learning_objectives|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Actions -->
+                    {% if user.is_authenticated %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            {% if video in user_progress.videos_watched.all %}
+                                            <span class="badge bg-success me-2">
+                                                <i class="fas fa-check me-1"></i>Angesehen
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-primary me-2" onclick="markVideoWatched({{ video.id }})">
+                                                <i class="fas fa-check me-1"></i>Als angesehen markieren
+                                            </button>
+                                            <button class="btn btn-outline-secondary" onclick="showFeedbackModal()">
+                                                <i class="fas fa-comment me-1"></i>Feedback geben
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Related Videos -->
+            {% if related_videos %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-video me-2"></i>Ähnliche Videos
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for related_video in related_videos %}
+                        <a href="{% url 'help_system:video_detail' related_video.id %}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ related_video.title|truncatechars:40 }}</h6>
+                                <small>{{ related_video.duration_minutes }}min</small>
+                            </div>
+                            <p class="mb-1">{{ related_video.description|truncatewords:15 }}</p>
+                            <small class="text-muted">{{ related_video.category.name }}</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Interactive Guides -->
+            {% if related_guides %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-route me-2"></i>Interaktive Guides
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for guide in related_guides %}
+                        <button class="list-group-item list-group-item-action" 
+                                onclick="startGuide({{ guide.id }})">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ guide.title }}</h6>
+                                <i class="fas fa-play text-primary"></i>
+                            </div>
+                            <p class="mb-1">{{ guide.description|truncatewords:10 }}</p>
+                            <small class="text-muted">{{ guide.get_guide_type_display }}</small>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Navigation -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-compass me-2"></i>Navigation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'help_system:dashboard' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>Hilfe-Center
+                        </a>
+                        <a href="{% url 'help_system:video_library' %}" class="btn btn-outline-info">
+                            <i class="fas fa-video me-2"></i>Video Bibliothek
+                        </a>
+                        <a href="{% url 'help_system:interactive_guides' %}" class="btn btn-outline-success">
+                            <i class="fas fa-route me-2"></i>Interaktive Guides
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="feedbackModalLabel">Feedback für "{{ video.title }}"</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Bewertung</label>
+                        <div class="rating-stars">
+                            {% for i in "12345"|make_list %}
+                            <span class="star" data-rating="{{ i }}">
+                                <i class="far fa-star"></i>
+                            </span>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" id="rating" name="rating" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Kommentar</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="improvements" class="form-label">Verbesserungsvorschläge</label>
+                        <textarea class="form-control" id="improvements" name="improvements" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="button" class="btn btn-primary" onclick="submitFeedback()">Feedback senden</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'help_system/js/help-system.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize help system
+    const helpSystem = new HelpSystem();
+    helpSystem.init();
+    
+    // Star rating functionality
+    const stars = document.querySelectorAll('.star');
+    const ratingInput = document.getElementById('rating');
+    
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = this.dataset.rating;
+            ratingInput.value = rating;
+            
+            stars.forEach((s, index) => {
+                const icon = s.querySelector('i');
+                if (index < rating) {
+                    icon.className = 'fas fa-star text-warning';
+                } else {
+                    icon.className = 'far fa-star';
+                }
+            });
+        });
+        
+        star.addEventListener('mouseover', function() {
+            const rating = this.dataset.rating;
+            stars.forEach((s, index) => {
+                const icon = s.querySelector('i');
+                if (index < rating) {
+                    icon.className = 'fas fa-star text-warning';
+                } else {
+                    icon.className = 'far fa-star';
+                }
+            });
+        });
+    });
+    
+    document.querySelector('.rating-stars').addEventListener('mouseleave', function() {
+        const currentRating = ratingInput.value;
+        stars.forEach((s, index) => {
+            const icon = s.querySelector('i');
+            if (index < currentRating) {
+                icon.className = 'fas fa-star text-warning';
+            } else {
+                icon.className = 'far fa-star';
+            }
+        });
+    });
+});
+
+function markVideoWatched(videoId) {
+    if (window.helpSystem) {
+        window.helpSystem.markVideoWatched(videoId).then(() => {
+            location.reload();
+        });
+    }
+}
+
+function showFeedbackModal() {
+    const modal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    modal.show();
+}
+
+function submitFeedback() {
+    const form = document.getElementById('feedbackForm');
+    const formData = new FormData(form);
+    
+    if (window.helpSystem) {
+        window.helpSystem.submitVideoFeedback({{ video.id }}, {
+            rating: formData.get('rating'),
+            comment: formData.get('comment'),
+            improvements: formData.get('improvements')
+        }).then(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('feedbackModal'));
+            modal.hide();
+            
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                Vielen Dank für dein Feedback!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.row'));
+        });
+    }
+}
+
+function startGuide(guideId) {
+    if (window.helpSystem) {
+        window.helpSystem.startGuide(guideId);
+    }
+}
+</script>
+{% endblock %}

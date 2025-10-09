@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Monatsbericht {{ report_month }}/{{ report_year }} - BikeShop Simulator{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">📊 Monatsbericht</h1>
+                <div class="month-display">
+                    {{ report_month }}/{{ report_year }}
+                </div>
+            </div>
+
+            {% if has_saved_report %}
+                
+                <!-- Financial Summary Card -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chart-line"></i> Finanzübersicht
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-2 col-md-4 col-sm-6">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-muted">Anfangssaldo</h6>
+                                            <div class="h4">{{ monthly_report.opening_balance|floatformat:2 }}€</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-sm-6">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-muted">Endsaldo</h6>
+                                            <div class="h4">{{ monthly_report.closing_balance|floatformat:2 }}€</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-sm-6">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-muted">Saldoänderung</h6>
+                                            <div class="h4 {% if balance_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if balance_change >= 0 %}+{% endif %}{{ balance_change|floatformat:2 }}€
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-sm-6">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-muted">Gesamteinnahmen</h6>
+                                            <div class="h4 text-success">{{ monthly_report.total_income|floatformat:2 }}€</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-sm-6">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-muted">Gesamtausgaben</h6>
+                                            <div class="h4 text-danger">{{ monthly_report.total_expenses|floatformat:2 }}€</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-2 col-md-4 col-sm-6">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-muted">Gewinn/Verlust</h6>
+                                            <div class="h4 {% if profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if profit_loss >= 0 %}
+                                                    <i class="fas fa-arrow-up"></i> +{{ profit_loss|floatformat:2 }}€
+                                                {% else %}
+                                                    <i class="fas fa-arrow-down"></i> {{ profit_loss|floatformat:2 }}€
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Activity Summary -->
+                <div class="row mb-4">
+                    <!-- Procurement -->
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-shopping-cart text-primary"></i> Einkauf
+                                </h5>
+                                <span class="badge bg-primary">{{ bought_items|length }} Komponenten</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    <div class="h4 text-primary">{{ total_bought_amount|floatformat:2 }}€</div>
+                                    <small class="text-muted">Gesamteinkauf</small>
+                                </div>
+                                {% if bought_items %}
+                                    <div class="mt-3">
+                                        <div class="table-responsive" style="max-height: 300px;">
+                                            <table class="table table-sm">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Komponente</th>
+                                                        <th class="text-end">Menge</th>
+                                                        <th class="text-end">Kosten</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for item in bought_items %}
+                                                    <tr>
+                                                        <td>
+                                                            <small class="fw-bold">{{ item.component }}</small>
+                                                            <br><small class="text-muted">{{ item.supplier }}</small>
+                                                        </td>
+                                                        <td class="text-end"><small>{{ item.quantity }}</small></td>
+                                                        <td class="text-end"><small class="fw-bold">{{ item.total_cost|floatformat:2 }}€</small></td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center text-muted py-3">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <p>Keine Einkäufe getätigt</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Production -->
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-cogs text-success"></i> Produktion
+                                </h5>
+                                <span class="badge bg-success">{{ bikes_produced_count }} Fahrräder</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    <div class="h4 text-success">{{ total_production_cost|floatformat:2 }}€</div>
+                                    <small class="text-muted">Produktionskosten</small>
+                                </div>
+                                {% if production_summary %}
+                                    <div class="mt-3">
+                                        {% for bike_type, data in production_summary.items %}
+                                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(25, 135, 84, 0.1);">
+                                                <div>
+                                                    <small class="fw-bold">{{ bike_type }}</small>
+                                                    <br><small class="text-muted">{{ data.cost|floatformat:2 }}€</small>
+                                                </div>
+                                                <span class="badge bg-success">{{ data.count }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="text-center text-muted py-3">
+                                        <i class="fas fa-industry fa-2x mb-2"></i>
+                                        <p>Keine Produktion</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sales -->
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-chart-line text-success"></i> Verkaufsübersicht
+                                </h5>
+                                <span class="badge bg-success">{{ bikes_sold_count }} verkauft</span>
+                            </div>
+                            <div class="card-body">
+                                <!-- ACTUAL COMPLETED SALES -->
+                                <div class="mb-3">
+                                    <h6 class="text-success mb-2">
+                                        <i class="fas fa-check-circle"></i> Tatsächlich verkauft
+                                    </h6>
+                                    <div class="text-center mb-3">
+                                        <div class="h4 text-success">{{ total_sales_revenue|floatformat:2 }}€</div>
+                                        <small class="text-muted">Umsatz diesen Monat</small>
+                                    </div>
+                                    {% if sales_summary %}
+                                        {% for bike_type, data in sales_summary.items %}
+                                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(25, 135, 84, 0.1);">
+                                                <div>
+                                                    <small class="fw-bold">{{ bike_type }}</small>
+                                                    <br><small class="text-success">{{ data.revenue|floatformat:2 }}€ Brutto</small>
+                                                    {% if data.transport_cost %}
+                                                        <br><small class="text-danger">-{{ data.transport_cost|floatformat:2 }}€ Transport</small>
+                                                    {% endif %}
+                                                    {% if data.net_revenue %}
+                                                        <br><small class="text-success fw-bold">{{ data.net_revenue|floatformat:2 }}€ Netto</small>
+                                                    {% endif %}
+                                                </div>
+                                                <span class="badge bg-success">{{ data.count }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center text-muted py-2">
+                                            <i class="fas fa-store-slash fa-lg mb-1"></i>
+                                            <p class="mb-0 small">Keine Verkäufe abgeschlossen</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- PLANNED SALES -->
+                                {% if planned_sales_summary %}
+                                <div class="border-top pt-3">
+                                    <h6 class="text-primary mb-2">
+                                        <i class="fas fa-calendar-plus"></i> Aufträge erstellt
+                                    </h6>
+                                    {% for bike_type, data in planned_sales_summary.items %}
+                                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(13, 110, 253, 0.1);">
+                                            <div>
+                                                <small class="fw-bold">{{ bike_type }}</small>
+                                                <br><small class="text-primary">{{ data.revenue|floatformat:2 }}€ geplant</small>
+                                                {% if data.status == 'pending' %}
+                                                    <br><small class="text-info"><i class="fas fa-clock"></i> Wartet auf Verarbeitung</small>
+                                                {% endif %}
+                                            </div>
+                                            <span class="badge bg-primary">{{ data.count }}</span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Transactions -->
+                {% if transactions %}
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-receipt"></i> Größte Transaktionen
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Typ</th>
+                                                <th>Kategorie</th>
+                                                <th>Beschreibung</th>
+                                                <th class="text-end">Betrag</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for transaction in transactions %}
+                                            <tr>
+                                                <td>
+                                                    {% if transaction.type == 'income' %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-arrow-up"></i> Einnahme
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-arrow-down"></i> Ausgabe
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold">{{ transaction.category }}</span>
+                                                </td>
+                                                <td class="text-truncate" style="max-width: 300px;">
+                                                    {{ transaction.description }}
+                                                </td>
+                                                <td class="text-end">
+                                                    <strong class="{% if transaction.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                                        {% if transaction.type == 'income' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:2 }}€
+                                                    </strong>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <!-- No Report Available -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body text-center py-5">
+                                <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+                                <h4 class="text-muted">Kein Monatsbericht verfügbar</h4>
+                                <p class="text-muted mb-4">
+                                    Für {{ report_month }}/{{ report_year }} ist noch kein gespeicherter Bericht verfügbar.<br>
+                                    <strong>Monatsberichte werden automatisch erstellt, wenn Sie zum nächsten Monat weitergehen.</strong><br>
+                                    <small class="text-muted mt-2 d-block">
+                                        Klicken Sie auf "Nächster Monat", um den aktuellen Monat abzuschließen und einen Bericht zu generieren.
+                                    </small>
+                                </p>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-primary">
+                                        <i class="fas fa-arrow-left"></i> Zurück zum Dashboard
+                                    </a>
+                                    {% if session.current_month == report_month and session.current_year == report_year %}
+                                    <form method="post" action="{% url 'simulation:advance_month' session.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-forward"></i> Nächster Monat
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -45,6 +45,13 @@ INSTALLED_APPS = [
     'sales',
     'simulation',
     'workers',  # Neue workers App hinzugefügt
+    'competitors',
+    'multiplayer',
+    'market_simulator',
+    'business_strategy',
+    'random_events',
+    'help_system',
+    'game_objectives',
 ]
 
 MIDDLEWARE = [

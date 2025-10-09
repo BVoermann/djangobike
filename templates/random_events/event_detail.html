@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Event Details - {{ event_occurrence.event.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-exclamation-circle"></i> {{ event_occurrence.event.title }}</h1>
+                    <p class="text-muted">{{ event_occurrence.event.category.name }} - {{ event_occurrence.event.get_severity_display }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'random_events:dashboard' session.id %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Event Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ event_occurrence.event.description }}</p>
+                            {% if event_occurrence.event.detailed_description %}
+                                <hr>
+                                <p>{{ event_occurrence.event.detailed_description }}</p>
+                            {% endif %}
+                            
+                            {% if event_choices %}
+                            <hr>
+                            <h6>Your Response Options:</h6>
+                            <form method="post">
+                                {% csrf_token %}
+                                {% for choice in event_choices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="choice_id" value="{{ choice.id }}" id="choice{{ choice.id }}">
+                                    <label class="form-check-label" for="choice{{ choice.id }}">
+                                        <strong>{{ choice.title }}</strong>
+                                        <p class="text-muted mb-0">{{ choice.description }}</p>
+                                        {% if choice.required_balance %}
+                                        <small class="text-warning">Requires: €{{ choice.required_balance|floatformat:0 }}</small>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                <button type="submit" class="btn btn-primary mt-3">Submit Response</button>
+                            </form>
+                            {% else %}
+                            <form method="post" class="mt-3">
+                                {% csrf_token %}
+                                <button type="submit" name="acknowledge" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Acknowledge Event
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Event Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Triggered:</strong> {{ event_occurrence.triggered_month }}/{{ event_occurrence.triggered_year }}</p>
+                            <p><strong>Status:</strong> {{ event_occurrence.get_status_display }}</p>
+                            <p><strong>Severity:</strong> {{ event_occurrence.event.get_severity_display }}</p>
+                            <p><strong>Category:</strong> {{ event_occurrence.event.category.name }}</p>
+                            {% if event_occurrence.duration_months %}
+                            <p><strong>Duration:</strong> {{ event_occurrence.duration_months }} months</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

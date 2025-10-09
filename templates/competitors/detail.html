@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ competitor.name }} - Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>{{ competitor.name }}</h1>
+                    <p class="text-muted">{{ competitor.get_strategy_display }} | Monat {{ session.current_month }}/{{ session.current_year }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'competitors:dashboard' session.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Zurück
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Konkurrenten-Eigenschaften -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-cogs"></i> Eigenschaften</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Strategie:</strong><br>
+                        <span class="badge bg-primary">{{ competitor.get_strategy_display }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Ressourcen:</strong><br>
+                        {{ competitor.financial_resources|floatformat:0 }}€
+                    </div>
+                    <div class="mb-2">
+                        <strong>Marktpräsenz:</strong><br>
+                        {{ competitor.market_presence }}%
+                    </div>
+                    <div class="mb-2">
+                        <strong>Aggressivität:</strong><br>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {{ competitor.aggressiveness|mul:100 }}%">
+                                {{ competitor.aggressiveness|mul:100|floatformat:0 }}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Effizienz:</strong><br>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ competitor.efficiency|mul:100 }}%">
+                                {{ competitor.efficiency|mul:100|floatformat:0 }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance-Übersicht -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-chart-line"></i> Performance-Übersicht</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-primary">{{ competitor.total_bikes_produced }}</h3>
+                            <p class="text-muted">Produzierte Fahrräder</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-success">{{ competitor.total_bikes_sold }}</h3>
+                            <p class="text-muted">Verkaufte Fahrräder</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h3 class="text-info">{{ competitor.total_revenue|floatformat:0 }}€</h3>
+                            <p class="text-muted">Gesamtumsatz</p>
+                        </div>
+                    </div>
+                    
+                    {% if competitor.total_bikes_produced > 0 %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <p><strong>Verkaufseffizienz:</strong> 
+                               {{ competitor.total_bikes_sold|div:competitor.total_bikes_produced|mul:100|floatformat:1 }}%
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monatliche Statistiken -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-calendar-alt"></i> Monatliche Entwicklung {{ session.current_year }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Monat</th>
+                                    <th>Produziert</th>
+                                    <th>Verkauft</th>
+                                    <th>Umsatz</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in monthly_stats %}
+                                <tr {% if stat.month == session.current_month %}class="table-active"{% endif %}>
+                                    <td>{{ stat.month }}/{{ session.current_year }}</td>
+                                    <td>{{ stat.produced }}</td>
+                                    <td>{{ stat.sold }}</td>
+                                    <td>{{ stat.revenue|floatformat:0 }}€</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produktionshistorie -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-industry"></i> Aktuelle Produktionen</h6>
+                </div>
+                <div class="card-body">
+                    {% if productions %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Monat</th>
+                                        <th>Fahrradtyp</th>
+                                        <th>Segment</th>
+                                        <th>Produziert</th>
+                                        <th>Kosten</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for prod in productions %}
+                                    <tr>
+                                        <td>{{ prod.month }}/{{ prod.year }}</td>
+                                        <td>{{ prod.bike_type.name }}</td>
+                                        <td>{{ prod.get_price_segment_display }}</td>
+                                        <td>{{ prod.quantity_produced }}</td>
+                                        <td>{{ prod.production_cost_per_unit|floatformat:0 }}€</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Keine Produktionsdaten verfügbar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Verkaufshistorie -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-shopping-cart"></i> Aktuelle Verkäufe</h6>
+                </div>
+                <div class="card-body">
+                    {% if sales %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Monat</th>
+                                        <th>Markt</th>
+                                        <th>Fahrradtyp</th>
+                                        <th>Verkauft</th>
+                                        <th>Umsatz</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in sales %}
+                                    <tr>
+                                        <td>{{ sale.month }}/{{ sale.year }}</td>
+                                        <td>{{ sale.market.name }}</td>
+                                        <td>{{ sale.bike_type.name }}</td>
+                                        <td>{{ sale.quantity_sold }}</td>
+                                        <td>{{ sale.total_revenue|floatformat:0 }}€</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Keine Verkaufsdaten verfügbar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

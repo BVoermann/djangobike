@@ -1,0 +1,329 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}{{ game.name }} - Multiplayer Game{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Game Header -->
+            <div class="mb-4">
+                <h1>🎮 {{ game.name }}</h1>
+                <p class="text-muted mb-0">{{ game.description|default:"Multiplayer bike shop simulation" }}</p>
+            </div>
+
+            <!-- Game Status Bar -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-2">
+                                    <h6 class="text-muted mb-1">Status</h6>
+                                    <span class="badge badge-lg badge-{% if game.status == 'setup' %}primary{% elif game.status == 'waiting' %}warning{% elif game.status == 'active' %}success{% elif game.status == 'completed' %}secondary{% else %}info{% endif %}">
+                                        {{ game.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="col-md-2">
+                                    <h6 class="text-muted mb-1">Players</h6>
+                                    <strong>{{ players.count }}/{{ game.max_players }}</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    <h6 class="text-muted mb-1">Turn</h6>
+                                    <strong>{{ game.current_month }}/{{ game.current_year }}</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    <h6 class="text-muted mb-1">Progress</h6>
+                                    <strong>{{ game.game_progress_percentage|floatformat:0 }}%</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    <h6 class="text-muted mb-1">Difficulty</h6>
+                                    <span class="badge badge-{% if game.difficulty == 'easy' %}success{% elif game.difficulty == 'medium' %}warning{% else %}danger{% endif %}">
+                                        {{ game.get_difficulty_display }}
+                                    </span>
+                                </div>
+                                <div class="col-md-2">
+                                    <h6 class="text-muted mb-1">Creator</h6>
+                                    <strong>{{ game.created_by.username }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            {% if can_join %}
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <a href="{% url 'multiplayer:join_game' game.id %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> Join This Game
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if can_start %}
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <form method="post" action="{% url 'multiplayer:start_game' game.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('Start the game? This cannot be undone.')">
+                            <i class="fas fa-play"></i> Start Game
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Player Financial Health (if player and game active) -->
+            {% if financial_health and is_player %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line"></i> Your Financial Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <h6>Current Balance</h6>
+                                    <h4 class="{% if player_session.balance < 0 %}text-danger{% elif player_session.balance < 10000 %}text-warning{% else %}text-success{% endif %}">
+                                        €{{ player_session.balance|floatformat:0 }}
+                                    </h4>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6>Company</h6>
+                                    <strong>{{ player_session.company_name }}</strong>
+                                    {% if player_session.is_bankrupt %}
+                                        <br><span class="badge badge-danger">Bankrupt</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3">
+                                    <h6>Turn Status</h6>
+                                    {% if turn_status %}
+                                        <span class="badge badge-{% if turn_status.ready %}success{% else %}warning{% endif %}">
+                                            {% if turn_status.ready %}Ready{% else %}Pending{% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">N/A</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3">
+                                    <h6>Actions</h6>
+                                    {% if game.status == 'active' and is_player %}
+                                        <a href="{% url 'multiplayer:financial_dashboard' game.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-chart-bar"></i> Dashboard
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Main Content -->
+            <div class="row">
+                <!-- Players List -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-users"></i> Players ({{ players.count }})</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if players %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Company</th>
+                                                <th>Player</th>
+                                                <th>Type</th>
+                                                <th>Balance</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for player in players %}
+                                            <tr class="{% if player.user == user %}table-primary{% endif %}">
+                                                <td>
+                                                    <strong>{{ player.company_name }}</strong>
+                                                    {% if player.user == user %}
+                                                        <small class="text-primary">(You)</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if player.user %}
+                                                        {{ player.user.username }}
+                                                    {% else %}
+                                                        <em>AI Player</em>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if player.player_type == 'human' %}
+                                                        <i class="fas fa-user text-primary"></i> Human
+                                                    {% else %}
+                                                        <i class="fas fa-robot text-secondary"></i> AI
+                                                        {% if player.ai_strategy %}
+                                                            <br><small class="text-muted">{{ player.get_ai_strategy_display }}</small>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="{% if player.balance < 0 %}text-danger{% elif player.balance < 10000 %}text-warning{% else %}text-success{% endif %}">
+                                                        €{{ player.balance|floatformat:0 }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if player.is_bankrupt %}
+                                                        <span class="badge badge-danger">Bankrupt</span>
+                                                    {% elif not player.is_active %}
+                                                        <span class="badge badge-secondary">Inactive</span>
+                                                    {% else %}
+                                                        <span class="badge badge-success">Active</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                    <h6 class="text-muted">No players yet</h6>
+                                    <p class="text-muted">Players will appear here as they join the game.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Events / Activity Log -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-history"></i> Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_events %}
+                                <div class="timeline" style="max-height: 400px; overflow-y: auto;">
+                                    {% for event in recent_events %}
+                                    <div class="timeline-item mb-3">
+                                        <div class="d-flex">
+                                            <div class="timeline-marker">
+                                                {% if event.event_type == 'game_started' %}
+                                                    <i class="fas fa-play text-success"></i>
+                                                {% elif event.event_type == 'player_joined' %}
+                                                    <i class="fas fa-user-plus text-info"></i>
+                                                {% elif event.event_type == 'turn_completed' %}
+                                                    <i class="fas fa-check text-primary"></i>
+                                                {% elif event.event_type == 'bankruptcy' %}
+                                                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                                                {% else %}
+                                                    <i class="fas fa-info-circle text-muted"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="timeline-content ml-3">
+                                                <p class="mb-1">{{ event.message }}</p>
+                                                <small class="text-muted">
+                                                    {{ event.timestamp|date:"M d, H:i" }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                    <h6 class="text-muted">No activity yet</h6>
+                                    <p class="text-muted">Game events will appear here as they occur.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Settings (if setup phase) -->
+            {% if game.status == 'setup' %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-cog"></i> Game Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <h6>Starting Balance</h6>
+                                    <p>€{{ game.starting_balance|floatformat:0 }}</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6>Game Duration</h6>
+                                    <p>{{ game.max_months }} months</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6>Turn Deadline</h6>
+                                    <p>{{ game.turn_deadline_hours }} hours</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6>Bankruptcy Threshold</h6>
+                                    <p>€{{ game.bankruptcy_threshold|floatformat:0 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.badge-lg {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
+}
+
+.timeline-marker {
+    width: 24px;
+    text-align: center;
+}
+
+.timeline-item {
+    border-left: 2px solid #e9ecef;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.timeline-item:last-child {
+    border-left: none;
+}
+
+.table-primary {
+    background-color: rgba(0,123,255,0.1) !important;
+}
+
+.btn-lg {
+    font-size: 1.1em;
+    padding: 0.75rem 2rem;
+}
+</style>
+{% endblock %}

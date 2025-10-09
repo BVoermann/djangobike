@@ -99,6 +99,113 @@ def delete_session(request, session_id):
 
 
 @login_required
+def monthly_report(request, session_id):
+    """Monthly report showing last month's business activity"""
+    session = get_object_or_404(GameSession, id=session_id, user=request.user)
+    
+    # Get last month data
+    if session.current_month > 1:
+        report_month = session.current_month - 1
+        report_year = session.current_year
+    else:
+        report_month = 12
+        report_year = session.current_year - 1
+    
+    from finance.models import MonthlyReport
+    
+    # Try to get saved monthly report first
+    try:
+        monthly_report = MonthlyReport.objects.get(
+            session=session,
+            month=report_month,
+            year=report_year
+        )
+        
+        # Use saved data from comprehensive monthly report
+        balance_change = monthly_report.closing_balance - monthly_report.opening_balance
+        
+        # Convert JSON fields back to usable format
+        production_summary = monthly_report.production_summary or {}
+        sales_summary = monthly_report.sales_summary or {}
+        procurement_summary = monthly_report.procurement_summary or {}
+        detailed_transactions = monthly_report.detailed_transactions or []
+        
+        # Extract planned sales data from detailed transactions
+        planned_sales_summary = {}
+        filtered_transactions = []
+        for transaction in detailed_transactions:
+            if transaction.get('type') == 'planned_sales_data':
+                planned_sales_summary = transaction.get('planned_sales_summary', {})
+            else:
+                filtered_transactions.append(transaction)
+        detailed_transactions = filtered_transactions
+        
+        # Create bought_items from procurement_summary for template compatibility
+        bought_items = []
+        for component, data in procurement_summary.items():
+            bought_items.append({
+                'component': component,
+                'quantity': data['quantity'],
+                'total_cost': data['cost'],
+                'supplier': data.get('supplier', 'Unknown')
+            })
+        
+        context = {
+            'session': session,
+            'report_month': report_month,
+            'report_year': report_year,
+            'monthly_report': monthly_report,
+            'balance_change': balance_change,
+            'profit_loss': monthly_report.profit_loss,
+            
+            # Procurement data
+            'bought_items': bought_items,
+            'total_bought_amount': monthly_report.total_procurement_cost,
+            
+            # Production data
+            'production_summary': production_summary,
+            'total_production_cost': monthly_report.total_production_cost,
+            'bikes_produced_count': monthly_report.bikes_produced_count,
+            
+            # Sales data - ACTUAL completed sales
+            'sales_summary': sales_summary,
+            'total_sales_revenue': monthly_report.total_sales_revenue,
+            'bikes_sold_count': monthly_report.bikes_sold_count,
+            
+            # Planned sales data - sales orders created this month
+            'planned_sales_summary': planned_sales_summary,
+            
+            # Transaction data
+            'transactions': detailed_transactions,
+            'has_saved_report': True,
+        }
+        
+    except MonthlyReport.DoesNotExist:
+        # No saved report - show message that report is not available yet
+        context = {
+            'session': session,
+            'report_month': report_month,
+            'report_year': report_year,
+            'monthly_report': None,
+            'balance_change': 0,
+            'profit_loss': 0,
+            'bought_items': [],
+            'total_bought_amount': 0,
+            'production_summary': {},
+            'total_production_cost': 0,
+            'bikes_produced_count': 0,
+            'sales_summary': {},
+            'total_sales_revenue': 0,
+            'bikes_sold_count': 0,
+            'planned_sales_summary': {},
+            'transactions': [],
+            'has_saved_report': False,
+        }
+    
+    return render(request, 'bikeshop/monthly_report.html', context)
+
+
+@login_required
 def download_default_parameters(request):
     """Download ZIP file containing default XLSX parameter files"""
     
@@ -110,7 +217,8 @@ def download_default_parameters(request):
         'lager.xlsx',
         'maerkte.xlsx',
         'personal.xlsx',
-        'finanzen.xlsx'
+        'finanzen.xlsx',
+        'konkurrenten.xlsx'
     ]
     
     # Create a temporary ZIP file

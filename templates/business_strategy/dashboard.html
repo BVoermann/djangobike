@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Business Strategy Dashboard - {{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-chess"></i> Business Strategy Dashboard</h1>
+                <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Strategy Overview Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Active R&D Projects</h6>
+                                    <h3 class="mb-0">{{ active_research_projects.count }}</h3>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-flask fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Marketing Campaigns</h6>
+                                    <h3 class="mb-0">{{ active_campaigns.count }}</h3>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-bullhorn fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Sustainability Score</h6>
+                                    <h3 class="mb-0">{{ sustainability_score|default:0 }}/100</h3>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-leaf fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-rocket"></i> Strategic Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <a href="{% url 'business_strategy:research_development' session.id %}" class="btn btn-outline-primary btn-block">
+                                        <i class="fas fa-flask mb-2"></i><br>
+                                        Research & Development
+                                    </a>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <a href="{% url 'business_strategy:marketing_campaigns' session.id %}" class="btn btn-outline-success btn-block">
+                                        <i class="fas fa-bullhorn mb-2"></i><br>
+                                        Marketing Campaigns
+                                    </a>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <a href="{% url 'business_strategy:sustainability' session.id %}" class="btn btn-outline-info btn-block">
+                                        <i class="fas fa-leaf mb-2"></i><br>
+                                        Sustainability Management
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Projects Summary -->
+            {% if active_research_projects or active_campaigns %}
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-flask"></i> Active R&D Projects</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if active_research_projects %}
+                                {% for project in active_research_projects %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>{{ project.name }}</strong>
+                                        <span class="text-muted">{{ project.progress_percentage|floatformat:0 }}%</span>
+                                    </div>
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar" style="width: {{ project.progress_percentage }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ project.months_remaining }} months remaining</small>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No active R&D projects</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-bullhorn"></i> Active Marketing Campaigns</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if active_campaigns %}
+                                {% for campaign in active_campaigns %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>{{ campaign.name }}</strong>
+                                        <span class="badge badge-primary">{{ campaign.get_status_display }}</span>
+                                    </div>
+                                    <p class="mb-1 text-muted">{{ campaign.description|truncatechars:100 }}</p>
+                                    <small class="text-muted">Budget: €{{ campaign.budget|floatformat:0 }}</small>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No active marketing campaigns</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -38,8 +38,11 @@ def production_view(request, session_id):
                 total_skilled_hours = 0
                 total_unskilled_hours = 0
                 total_bikes_produced = 0
+                
+                # Check if upgrades are needed and collect upgrade information
+                upgrades_needed = []
                 component_requirements = {}
-
+                
                 # First pass: Calculate requirements and check feasibility
                 for item in production_data:
                     bike_type = get_object_or_404(BikeType, id=item['bike_type_id'], session=session)
@@ -53,18 +56,45 @@ def production_view(request, session_id):
                             total_unskilled_hours += bike_type.unskilled_worker_hours * quantity
                             total_bikes_produced += quantity
                             
-                            # Calculate component requirements
-                            components = [bike_type.wheel_set, bike_type.frame, bike_type.handlebar,
-                                        bike_type.saddle, bike_type.gearshift]
+                            # Use the new flexible component matching system
+                            component_match_result = bike_type.find_best_components_for_segment(session, segment)
                             
-                            # Add motor if it exists (for e-bikes)
-                            if bike_type.motor:
-                                components.append(bike_type.motor)
+                            # Check if any components are missing
+                            if component_match_result['missing']:
+                                missing_components = ', '.join(component_match_result['missing'])
+                                return JsonResponse({
+                                    'success': False,
+                                    'error': f'Keine verfügbaren Komponenten für {segment} {bike_type.name}! Fehlend: {missing_components}'
+                                })
                             
-                            for component in components:
+                            # Collect upgrade information for confirmation
+                            if component_match_result['upgrades']:
+                                for upgrade in component_match_result['upgrades']:
+                                    upgrade_info = {
+                                        'bike_type': bike_type.name,
+                                        'segment': segment,
+                                        'component_type': upgrade['component_type'],
+                                        'component_name': upgrade['component_name'],
+                                        'component_quality': upgrade['component_quality'],
+                                        'target_segment': upgrade['target_segment']
+                                    }
+                                    upgrades_needed.append(upgrade_info)
+                            
+                            # Add component requirements
+                            for component_type_name, component in component_match_result['components'].items():
                                 if component.id not in component_requirements:
                                     component_requirements[component.id] = 0
                                 component_requirements[component.id] += quantity
+                
+                # If upgrades are needed and user hasn't confirmed, ask for confirmation
+                confirm_upgrades = request.GET.get('confirm_upgrades', '').lower() == 'true'
+                if upgrades_needed and not confirm_upgrades:
+                    return JsonResponse({
+                        'success': False,
+                        'upgrades_needed': True,
+                        'upgrades': upgrades_needed,
+                        'message': 'Qualitäts-Upgrades erforderlich. Bestätigung benötigt.'
+                    })
 
                 # Check worker capacity
                 skilled_worker = workers.filter(worker_type='skilled').first()

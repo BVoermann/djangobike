@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load math_filters %}
+
+{% block title %}Konkurrenten-Analyse{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>Konkurrenten-Analyse</h1>
+                    <p class="text-muted">Monat {{ session.current_month }}/{{ session.current_year }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'competitors:market_analysis' session.id %}" class="btn btn-info">
+                        <i class="fas fa-chart-line"></i> Marktanalyse
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marktanteile -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Marktanteile (letzte 3 Monate)</h5>
+                </div>
+                <div class="card-body">
+                    {% if market_shares %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Unternehmen</th>
+                                        <th>Umsatz</th>
+                                        <th>Anteil</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for share in market_shares %}
+                                    <tr>
+                                        <td>{{ share.name }}</td>
+                                        <td>{{ share.revenue|floatformat:0 }}€</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" role="progressbar" 
+                                                     style="width: {{ share.share }}%">
+                                                    {{ share.share }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <small class="text-muted">Gesamtmarkt: {{ total_market_revenue|floatformat:0 }}€</small>
+                    {% else %}
+                        <p class="text-muted">Noch keine Marktdaten verfügbar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Konkurrenten-Übersicht -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-building"></i> Konkurrenten</h5>
+                </div>
+                <div class="card-body">
+                    {% for competitor in competitors %}
+                    <div class="border-bottom pb-2 mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    <a href="{% url 'competitors:detail' session.id competitor.id %}" class="text-decoration-none">
+                                        {{ competitor.name }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">{{ competitor.get_strategy_display }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">{{ competitor.market_presence }}%</span>
+                            </div>
+                        </div>
+                        <div class="row mt-1">
+                            <div class="col-6">
+                                <small class="text-muted">Produziert: {{ competitor.total_bikes_produced }}</small>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Verkauft: {{ competitor.total_bikes_sold }}</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <small class="text-muted">Umsatz: {{ competitor.total_revenue|floatformat:0 }}€</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Keine Konkurrenten aktiv.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aktuelle Markt-Wettbewerbssituation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Aktuelle Marktsituation</h5>
+                </div>
+                <div class="card-body">
+                    {% if current_competition %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Markt</th>
+                                        <th>Fahrradtyp</th>
+                                        <th>Segment</th>
+                                        <th>Angebot</th>
+                                        <th>Nachfrage</th>
+                                        <th>Sättigung</th>
+                                        <th>Preisdruck</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for comp in current_competition %}
+                                    <tr>
+                                        <td>{{ comp.market.name }}</td>
+                                        <td>{{ comp.bike_type.name }}</td>
+                                        <td>{{ comp.get_price_segment_display }}</td>
+                                        <td>{{ comp.total_supply }}</td>
+                                        <td>{{ comp.estimated_demand }}</td>
+                                        <td>
+                                            <span class="badge {% if comp.saturation_level > 1.2 %}bg-danger{% elif comp.saturation_level > 0.8 %}bg-warning{% else %}bg-success{% endif %}">
+                                                {{ comp.saturation_level|floatformat:1 }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if comp.price_pressure > 0 %}
+                                                <span class="text-success">+{{ comp.price_pressure|floatformat:1 }}</span>
+                                            {% elif comp.price_pressure < 0 %}
+                                                <span class="text-danger">{{ comp.price_pressure|floatformat:1 }}</span>
+                                            {% else %}
+                                                <span class="text-muted">0.0</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Noch keine Marktdaten für diesen Monat verfügbar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aktuelle Verkäufe -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-shopping-cart"></i> Aktuelle Konkurrenten-Verkäufe</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_sales %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Konkurrent</th>
+                                        <th>Markt</th>
+                                        <th>Fahrradtyp</th>
+                                        <th>Segment</th>
+                                        <th>Monat</th>
+                                        <th>Verkauft</th>
+                                        <th>Preis</th>
+                                        <th>Umsatz</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sale in recent_sales %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'competitors:detail' session.id sale.competitor.id %}" class="text-decoration-none">
+                                                {{ sale.competitor.name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ sale.market.name }}</td>
+                                        <td>{{ sale.bike_type.name }}</td>
+                                        <td>{{ sale.get_price_segment_display }}</td>
+                                        <td>{{ sale.month }}/{{ sale.year }}</td>
+                                        <td>{{ sale.quantity_sold }}</td>
+                                        <td>{{ sale.sale_price|floatformat:0 }}€</td>
+                                        <td>{{ sale.total_revenue|floatformat:0 }}€</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Noch keine Verkaufsdaten verfügbar.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

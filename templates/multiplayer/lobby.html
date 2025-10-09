@@ -1,0 +1,228 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}Multiplayer Lobby{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🎮 Multiplayer Lobby</h1>
+            
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">🎯 Quick Start</h5>
+                            <p class="card-text">Create a new multiplayer game and compete against AI and human players</p>
+                            <a href="{% url 'multiplayer:create_game' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus"></i> Create New Game
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">📊 Game Statistics</h5>
+                            <div class="row">
+                                <div class="col">
+                                    <strong>{{ user_games.count }}</strong><br>
+                                    <small>Your Games</small>
+                                </div>
+                                <div class="col">
+                                    <strong>{{ available_games.count }}</strong><br>
+                                    <small>Available</small>
+                                </div>
+                                <div class="col">
+                                    <strong>{{ pending_invitations.count }}</strong><br>
+                                    <small>Invitations</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Invitations -->
+            {% if pending_invitations %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-envelope"></i> Pending Invitations</h5>
+                </div>
+                <div class="card-body">
+                    {% for invitation in pending_invitations %}
+                    <div class="alert alert-info d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ invitation.multiplayer_game.name }}</strong> 
+                            <small class="text-muted">invited by {{ invitation.invited_by.username }}</small>
+                            <br>
+                            <small>{{ invitation.message|default:"Join this multiplayer game!" }}</small>
+                        </div>
+                        <div>
+                            <a href="{% url 'multiplayer:game_detail' invitation.multiplayer_game.id %}" class="btn btn-success btn-sm">Accept</a>
+                            <button class="btn btn-secondary btn-sm">Decline</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Your Games -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-gamepad"></i> Your Active Games</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if user_games %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Game Name</th>
+                                                <th>Status</th>
+                                                <th>Players</th>
+                                                <th>Turn</th>
+                                                <th>Your Company</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for game in user_games %}
+                                            {% with player=game.players.all|first %}
+                                            <tr class="{% if game.status == 'active' %}table-success{% elif game.status == 'completed' %}table-light{% endif %}">
+                                                <td>
+                                                    <strong>{{ game.name }}</strong>
+                                                    {% if game.status == 'active' %}
+                                                        <span class="badge badge-success">Live</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-{% if game.status == 'active' %}success{% elif game.status == 'setup' %}warning{% elif game.status == 'completed' %}secondary{% else %}info{% endif %}">
+                                                        {{ game.get_status_display }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {{ game.players.count }}/{{ game.max_players }}
+                                                    <small class="text-muted">
+                                                        ({{ game.human_players_count }}👤 {{ game.ai_players_count }}🤖)
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    {% if game.status == 'active' %}
+                                                        {{ game.current_year }}/{{ game.current_month|stringformat:"02d" }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% for p in game.players.all %}
+                                                        {% if p.user == user %}
+                                                            {{ p.company_name }}
+                                                            {% if p.is_bankrupt %}
+                                                                <span class="badge badge-danger">Bankrupt</span>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-primary btn-sm">
+                                                        {% if game.status == 'active' %}Play{% else %}View{% endif %}
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endwith %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-gamepad fa-3x text-muted mb-3"></i>
+                                    <h6 class="text-muted">No active games</h6>
+                                    <p class="text-muted">Create a new game or join an existing one to get started!</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Games -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-search"></i> Join a Game</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if available_games %}
+                                {% for game in available_games %}
+                                <div class="card mb-3 border">
+                                    <div class="card-body p-3">
+                                        <h6 class="card-title mb-1">{{ game.name }}</h6>
+                                        <small class="text-muted">{{ game.description|truncatechars:50 }}</small>
+                                        
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                Players: {{ game.players.count }}/{{ game.max_players }} • 
+                                                Difficulty: {{ game.get_difficulty_display }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="mt-2">
+                                            <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-outline-primary btn-sm">
+                                                View Details
+                                            </a>
+                                            {% if not game.is_full %}
+                                                <a href="{% url 'multiplayer:join_game' game.id %}" class="btn btn-success btn-sm">
+                                                    Join
+                                                </a>
+                                            {% else %}
+                                                <span class="badge badge-warning">Full</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">No games available to join</p>
+                                    <small class="text-muted">Check back later or create your own!</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.badge {
+    font-size: 0.7em;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.1);
+}
+
+.alert {
+    border-left: 4px solid #17a2b8;
+}
+</style>
+{% endblock %}

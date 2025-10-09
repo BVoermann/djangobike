@@ -1,0 +1,1033 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}BikeShop Simulator - Comprehensive Documentation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'help_system/css/help-system.css' %}">
+<style>
+    .sidebar-toc {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+    
+    .toc-item {
+        padding: 8px 12px;
+        margin: 2px 0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+    }
+    
+    .toc-item:hover {
+        background: #f8f9fa;
+        border-left-color: #007bff;
+    }
+    
+    .toc-item.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-left-color: #fff;
+    }
+    
+    .toc-level-1 { margin-left: 0; font-weight: 600; }
+    .toc-level-2 { margin-left: 20px; font-weight: 500; }
+    .toc-level-3 { margin-left: 40px; font-weight: 400; }
+    
+    .doc-section {
+        margin-bottom: 3rem;
+        padding: 2rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .doc-section:last-child {
+        border-bottom: none;
+    }
+    
+    .strategy-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+        border: 2px solid #2196f3;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .strategy-box h5 {
+        color: #1976d2;
+        margin-bottom: 15px;
+    }
+    
+    .tip-box {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f8f9fa 100%);
+        border: 2px solid #4caf50;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .warning-box {
+        background: linear-gradient(135deg, #fff3e0 0%, #f8f9fa 100%);
+        border: 2px solid #ff9800;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .highlight {
+        background-color: yellow !important;
+        padding: 2px 4px;
+        border-radius: 3px;
+        animation: fadeHighlight 2s ease-out;
+    }
+    
+    @keyframes fadeHighlight {
+        0% { background-color: #ffeb3b; }
+        100% { background-color: transparent; }
+    }
+    
+    .search-no-results {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+    
+    .back-to-top {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        display: none;
+        transition: all 0.3s ease;
+    }
+    
+    .back-to-top:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Table of Contents Sidebar -->
+        <div class="col-lg-3">
+            <div class="sidebar-toc">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>Table of Contents
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Search within documentation -->
+                        <div class="p-3 border-bottom">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="doc-search" placeholder="Search documentation...">
+                                <button class="btn btn-outline-primary" type="button" id="search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Table of Contents -->
+                        <div id="toc-container">
+                            <div class="toc-item toc-level-1" data-target="introduction">
+                                <i class="fas fa-rocket me-2"></i>Introduction
+                            </div>
+                            <div class="toc-item toc-level-1" data-target="core-mechanics">
+                                <i class="fas fa-cogs me-2"></i>Core Game Mechanics
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="financial-system">Financial System</div>
+                            <div class="toc-item toc-level-2" data-target="session-management">Session Management</div>
+                            <div class="toc-item toc-level-2" data-target="time-progression">Time Progression</div>
+                            
+                            <div class="toc-item toc-level-1" data-target="procurement">
+                                <i class="fas fa-shopping-cart me-2"></i>Procurement & Purchasing
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="supplier-management">Supplier Management</div>
+                            <div class="toc-item toc-level-2" data-target="component-quality">Component Quality</div>
+                            <div class="toc-item toc-level-2" data-target="procurement-strategies">Procurement Strategies</div>
+                            
+                            <div class="toc-item toc-level-1" data-target="production">
+                                <i class="fas fa-industry me-2"></i>Production System
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="workforce-management">Workforce Management</div>
+                            <div class="toc-item toc-level-2" data-target="production-planning">Production Planning</div>
+                            <div class="toc-item toc-level-2" data-target="quality-control">Quality Control</div>
+                            
+                            <div class="toc-item toc-level-1" data-target="sales-marketing">
+                                <i class="fas fa-chart-line me-2"></i>Sales & Marketing
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="market-analysis">Market Analysis</div>
+                            <div class="toc-item toc-level-2" data-target="pricing-strategies">Pricing Strategies</div>
+                            <div class="toc-item toc-level-2" data-target="transport-logistics">Transport & Logistics</div>
+                            
+                            <div class="toc-item toc-level-1" data-target="warehouse">
+                                <i class="fas fa-warehouse me-2"></i>Warehouse Management
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="inventory-control">Inventory Control</div>
+                            <div class="toc-item toc-level-2" data-target="storage-optimization">Storage Optimization</div>
+                            
+                            <div class="toc-item toc-level-1" data-target="finance">
+                                <i class="fas fa-euro-sign me-2"></i>Financial Management
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="cash-flow">Cash Flow Management</div>
+                            <div class="toc-item toc-level-2" data-target="profitability">Profitability Analysis</div>
+                            <div class="toc-item toc-level-2" data-target="credit-management">Credit Management</div>
+                            
+                            <div class="toc-item toc-level-1" data-target="advanced-strategies">
+                                <i class="fas fa-trophy me-2"></i>Advanced Strategies
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="competitive-analysis">Competitive Analysis</div>
+                            <div class="toc-item toc-level-2" data-target="growth-strategies">Growth Strategies</div>
+                            <div class="toc-item toc-level-2" data-target="risk-management">Risk Management</div>
+                            
+                            <div class="toc-item toc-level-1" data-target="troubleshooting">
+                                <i class="fas fa-wrench me-2"></i>Troubleshooting
+                            </div>
+                            <div class="toc-item toc-level-2" data-target="common-issues">Common Issues</div>
+                            <div class="toc-item toc-level-2" data-target="performance-optimization">Performance Tips</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="card mt-3">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightning-bolt me-2"></i>Quick Actions
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'help_system:interactive_guides' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-route me-1"></i>Interactive Guides
+                            </a>
+                            <a href="{% url 'help_system:video_library' %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-video me-1"></i>Video Tutorials
+                            </a>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                                <i class="fas fa-print me-1"></i>Print Documentation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Documentation Content -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="mb-0">
+                            <i class="fas fa-book-open me-2"></i>
+                            BikeShop Simulator - Comprehensive Documentation
+                        </h1>
+                        <a href="{% url 'help_system:dashboard' %}" class="btn btn-light">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Help
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Introduction -->
+                    <section id="introduction" class="doc-section">
+                        <h2><i class="fas fa-rocket me-2"></i>Introduction</h2>
+                        <p class="lead">Welcome to the comprehensive documentation for the BikeShop Simulator! This guide will teach you everything you need to know to build and manage a successful bicycle business.</p>
+                        
+                        <h3>What is the BikeShop Simulator?</h3>
+                        <p>The BikeShop Simulator is a comprehensive business simulation game where you manage all aspects of a bicycle manufacturing and retail business. From procurement of components to production planning, from sales strategies to financial management - every decision affects your company's success.</p>
+                        
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-lightbulb me-2"></i>Key Success Factors</h5>
+                            <ul>
+                                <li><strong>Strategic Planning:</strong> Plan ahead for at least 3-6 months</li>
+                                <li><strong>Cash Flow Management:</strong> Never run out of money</li>
+                                <li><strong>Quality Balance:</strong> Find the right balance between cost and quality</li>
+                                <li><strong>Market Understanding:</strong> Know your customers and competitors</li>
+                                <li><strong>Continuous Learning:</strong> Adapt and improve your strategies</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <!-- Core Game Mechanics -->
+                    <section id="core-mechanics" class="doc-section">
+                        <h2><i class="fas fa-cogs me-2"></i>Core Game Mechanics</h2>
+                        
+                        <h3 id="financial-system">Financial System</h3>
+                        <p>Your company's financial health is the foundation of success. The game tracks multiple financial metrics:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>Key Financial Metrics</h4>
+                                <ul>
+                                    <li><strong>Current Balance:</strong> Available cash for operations</li>
+                                    <li><strong>Monthly Revenue:</strong> Income from bike sales</li>
+                                    <li><strong>Operating Costs:</strong> Salaries, rent, utilities</li>
+                                    <li><strong>Profit Margin:</strong> Revenue minus all costs</li>
+                                    <li><strong>Credit Line:</strong> Available borrowing capacity</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tip-box">
+                                    <h5><i class="fas fa-lightbulb me-2"></i>Financial Tip</h5>
+                                    <p>Always maintain at least 2-3 months of operating expenses in cash. This buffer helps you survive unexpected market downturns or delayed payments.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3 id="session-management">Session Management</h3>
+                        <p>Each game session represents a complete business scenario. Sessions can be:</p>
+                        <ul>
+                            <li><strong>Single-player:</strong> Focus on learning and strategy development</li>
+                            <li><strong>Multiplayer:</strong> Compete against other players in real-time</li>
+                            <li><strong>Campaign:</strong> Follow structured scenarios with specific goals</li>
+                        </ul>
+
+                        <h3 id="time-progression">Time Progression</h3>
+                        <p>The simulation operates on a monthly cycle:</p>
+                        <ul>
+                            <li><strong>Planning Phase:</strong> Make procurement, production, and sales decisions</li>
+                            <li><strong>Execution Phase:</strong> Watch your decisions play out</li>
+                            <li><strong>Results Phase:</strong> Analyze performance and plan for next month</li>
+                        </ul>
+                    </section>
+
+                    <!-- Procurement & Purchasing -->
+                    <section id="procurement" class="doc-section">
+                        <h2><i class="fas fa-shopping-cart me-2"></i>Procurement & Purchasing</h2>
+                        
+                        <h3 id="supplier-management">Supplier Management</h3>
+                        <p>Choosing the right suppliers is crucial for your business success. Each supplier offers different:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h4>Quality Levels</h4>
+                                <ul>
+                                    <li><strong>Basic:</strong> Low cost, basic quality</li>
+                                    <li><strong>Standard:</strong> Balanced cost/quality</li>
+                                    <li><strong>Premium:</strong> High cost, premium quality</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h4>Delivery Terms</h4>
+                                <ul>
+                                    <li><strong>Express:</strong> 1-2 days, higher cost</li>
+                                    <li><strong>Standard:</strong> 3-7 days, normal cost</li>
+                                    <li><strong>Economy:</strong> 7-14 days, lower cost</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h4>Payment Terms</h4>
+                                <ul>
+                                    <li><strong>Immediate:</strong> Pay on order, discount available</li>
+                                    <li><strong>Net 30:</strong> Pay within 30 days</li>
+                                    <li><strong>Net 60:</strong> Extended payment terms</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h3 id="component-quality">Component Quality</h3>
+                        <p>Component quality directly affects:</p>
+                        <ul>
+                            <li><strong>Final Product Quality:</strong> Higher quality components = better bikes</li>
+                            <li><strong>Customer Satisfaction:</strong> Quality affects brand reputation</li>
+                            <li><strong>Return Rates:</strong> Poor quality leads to higher returns</li>
+                            <li><strong>Pricing Power:</strong> Quality products can command premium prices</li>
+                        </ul>
+
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-target me-2"></i>Procurement Strategy</h5>
+                            <p><strong>The 70-20-10 Rule:</strong></p>
+                            <ul>
+                                <li><strong>70%</strong> of components should be standard quality (reliable baseline)</li>
+                                <li><strong>20%</strong> should be premium quality (for high-end products)</li>
+                                <li><strong>10%</strong> can be basic quality (for budget products)</li>
+                            </ul>
+                        </div>
+
+                        <h3 id="procurement-strategies">Procurement Strategies</h3>
+                        
+                        <h4>Just-in-Time (JIT) Procurement</h4>
+                        <p>Order components only when needed to minimize inventory costs.</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Advantages:</strong>
+                                <ul>
+                                    <li>Lower storage costs</li>
+                                    <li>Reduced capital tied up in inventory</li>
+                                    <li>Fresher components</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Disadvantages:</strong>
+                                <ul>
+                                    <li>Risk of stockouts</li>
+                                    <li>Higher per-unit costs</li>
+                                    <li>Dependency on supplier reliability</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h4>Bulk Purchasing</h4>
+                        <p>Order large quantities to get volume discounts.</p>
+                        <div class="warning-box">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Warning</h5>
+                            <p>Bulk purchasing ties up cash and increases storage costs. Only use this strategy when you have confirmed demand and sufficient cash flow.</p>
+                        </div>
+                    </section>
+
+                    <!-- Production System -->
+                    <section id="production" class="doc-section">
+                        <h2><i class="fas fa-industry me-2"></i>Production System</h2>
+                        
+                        <h3 id="workforce-management">Workforce Management</h3>
+                        <p>Your workforce is divided into two categories:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>Skilled Workers</h4>
+                                <ul>
+                                    <li>Higher salary costs</li>
+                                    <li>Can work on complex assemblies</li>
+                                    <li>Better quality output</li>
+                                    <li>Lower error rates</li>
+                                    <li>Can train unskilled workers</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Unskilled Workers</h4>
+                                <ul>
+                                    <li>Lower salary costs</li>
+                                    <li>Limited to simple tasks</li>
+                                    <li>Higher supervision needs</li>
+                                    <li>Potential for quality issues</li>
+                                    <li>Can be trained to become skilled</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="tip-box">
+                            <h5><i class="fas fa-users me-2"></i>Workforce Optimization</h5>
+                            <p>Maintain a ratio of 1 skilled worker for every 2-3 unskilled workers. This ensures proper supervision and quality control while managing costs effectively.</p>
+                        </div>
+
+                        <h3 id="production-planning">Production Planning</h3>
+                        <p>Effective production planning involves:</p>
+                        
+                        <h4>Capacity Planning</h4>
+                        <ul>
+                            <li><strong>Worker Hours:</strong> Calculate available working hours per month</li>
+                            <li><strong>Machine Time:</strong> Factor in equipment capacity and maintenance</li>
+                            <li><strong>Component Availability:</strong> Ensure all parts are available when needed</li>
+                            <li><strong>Quality Time:</strong> Account for quality control processes</li>
+                        </ul>
+
+                        <h4>Production Scheduling</h4>
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-calendar me-2"></i>Optimal Production Schedule</h5>
+                            <ol>
+                                <li><strong>Week 1:</strong> High-volume, standard products</li>
+                                <li><strong>Week 2:</strong> Medium-volume, mid-range products</li>
+                                <li><strong>Week 3:</strong> Low-volume, premium products</li>
+                                <li><strong>Week 4:</strong> Special orders and maintenance</li>
+                            </ol>
+                        </div>
+
+                        <h3 id="quality-control">Quality Control</h3>
+                        <p>Quality control affects every aspect of your business:</p>
+                        
+                        <h4>Quality Factors</h4>
+                        <ul>
+                            <li><strong>Component Quality:</strong> Input quality affects output quality</li>
+                            <li><strong>Worker Skill:</strong> Skilled workers produce better bikes</li>
+                            <li><strong>Production Speed:</strong> Rushing production reduces quality</li>
+                            <li><strong>Quality Processes:</strong> Time spent on QC improves final quality</li>
+                        </ul>
+
+                        <div class="warning-box">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Quality vs. Cost Trade-off</h5>
+                            <p>Higher quality increases costs but also increases selling price and customer satisfaction. Find the sweet spot for your target market segment.</p>
+                        </div>
+                    </section>
+
+                    <!-- Sales & Marketing -->
+                    <section id="sales-marketing" class="doc-section">
+                        <h2><i class="fas fa-chart-line me-2"></i>Sales & Marketing</h2>
+                        
+                        <h3 id="market-analysis">Market Analysis</h3>
+                        <p>Understanding your markets is crucial for success:</p>
+                        
+                        <h4>Market Types</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h5>Local Markets</h5>
+                                <ul>
+                                    <li>Lower transport costs</li>
+                                    <li>Faster delivery</li>
+                                    <li>Limited volume</li>
+                                    <li>Personal relationships matter</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h5>Regional Markets</h5>
+                                <ul>
+                                    <li>Moderate transport costs</li>
+                                    <li>Larger volume potential</li>
+                                    <li>More competition</li>
+                                    <li>Standardized requirements</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h5>International Markets</h5>
+                                <ul>
+                                    <li>High transport costs</li>
+                                    <li>Highest volume potential</li>
+                                    <li>Complex regulations</li>
+                                    <li>Currency risks</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h3 id="pricing-strategies">Pricing Strategies</h3>
+                        
+                        <h4>Cost-Plus Pricing</h4>
+                        <p>Calculate your total cost and add a markup for profit.</p>
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-calculator me-2"></i>Pricing Formula</h5>
+                            <p><strong>Sale Price = (Production Cost + Transport Cost + Overhead) × (1 + Markup %)</strong></p>
+                            <ul>
+                                <li><strong>Basic bikes:</strong> 15-25% markup</li>
+                                <li><strong>Standard bikes:</strong> 25-35% markup</li>
+                                <li><strong>Premium bikes:</strong> 35-50% markup</li>
+                            </ul>
+                        </div>
+
+                        <h4>Market-Based Pricing</h4>
+                        <p>Price based on what the market will bear, considering:</p>
+                        <ul>
+                            <li><strong>Competitor prices</strong></li>
+                            <li><strong>Customer willingness to pay</strong></li>
+                            <li><strong>Market demand level</strong></li>
+                            <li><strong>Your brand reputation</strong></li>
+                        </ul>
+
+                        <h3 id="transport-logistics">Transport & Logistics</h3>
+                        <p>Transport costs significantly impact profitability:</p>
+                        
+                        <h4>Transport Optimization</h4>
+                        <div class="tip-box">
+                            <h5><i class="fas fa-truck me-2"></i>Transport Tips</h5>
+                            <ul>
+                                <li>Group shipments to the same region</li>
+                                <li>Consider bulk shipments for cost savings</li>
+                                <li>Factor transport costs into pricing decisions</li>
+                                <li>Build relationships with reliable logistics partners</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <!-- Warehouse Management -->
+                    <section id="warehouse" class="doc-section">
+                        <h2><i class="fas fa-warehouse me-2"></i>Warehouse Management</h2>
+                        
+                        <h3 id="inventory-control">Inventory Control</h3>
+                        <p>Effective inventory management balances cost, availability, and cash flow:</p>
+                        
+                        <h4>Inventory Types</h4>
+                        <ul>
+                            <li><strong>Raw Materials:</strong> Components awaiting production</li>
+                            <li><strong>Work in Progress:</strong> Partially assembled bikes</li>
+                            <li><strong>Finished Goods:</strong> Completed bikes ready for sale</li>
+                            <li><strong>Safety Stock:</strong> Buffer inventory for unexpected demand</li>
+                        </ul>
+
+                        <h4>ABC Analysis</h4>
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-chart-bar me-2"></i>Inventory Classification</h5>
+                            <ul>
+                                <li><strong>A-items (20%):</strong> High-value components - tight control</li>
+                                <li><strong>B-items (30%):</strong> Medium-value components - regular monitoring</li>
+                                <li><strong>C-items (50%):</strong> Low-value components - simple control</li>
+                            </ul>
+                        </div>
+
+                        <h3 id="storage-optimization">Storage Optimization</h3>
+                        <p>Maximize warehouse efficiency:</p>
+                        
+                        <h4>Storage Principles</h4>
+                        <ul>
+                            <li><strong>FIFO (First In, First Out):</strong> Use older stock first</li>
+                            <li><strong>High-turnover items:</strong> Store near shipping areas</li>
+                            <li><strong>Heavy items:</strong> Store at ground level</li>
+                            <li><strong>Fragile items:</strong> Special handling and storage</li>
+                        </ul>
+                    </section>
+
+                    <!-- Financial Management -->
+                    <section id="finance" class="doc-section">
+                        <h2><i class="fas fa-euro-sign me-2"></i>Financial Management</h2>
+                        
+                        <h3 id="cash-flow">Cash Flow Management</h3>
+                        <p>Cash flow is the lifeblood of your business:</p>
+                        
+                        <h4>Cash Inflows</h4>
+                        <ul>
+                            <li><strong>Sales revenue</strong> from bike sales</li>
+                            <li><strong>Credit facilities</strong> from banks</li>
+                            <li><strong>Investment income</strong> from surplus cash</li>
+                        </ul>
+
+                        <h4>Cash Outflows</h4>
+                        <ul>
+                            <li><strong>Component purchases</strong></li>
+                            <li><strong>Salary payments</strong></li>
+                            <li><strong>Operating expenses</strong> (rent, utilities, etc.)</li>
+                            <li><strong>Loan repayments</strong></li>
+                            <li><strong>Tax payments</strong></li>
+                        </ul>
+
+                        <div class="warning-box">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Cash Flow Warning</h5>
+                            <p>Even profitable businesses can fail due to cash flow problems. Always maintain adequate cash reserves and monitor payment timing carefully.</p>
+                        </div>
+
+                        <h3 id="profitability">Profitability Analysis</h3>
+                        <p>Track multiple profitability metrics:</p>
+                        
+                        <h4>Key Profitability Ratios</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Gross Profit Margin</h5>
+                                <p><strong>(Revenue - Cost of Goods) ÷ Revenue</strong></p>
+                                <p>Target: 40-60% for healthy operations</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Net Profit Margin</h5>
+                                <p><strong>(Revenue - All Costs) ÷ Revenue</strong></p>
+                                <p>Target: 10-20% for sustainable growth</p>
+                            </div>
+                        </div>
+
+                        <h3 id="credit-management">Credit Management</h3>
+                        <p>Use credit wisely to fuel growth:</p>
+                        
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-credit-card me-2"></i>Credit Best Practices</h5>
+                            <ul>
+                                <li>Never borrow more than you can repay in 6 months</li>
+                                <li>Use credit for growth investments, not operational expenses</li>
+                                <li>Maintain good relationships with multiple lenders</li>
+                                <li>Pay on time to maintain good credit rating</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <!-- Advanced Strategies -->
+                    <section id="advanced-strategies" class="doc-section">
+                        <h2><i class="fas fa-trophy me-2"></i>Advanced Strategies</h2>
+                        
+                        <h3 id="competitive-analysis">Competitive Analysis</h3>
+                        <p>Stay ahead of the competition:</p>
+                        
+                        <h4>Competitor Monitoring</h4>
+                        <ul>
+                            <li><strong>Price tracking:</strong> Monitor competitor pricing regularly</li>
+                            <li><strong>Product analysis:</strong> Compare quality and features</li>
+                            <li><strong>Market share:</strong> Track relative market positions</li>
+                            <li><strong>Customer feedback:</strong> Learn from competitor customer reviews</li>
+                        </ul>
+
+                        <h3 id="growth-strategies">Growth Strategies</h3>
+                        
+                        <h4>Horizontal Growth</h4>
+                        <p>Expand into new markets or customer segments:</p>
+                        <ul>
+                            <li><strong>Geographic expansion:</strong> Enter new regional markets</li>
+                            <li><strong>Product diversification:</strong> Add new bike categories</li>
+                            <li><strong>Customer segment expansion:</strong> Target new demographics</li>
+                        </ul>
+
+                        <h4>Vertical Integration</h4>
+                        <p>Control more of your supply chain:</p>
+                        <ul>
+                            <li><strong>Backward integration:</strong> Produce your own components</li>
+                            <li><strong>Forward integration:</strong> Open retail stores</li>
+                        </ul>
+
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-rocket me-2"></i>Growth Strategy Framework</h5>
+                            <ol>
+                                <li><strong>Consolidate:</strong> Dominate your current market first</li>
+                                <li><strong>Expand:</strong> Move to adjacent markets</li>
+                                <li><strong>Diversify:</strong> Enter completely new areas</li>
+                                <li><strong>Innovate:</strong> Create new product categories</li>
+                            </ol>
+                        </div>
+
+                        <h3 id="risk-management">Risk Management</h3>
+                        <p>Identify and mitigate business risks:</p>
+                        
+                        <h4>Common Business Risks</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Operational Risks</h5>
+                                <ul>
+                                    <li>Supplier failures</li>
+                                    <li>Quality problems</li>
+                                    <li>Worker strikes</li>
+                                    <li>Equipment breakdowns</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Market Risks</h5>
+                                <ul>
+                                    <li>Demand fluctuations</li>
+                                    <li>New competitors</li>
+                                    <li>Price wars</li>
+                                    <li>Economic downturns</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="tip-box">
+                            <h5><i class="fas fa-shield-alt me-2"></i>Risk Mitigation</h5>
+                            <p>Diversify across suppliers, markets, and products. Never put all your eggs in one basket!</p>
+                        </div>
+                    </section>
+
+                    <!-- Troubleshooting -->
+                    <section id="troubleshooting" class="doc-section">
+                        <h2><i class="fas fa-wrench me-2"></i>Troubleshooting</h2>
+                        
+                        <h3 id="common-issues">Common Issues</h3>
+                        
+                        <h4>Cash Flow Problems</h4>
+                        <div class="warning-box">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Symptoms</h5>
+                            <ul>
+                                <li>Cannot pay supplier invoices</li>
+                                <li>Cannot pay worker salaries</li>
+                                <li>Declining credit rating</li>
+                            </ul>
+                        </div>
+                        <div class="tip-box">
+                            <h5><i class="fas fa-tools me-2"></i>Solutions</h5>
+                            <ul>
+                                <li>Accelerate collections from customers</li>
+                                <li>Negotiate payment extensions with suppliers</li>
+                                <li>Reduce inventory levels</li>
+                                <li>Consider emergency credit facilities</li>
+                            </ul>
+                        </div>
+
+                        <h4>Quality Issues</h4>
+                        <div class="warning-box">
+                            <h5><i class="fas fa-exclamation-triangle me-2"></i>Symptoms</h5>
+                            <ul>
+                                <li>High return rates</li>
+                                <li>Customer complaints</li>
+                                <li>Damaged reputation</li>
+                                <li>Price pressure</li>
+                            </ul>
+                        </div>
+                        <div class="tip-box">
+                            <h5><i class="fas fa-tools me-2"></i>Solutions</h5>
+                            <ul>
+                                <li>Improve supplier selection</li>
+                                <li>Invest in worker training</li>
+                                <li>Implement quality control processes</li>
+                                <li>Slow down production pace</li>
+                            </ul>
+                        </div>
+
+                        <h3 id="performance-optimization">Performance Optimization Tips</h3>
+                        
+                        <h4>Monthly Performance Review</h4>
+                        <div class="strategy-box">
+                            <h5><i class="fas fa-chart-line me-2"></i>Performance Checklist</h5>
+                            <ul>
+                                <li>☐ Review financial statements</li>
+                                <li>☐ Analyze supplier performance</li>
+                                <li>☐ Check inventory levels</li>
+                                <li>☐ Monitor competitor activities</li>
+                                <li>☐ Evaluate market trends</li>
+                                <li>☐ Assess worker productivity</li>
+                                <li>☐ Review customer feedback</li>
+                                <li>☐ Plan next month's strategy</li>
+                            </ul>
+                        </div>
+
+                        <h4>Quick Wins</h4>
+                        <div class="tip-box">
+                            <h5><i class="fas fa-lightning-bolt me-2"></i>Immediate Improvements</h5>
+                            <ul>
+                                <li><strong>Negotiate better supplier terms:</strong> 2-3% cost reduction</li>
+                                <li><strong>Optimize transport routes:</strong> 5-10% logistics savings</li>
+                                <li><strong>Reduce waste:</strong> 1-2% material savings</li>
+                                <li><strong>Improve scheduling:</strong> 10-15% productivity gain</li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <!-- Footer with Additional Resources -->
+                    <section class="doc-section">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h4 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>Continue Learning</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h5><i class="fas fa-route me-2"></i>Interactive Guides</h5>
+                                        <p>Practice what you've learned with step-by-step interactive tutorials.</p>
+                                        <a href="{% url 'help_system:interactive_guides' %}" class="btn btn-primary">Start Guides</a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h5><i class="fas fa-video me-2"></i>Video Tutorials</h5>
+                                        <p>Watch detailed video explanations of complex concepts.</p>
+                                        <a href="{% url 'help_system:video_library' %}" class="btn btn-info">Watch Videos</a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h5><i class="fas fa-comments me-2"></i>Get Help</h5>
+                                        <p>Need personalized assistance? Contact our support team.</p>
+                                        <a href="{% url 'help_system:dashboard' %}" class="btn btn-success">Get Support</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Back to Top Button -->
+<button class="back-to-top" id="backToTop">
+    <i class="fas fa-arrow-up"></i>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Table of Contents Navigation
+    const tocItems = document.querySelectorAll('.toc-item');
+    const sections = document.querySelectorAll('.doc-section');
+    const searchInput = document.getElementById('doc-search');
+    const searchBtn = document.getElementById('search-btn');
+    const backToTopBtn = document.getElementById('backToTop');
+    
+    // TOC Click Navigation
+    tocItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                // Update active TOC item
+                tocItems.forEach(toc => toc.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Smooth scroll to target
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Update URL hash without jumping
+                history.pushState(null, null, '#' + targetId);
+            }
+        });
+    });
+    
+    // Auto-update active TOC item on scroll
+    window.addEventListener('scroll', function() {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.getBoundingClientRect().top;
+            if (sectionTop <= 100) {
+                current = section.id;
+            }
+        });
+        
+        if (current) {
+            tocItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.target === current) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        // Show/hide back to top button
+        if (window.pageYOffset > 300) {
+            backToTopBtn.style.display = 'block';
+        } else {
+            backToTopBtn.style.display = 'none';
+        }
+    });
+    
+    // Back to top functionality
+    backToTopBtn.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+    
+    // Search functionality
+    function performSearch() {
+        const query = searchInput.value.toLowerCase().trim();
+        
+        if (query.length < 2) {
+            clearHighlights();
+            return;
+        }
+        
+        clearHighlights();
+        
+        let matchCount = 0;
+        const searchResults = [];
+        
+        // Search through all text content
+        sections.forEach(section => {
+            const walker = document.createTreeWalker(
+                section,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+            
+            let node;
+            while (node = walker.nextNode()) {
+                const text = node.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    matchCount++;
+                    
+                    // Highlight the match
+                    const parent = node.parentNode;
+                    const originalText = node.textContent;
+                    const regex = new RegExp(`(${query})`, 'gi');
+                    const highlightedText = originalText.replace(regex, '<mark class="highlight">$1</mark>');
+                    
+                    if (parent.tagName !== 'SCRIPT' && parent.tagName !== 'STYLE') {
+                        parent.innerHTML = parent.innerHTML.replace(originalText, highlightedText);
+                    }
+                    
+                    // Add to results for potential navigation
+                    const sectionHeader = section.querySelector('h2, h3, h4');
+                    if (sectionHeader) {
+                        searchResults.push({
+                            section: section.id,
+                            title: sectionHeader.textContent,
+                            element: parent
+                        });
+                    }
+                }
+            }
+        });
+        
+        // Show search feedback
+        if (matchCount > 0 && searchResults.length > 0) {
+            // Scroll to first result
+            searchResults[0].element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+            
+            // Update active TOC item
+            const targetSection = searchResults[0].section;
+            tocItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.target === targetSection) {
+                    item.classList.add('active');
+                }
+            });
+        }
+    }
+    
+    function clearHighlights() {
+        const highlights = document.querySelectorAll('.highlight');
+        highlights.forEach(highlight => {
+            const parent = highlight.parentNode;
+            parent.innerHTML = parent.innerHTML.replace(/<mark class="highlight">(.*?)<\/mark>/gi, '$1');
+        });
+    }
+    
+    // Search event listeners
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
+    });
+    
+    searchBtn.addEventListener('click', performSearch);
+    
+    // Clear highlights when search is cleared
+    searchInput.addEventListener('input', function() {
+        if (this.value.length < 2) {
+            clearHighlights();
+        }
+    });
+    
+    // Handle initial URL hash
+    if (window.location.hash) {
+        const targetId = window.location.hash.substring(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+            setTimeout(() => {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                tocItems.forEach(item => {
+                    if (item.dataset.target === targetId) {
+                        item.classList.add('active');
+                    }
+                });
+            }, 100);
+        }
+    } else {
+        // Set first item as active by default
+        if (tocItems.length > 0) {
+            tocItems[0].classList.add('active');
+        }
+    }
+    
+    // Print optimization
+    window.addEventListener('beforeprint', function() {
+        // Expand all sections for printing
+        clearHighlights();
+        
+        // Add print-specific styling
+        const printStyle = document.createElement('style');
+        printStyle.textContent = `
+            @media print {
+                .sidebar-toc, .back-to-top { display: none !important; }
+                .col-lg-9 { width: 100% !important; }
+                .doc-section { page-break-inside: avoid; }
+                .strategy-box, .tip-box, .warning-box { 
+                    border: 2px solid #333 !important;
+                    background: #f9f9f9 !important;
+                    color: #000 !important;
+                }
+            }
+        `;
+        document.head.appendChild(printStyle);
+    });
+});
+</script>
+{% endblock %}

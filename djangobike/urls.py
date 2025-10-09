@@ -30,6 +30,12 @@ urlpatterns = [
     path('sales/', include('sales.urls')),
     path('simulation/', include('simulation.urls')),
     path('workers/', include('workers.urls')),  # Neue workers URLs hinzugefügt
+    path('competitors/', include('competitors.urls')),
+    path('multiplayer/', include('multiplayer.urls')),
+    path('business-strategy/', include('business_strategy.urls')),
+    path('events/', include('random_events.urls')),
+    path('help/', include('help_system.urls')),
+    path('objectives/', include('game_objectives.urls')),
 ]
 
 if settings.DEBUG:

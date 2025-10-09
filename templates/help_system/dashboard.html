@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Help & Tutorial System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-question-circle"></i> Help & Tutorial System</h1>
+                <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Quick Help Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-play-circle fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Video Tutorials</h5>
+                            <p class="card-text">Watch step-by-step guides on how to use all features of the bike shop simulator.</p>
+                            <a href="{% url 'help_system:video_library' %}" class="btn btn-primary">
+                                <i class="fas fa-video"></i> Watch Videos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-route fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">Interactive Guides</h5>
+                            <p class="card-text">Follow interactive step-by-step guides that highlight interface elements.</p>
+                            <a href="{% url 'help_system:interactive_guides' %}" class="btn btn-success">
+                                <i class="fas fa-hand-point-right"></i> Start Guide
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-book fa-3x text-info mb-3"></i>
+                            <h5 class="card-title">Documentation</h5>
+                            <p class="card-text">Read comprehensive documentation about game mechanics and strategies.</p>
+                            <a href="{% url 'help_system:documentation' %}" class="btn btn-info">
+                                <i class="fas fa-book-open"></i> Read Docs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Getting Started Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-rocket"></i> Getting Started</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>New to the Bike Shop Simulator?</h6>
+                                    <p>Start with these essential guides:</p>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Creating Your First Session</span>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="startTour('first-session')">
+                                                <i class="fas fa-play"></i> Start
+                                            </button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Understanding the Dashboard</span>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="startTour('dashboard')">
+                                                <i class="fas fa-play"></i> Start
+                                            </button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Your First Procurement</span>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="startTour('procurement')">
+                                                <i class="fas fa-play"></i> Start
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Advanced Topics</h6>
+                                    <p>Master these for better performance:</p>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Financial Management</span>
+                                            <button class="btn btn-sm btn-outline-success" onclick="startTour('finance')">
+                                                <i class="fas fa-play"></i> Start
+                                            </button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Production Optimization</span>
+                                            <button class="btn btn-sm btn-outline-success" onclick="startTour('production')">
+                                                <i class="fas fa-play"></i> Start
+                                            </button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span>Market Analysis & Competition</span>
+                                            <button class="btn btn-sm btn-outline-success" onclick="startTour('competition')">
+                                                <i class="fas fa-play"></i> Start
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function startTour(tourType) {
+    // This would integrate with the help system JavaScript
+    console.log('Starting tour:', tourType);
+    alert('Interactive tour system would start here for: ' + tourType);
+}
+</script>
+{% endblock %}

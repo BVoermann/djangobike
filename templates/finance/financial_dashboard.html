@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+
+{% block title %}Financial Dashboard - {{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-chart-bar"></i> Financial Dashboard</h1>
+                    <p class="text-muted mb-0">{{ session.name }} - Month {{ session.current_month }}/{{ session.current_year }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Session
+                    </a>
+                </div>
+            </div>
+
+            <!-- Key Metrics Summary -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Current Balance</h6>
+                                    <h4 class="mb-0">€{{ session.balance|floatformat:0 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-wallet fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white {% if current_pnl.net_profit >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Net Profit</h6>
+                                    <h4 class="mb-0">€{{ current_pnl.net_profit|default:0|floatformat:0 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-chart-line fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Revenue</h6>
+                                    <h4 class="mb-0">€{{ current_pnl.total_revenue|default:0|floatformat:0 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-coins fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Liquidity Ratio</h6>
+                                    <h4 class="mb-0">{{ current_liquidity.current_ratio|default:0|floatformat:2 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-tint fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Financial Reports -->
+            <div class="row">
+                <!-- Profit & Loss Statement -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line"></i> Profit & Loss Statement</h5>
+                            <small class="text-muted">Current Month: {{ session.current_month }}/{{ session.current_year }}</small>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Revenue</strong></td>
+                                        <td class="text-right"><strong>€{{ current_pnl.total_revenue|default:0|floatformat:2 }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Sales Revenue</td>
+                                        <td class="text-right">€{{ current_pnl.sales_revenue|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Other Revenue</td>
+                                        <td class="text-right">€{{ current_pnl.other_revenue|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr class="border-top">
+                                        <td><strong>Expenses</strong></td>
+                                        <td class="text-right"><strong>€{{ current_pnl.total_expenses|default:0|floatformat:2 }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Cost of Goods Sold</td>
+                                        <td class="text-right">€{{ current_pnl.cost_of_goods_sold|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Operating Expenses</td>
+                                        <td class="text-right">€{{ current_pnl.operating_expenses|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Labor Costs</td>
+                                        <td class="text-right">€{{ current_pnl.labor_costs|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Interest Expenses</td>
+                                        <td class="text-right">€{{ current_pnl.interest_expenses|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr class="border-top {% if current_pnl.net_profit >= 0 %}table-success{% else %}table-danger{% endif %}">
+                                        <td><strong>Net Profit</strong></td>
+                                        <td class="text-right"><strong>€{{ current_pnl.net_profit|default:0|floatformat:2 }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cash Flow Statement -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-exchange-alt"></i> Cash Flow Statement</h5>
+                            <small class="text-muted">Current Month: {{ session.current_month }}/{{ session.current_year }}</small>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Operating Activities</strong></td>
+                                        <td class="text-right"><strong>€{{ current_cf.operating_cash_flow|default:0|floatformat:2 }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Net Income</td>
+                                        <td class="text-right">€{{ current_cf.net_income|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Depreciation</td>
+                                        <td class="text-right">€{{ current_cf.depreciation|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Working Capital Changes</td>
+                                        <td class="text-right">€{{ current_cf.working_capital_changes|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr class="border-top">
+                                        <td><strong>Investing Activities</strong></td>
+                                        <td class="text-right"><strong>€{{ current_cf.investing_cash_flow|default:0|floatformat:2 }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Capital Expenditures</td>
+                                        <td class="text-right">€{{ current_cf.capital_expenditures|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr class="border-top">
+                                        <td><strong>Financing Activities</strong></td>
+                                        <td class="text-right"><strong>€{{ current_cf.financing_cash_flow|default:0|floatformat:2 }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>&nbsp;&nbsp;Debt Changes</td>
+                                        <td class="text-right">€{{ current_cf.debt_changes|default:0|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr class="border-top {% if current_cf.net_cash_flow >= 0 %}table-success{% else %}table-danger{% endif %}">
+                                        <td><strong>Net Cash Flow</strong></td>
+                                        <td class="text-right"><strong>€{{ current_cf.net_cash_flow|default:0|floatformat:2 }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Balance Sheet and Additional Analysis -->
+            <div class="row">
+                <!-- Balance Sheet -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-balance-scale"></i> Balance Sheet</h5>
+                            <small class="text-muted">As of {{ session.current_month }}/{{ session.current_year }}</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <h6 class="text-muted">Assets</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td>Current Assets</td>
+                                            <td class="text-right">€{{ current_bs.current_assets|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Fixed Assets</td>
+                                            <td class="text-right">€{{ current_bs.fixed_assets|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Inventory</td>
+                                            <td class="text-right">€{{ current_bs.inventory|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                        <tr class="border-top font-weight-bold">
+                                            <td>Total Assets</td>
+                                            <td class="text-right">€{{ current_bs.total_assets|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-6">
+                                    <h6 class="text-muted">Liabilities & Equity</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td>Current Liabilities</td>
+                                            <td class="text-right">€{{ current_bs.current_liabilities|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Long-term Debt</td>
+                                            <td class="text-right">€{{ current_bs.long_term_debt|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Equity</td>
+                                            <td class="text-right">€{{ current_bs.equity|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                        <tr class="border-top font-weight-bold">
+                                            <td>Total Liab. & Equity</td>
+                                            <td class="text-right">€{{ current_bs.total_liabilities_equity|default:0|floatformat:0 }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liquidity Analysis -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-tint"></i> Liquidity Analysis</h5>
+                            <small class="text-muted">Financial Health Indicators</small>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td>Current Ratio</td>
+                                    <td class="text-right">
+                                        <span class="badge badge-{% if current_liquidity.current_ratio >= 1.5 %}success{% elif current_liquidity.current_ratio >= 1.0 %}warning{% else %}danger{% endif %}">
+                                            {{ current_liquidity.current_ratio|default:0|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Quick Ratio</td>
+                                    <td class="text-right">
+                                        <span class="badge badge-{% if current_liquidity.quick_ratio >= 1.0 %}success{% elif current_liquidity.quick_ratio >= 0.5 %}warning{% else %}danger{% endif %}">
+                                            {{ current_liquidity.quick_ratio|default:0|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Cash Runway (months)</td>
+                                    <td class="text-right">
+                                        <span class="badge badge-{% if current_liquidity.cash_runway_months >= 3 %}success{% elif current_liquidity.cash_runway_months >= 1 %}warning{% else %}danger{% endif %}">
+                                            {{ current_liquidity.cash_runway_months|default:0|floatformat:1 }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Debt-to-Equity Ratio</td>
+                                    <td class="text-right">
+                                        <span class="badge badge-{% if current_liquidity.debt_to_equity_ratio <= 0.5 %}success{% elif current_liquidity.debt_to_equity_ratio <= 1.0 %}warning{% else %}danger{% endif %}">
+                                            {{ current_liquidity.debt_to_equity_ratio|default:0|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <div class="mt-3">
+                                <h6>Financial Health Score</h6>
+                                <div class="progress">
+                                    <div class="progress-bar {% if current_liquidity.financial_health_score >= 70 %}bg-success{% elif current_liquidity.financial_health_score >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         style="width: {{ current_liquidity.financial_health_score|default:0 }}%">
+                                        {{ current_liquidity.financial_health_score|default:0|floatformat:0 }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recurring Costs Overview -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-repeat"></i> Recurring Costs Overview</h5>
+                            <small class="text-muted">Fixed and Recurring Expenses</small>
+                        </div>
+                        <div class="card-body">
+                            <!-- Summary Cards -->
+                            <div class="row mb-4">
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Monthly Costs</h6>
+                                    <h3 class="text-danger">€{{ recurring_costs.summary.monthly|floatformat:0 }}</h3>
+                                    <small>Fixed per month</small>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Quarterly Costs</h6>
+                                    <h3 class="text-warning">€{{ recurring_costs.summary.quarterly|floatformat:0 }}</h3>
+                                    <small>Paid every 3 months</small>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Avg. Monthly</h6>
+                                    <h3 class="text-info">€{{ recurring_costs.summary.avg_monthly|floatformat:0 }}</h3>
+                                    <small>Including quarterly</small>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Annual Total</h6>
+                                    <h3 class="text-primary">€{{ recurring_costs.summary.annual|floatformat:0 }}</h3>
+                                    <small>Full year costs</small>
+                                </div>
+                            </div>
+
+                            <!-- Monthly Recurring Costs -->
+                            {% if recurring_costs.monthly %}
+                            <h6 class="mt-4 mb-3"><i class="fas fa-calendar-alt"></i> Monthly Recurring Costs</h6>
+                            <div class="row">
+                                {% for cost_category in recurring_costs.monthly %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-left-primary">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <i class="fas {{ cost_category.icon }}"></i> {{ cost_category.category }}
+                                                <span class="float-right text-danger">€{{ cost_category.subtotal|floatformat:0 }}/mo</span>
+                                            </h6>
+                                            <table class="table table-sm table-borderless mt-2">
+                                                {% for item in cost_category.items %}
+                                                <tr>
+                                                    <td>
+                                                        <small>
+                                                            {% if item.name %}{{ item.name }}{% endif %}
+                                                            {% if item.type %}<span class="badge badge-secondary">{{ item.type }}</span>{% endif %}
+                                                            {% if item.count and item.hourly_wage and item.monthly_hours %}
+                                                                <br>{{ item.count }} × €{{ item.hourly_wage }}/h × {{ item.monthly_hours }}h
+                                                            {% elif item.hourly_wage %}
+                                                                <br>€{{ item.hourly_wage }}/h × 160h
+                                                            {% endif %}
+                                                            {% if item.remaining_months %}<br>{{ item.remaining_months }} months remaining{% endif %}
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-right">
+                                                        <small class="text-danger">€{{ item.monthly_payment|default:item.monthly_cost|floatformat:0 }}</small>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Quarterly Recurring Costs -->
+                            {% if recurring_costs.quarterly %}
+                            <h6 class="mt-4 mb-3"><i class="fas fa-calendar-check"></i> Quarterly Recurring Costs</h6>
+                            <div class="row">
+                                {% for cost_category in recurring_costs.quarterly %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-left-warning">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <i class="fas {{ cost_category.icon }}"></i> {{ cost_category.category }}
+                                                <span class="float-right text-warning">€{{ cost_category.quarterly_total|floatformat:0 }}/quarter</span>
+                                            </h6>
+                                            <table class="table table-sm table-borderless mt-2">
+                                                {% for item in cost_category.items %}
+                                                <tr>
+                                                    <td>
+                                                        <small>
+                                                            {{ item.name }}
+                                                            {% if item.location %}<br>{{ item.location }}{% endif %}
+                                                            {% if item.capacity %}<br>{{ item.capacity }} m²{% endif %}
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-right">
+                                                        <small class="text-warning">€{{ item.quarterly_cost|floatformat:0 }}</small>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if not recurring_costs.monthly and not recurring_costs.quarterly %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> No recurring costs configured yet.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Summary -->
+            {% if current_sales %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-shopping-cart"></i> Sales Summary</h5>
+                            <small class="text-muted">Current Month Performance</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Units Sold</h6>
+                                    <h3 class="text-primary">{{ current_sales.total_units_sold|default:0 }}</h3>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Sales Revenue</h6>
+                                    <h3 class="text-success">€{{ current_sales.total_sales_revenue|default:0|floatformat:0 }}</h3>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Average Price</h6>
+                                    <h3 class="text-info">€{{ current_sales.average_selling_price|default:0|floatformat:0 }}</h3>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h6 class="text-muted">Profit Margin</h6>
+                                    <h3 class="text-warning">{{ current_sales.profit_margin_percentage|default:0|floatformat:1 }}%</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-tools"></i> Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'finance:finance' session.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-credit-card"></i> Credit Management
+                                </a>
+                                <a href="{% url 'finance:profit_loss' session.id %}" class="btn btn-outline-success">
+                                    <i class="fas fa-chart-line"></i> Detailed P&L
+                                </a>
+                                <a href="{% url 'finance:cash_flow' session.id %}" class="btn btn-outline-info">
+                                    <i class="fas fa-exchange-alt"></i> Cash Flow Details
+                                </a>
+                                <a href="{% url 'finance:balance_sheet' session.id %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-balance-scale"></i> Balance Sheet
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.bg-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+.bg-success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%) !important; }
+.bg-info { background: linear-gradient(135deg, #17a2b8 0%, #7fb3d3 100%) !important; }
+.bg-warning { background: linear-gradient(135deg, #ffc107 0%, #ffecb5 100%) !important; }
+.bg-danger { background: linear-gradient(135deg, #dc3545 0%, #f8bbd9 100%) !important; }
+
+.table td {
+    border: none;
+    padding: 0.5rem;
+}
+
+.table tr.border-top td {
+    border-top: 1px solid #dee2e6;
+}
+
+.progress {
+    height: 1.5rem;
+}
+
+.badge {
+    font-size: 0.85rem;
+}
+
+.btn-group .btn {
+    border-radius: 0.375rem !important;
+    margin-right: 0.5rem;
+}
+
+.border-left-primary {
+    border-left: 4px solid #667eea !important;
+}
+
+.border-left-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+
+.card.border-left-primary,
+.card.border-left-warning {
+    border: 1px solid #dee2e6;
+}
+
+.table-borderless td {
+    border: none !important;
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}

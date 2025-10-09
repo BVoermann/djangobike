@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block title %}Regulations Overview - {{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-balance-scale"></i> Regulations Overview</h1>
+                    <p class="text-muted mb-0">{{ session.name }} - Month {{ session.current_month }}/{{ session.current_year }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'random_events:dashboard' session.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Events Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="row mb-4">
+                <div class="col-lg-4 mb-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Upcoming Regulations</h6>
+                                    <h3 class="mb-0">{{ upcoming_regulations|length }}</h3>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-clock fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Active Regulations</h6>
+                                    <h3 class="mb-0">{{ active_regulations|length }}</h3>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-gavel fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 mb-3">
+                    <div class="card text-white bg-secondary">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Expired Regulations</h6>
+                                    <h3 class="mb-0">{{ expired_regulations|length }}</h3>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-archive fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Regulations -->
+            {% if upcoming_regulations %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-clock"></i> Upcoming Regulations (Grace Period)</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for item in upcoming_regulations %}
+                            <div class="card mb-3 border-warning">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-lg-8">
+                                            <h5 class="card-title">{{ item.regulation.title }}</h5>
+                                            <p class="card-text">{{ item.regulation.description }}</p>
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-tag"></i> Type: {{ item.regulation.get_regulation_type_display }}
+                                                    </small>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar"></i> Implementation: {{ item.regulation.implementation_month }}/{{ item.regulation.implementation_year }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <div class="text-center">
+                                                <span class="badge badge-warning badge-lg mb-2">{{ item.months_until_active }} month{{ item.months_until_active|pluralize }} until active</span>
+                                                <br>
+                                                {% if item.compliance %}
+                                                    {% if item.compliance.is_compliant %}
+                                                        <span class="badge badge-success">✓ Compliant</span>
+                                                    {% else %}
+                                                        <span class="badge badge-danger">✗ Non-Compliant</span>
+                                                    {% endif %}
+                                                    <br>
+                                                    <small class="text-muted">Compliance Cost: €{{ item.compliance.compliance_cost|floatformat:0 }}</small>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Not Assessed</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Active Regulations -->
+            {% if active_regulations %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-gavel"></i> Active Regulations</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for item in active_regulations %}
+                            <div class="card mb-3 border-info">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-lg-8">
+                                            <h5 class="card-title">{{ item.regulation.title }}</h5>
+                                            <p class="card-text">{{ item.regulation.description }}</p>
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-tag"></i> Type: {{ item.regulation.get_regulation_type_display }}
+                                                    </small>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar"></i> Active since: {{ item.regulation.implementation_month }}/{{ item.regulation.implementation_year }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <div class="text-center">
+                                                <span class="badge badge-info badge-lg mb-2">Active</span>
+                                                <br>
+                                                {% if item.compliance %}
+                                                    {% if item.compliance.is_compliant %}
+                                                        <span class="badge badge-success">✓ Compliant</span>
+                                                    {% else %}
+                                                        <span class="badge badge-danger">✗ Non-Compliant</span>
+                                                        <br>
+                                                        <small class="text-danger">Penalty: €{{ item.compliance.penalty_cost|floatformat:0 }}/month</small>
+                                                    {% endif %}
+                                                    <br>
+                                                    <small class="text-muted">Compliance Cost: €{{ item.compliance.compliance_cost|floatformat:0 }}</small>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Not Assessed</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Expired Regulations -->
+            {% if expired_regulations %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-archive"></i> Expired Regulations</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for item in expired_regulations %}
+                            <div class="card mb-3 border-secondary">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-lg-8">
+                                            <h5 class="card-title text-muted">{{ item.regulation.title }}</h5>
+                                            <p class="card-text text-muted">{{ item.regulation.description }}</p>
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-tag"></i> Type: {{ item.regulation.get_regulation_type_display }}
+                                                    </small>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar"></i> Expired: {{ item.regulation.expiration_month }}/{{ item.regulation.expiration_year }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <div class="text-center">
+                                                <span class="badge badge-secondary badge-lg">Expired</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- No Regulations Message -->
+            {% if not upcoming_regulations and not active_regulations and not expired_regulations %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-balance-scale fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No Regulations Found</h4>
+                            <p class="text-muted">There are currently no regulations in the system. Initialize the events system to create regulatory timeline.</p>
+                            <a href="{% url 'random_events:dashboard' session.id %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left"></i> Return to Events Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

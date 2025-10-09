@@ -9,5 +9,6 @@ urlpatterns = [
     path('download-default-parameters/', views.download_default_parameters, name='download_default_parameters'),
     path('create-session/', views.create_session, name='create_session'),
     path('session/<uuid:session_id>/', views.session_detail, name='session_detail'),
+    path('session/<uuid:session_id>/report/', views.monthly_report, name='monthly_report'),
     path('session/<uuid:session_id>/delete/', views.delete_session, name='delete_session'),
 ]

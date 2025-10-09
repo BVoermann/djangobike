@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bestenliste{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="text-center mb-5">
+        <h1 class="h2">
+            <i class="fas fa-trophy text-warning me-2"></i>
+            Bestenliste
+        </h1>
+        <p class="lead text-muted">Die besten Leistungen in allen Spielmodi</p>
+    </div>
+
+    <!-- User's Best Results -->
+    {% if user_best_results %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>
+                    Ihre besten Ergebnisse
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Spielmodus</th>
+                                <th>Punktzahl</th>
+                                <th>Zielerreichung</th>
+                                <th>Ergebnis</th>
+                                <th>Datum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in user_best_results %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ result.session_game_mode.game_mode.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ result.session_game_mode.game_mode.get_difficulty_level_display }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="h6 {% if result.result_type == 'victory' %}text-success{% else %}text-danger{% endif %}">
+                                            {{ result.final_score|floatformat:0 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar {% if result.completion_percentage >= 100 %}bg-success{% elif result.completion_percentage >= 75 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ result.completion_percentage }}%">
+                                                {{ result.completion_percentage|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if result.result_type == 'victory' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-crown me-1"></i>Sieg
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times me-1"></i>Niederlage
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ result.created_at|date:"d.m.Y" }}</small>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Leaderboards by Game Mode -->
+    {% if leaderboard_by_mode %}
+        {% for mode_name, results in leaderboard_by_mode.items %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">
+                        <i class="fas fa-medal me-2"></i>
+                        {{ mode_name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="60">Rang</th>
+                                    <th>Spieler</th>
+                                    <th>Punktzahl</th>
+                                    <th>Zielerreichung</th>
+                                    <th>Dauer</th>
+                                    <th>Datum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in results %}
+                                    <tr {% if result.session_game_mode.session.user == request.user %}class="table-primary"{% endif %}>
+                                        <td>
+                                            {% if forloop.counter == 1 %}
+                                                <i class="fas fa-trophy text-warning fs-4"></i>
+                                            {% elif forloop.counter == 2 %}
+                                                <i class="fas fa-medal text-secondary fs-4"></i>
+                                            {% elif forloop.counter == 3 %}
+                                                <i class="fas fa-medal text-warning fs-4"></i>
+                                            {% else %}
+                                                <span class="h6 text-muted">#{{ forloop.counter }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>{{ result.session_game_mode.session.user.username }}</strong>
+                                            {% if result.session_game_mode.session.user == request.user %}
+                                                <span class="badge bg-primary ms-2">Sie</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="h6 text-success">
+                                                {{ result.final_score|floatformat:0 }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-success" 
+                                                     style="width: {{ result.completion_percentage }}%">
+                                                    {{ result.completion_percentage|floatformat:1 }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small>{{ result.duration_months }} Monate</small>
+                                        </td>
+                                        <td>
+                                            <small>{{ result.created_at|date:"d.m.Y" }}</small>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-info-circle fs-1 mb-3"></i>
+            <h4>Noch keine Ergebnisse</h4>
+            <p>Seien Sie der Erste, der ein Spiel erfolgreich abschließt!</p>
+            <a href="{% url 'bikeshop:create_session' %}" class="btn btn-primary btn-lg mt-3">
+                <i class="fas fa-play me-2"></i>
+                Spiel starten
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- Statistics -->
+    {% if leaderboard_by_mode %}
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="display-4 text-primary">
+                            {% for mode_name, results in leaderboard_by_mode.items %}
+                                {{ results|length|add:0 }}
+                                {% if not forloop.last %}+{% endif %}
+                            {% endfor %}
+                        </div>
+                        <small class="text-muted">Erfolgreiche Spiele</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="display-4 text-warning">
+                            {{ leaderboard_by_mode|length }}
+                        </div>
+                        <small class="text-muted">Aktive Spielmodi</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="display-4 text-success">
+                            {% with best_score=leaderboard_by_mode.values.0.0.final_score %}
+                                {{ best_score|floatformat:0 }}
+                            {% endwith %}
+                        </div>
+                        <small class="text-muted">Höchste Punktzahl</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="text-center mt-5">
+        <a href="{% url 'bikeshop:create_session' %}" class="btn btn-primary btn-lg px-5 me-3">
+            <i class="fas fa-play me-2"></i>
+            Neues Spiel starten
+        </a>
+        <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-secondary btn-lg px-5">
+            <i class="fas fa-home me-2"></i>
+            Zur Übersicht
+        </a>
+    </div>
+</div>
+{% endblock %}

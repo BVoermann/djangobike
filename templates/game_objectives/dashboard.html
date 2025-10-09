@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Spielziele - {{ game_mode.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">
+                    <i class="fas fa-trophy text-warning me-2"></i>
+                    Spielziele: {{ game_mode.name }}
+                </h1>
+                <div>
+                    {% if session_game_mode.is_completed %}
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-crown me-1"></i>Gewonnen
+                        </span>
+                    {% elif session_game_mode.is_failed %}
+                        <span class="badge bg-danger fs-6">
+                            <i class="fas fa-skull me-1"></i>Gescheitert
+                        </span>
+                    {% else %}
+                        <span class="badge bg-primary fs-6">
+                            <i class="fas fa-play me-1"></i>Aktiv
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not is_game_over %}
+        <!-- Progress Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-primary">{{ current_score|floatformat:0 }}</div>
+                        <small class="text-muted">Aktuelle Punkte</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-info">{{ completion_percentage|floatformat:1 }}%</div>
+                        <small class="text-muted">Fortschritt</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-warning">€{{ session.balance|floatformat:0 }}</div>
+                        <small class="text-muted">Kontostand</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="display-4 {% if bankruptcy_risk.level == 'critical' %}text-danger{% elif bankruptcy_risk.level == 'high' %}text-warning{% else %}text-success{% endif %}">
+                            {% if bankruptcy_risk.level == 'critical' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {% elif bankruptcy_risk.level == 'high' %}
+                                <i class="fas fa-exclamation-circle"></i>
+                            {% else %}
+                                <i class="fas fa-check-circle"></i>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">{{ bankruptcy_risk.message }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Objectives Progress -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bullseye me-2"></i>
+                        Ziele & Fortschritt
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for obj_progress in objective_progress %}
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {% if obj_progress.objective.is_primary %}
+                                            <i class="fas fa-star text-warning me-1"></i>
+                                        {% elif obj_progress.objective.is_failure_condition %}
+                                            <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                                        {% else %}
+                                            <i class="fas fa-circle text-secondary me-1"></i>
+                                        {% endif %}
+                                        {{ obj_progress.objective.name }}
+                                        {% if obj_progress.is_met %}
+                                            <i class="fas fa-check text-success ms-2"></i>
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ obj_progress.objective.description }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold">
+                                        {{ obj_progress.current_value|floatformat:0 }} / {{ obj_progress.target_value|floatformat:0 }}
+                                    </div>
+                                    <small class="text-muted">{{ obj_progress.objective.get_comparison_operator_display }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="progress mb-1" style="height: 8px;">
+                                <div class="progress-bar bg-{{ obj_progress.status_class }}" 
+                                     role="progressbar" 
+                                     style="width: {{ obj_progress.progress_percentage|floatformat:1 }}%"
+                                     aria-valuenow="{{ obj_progress.progress_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">
+                                    {% if obj_progress.objective.is_primary %}
+                                        <strong>Hauptziel</strong>
+                                    {% elif obj_progress.objective.is_failure_condition %}
+                                        <strong>Versagensbedingung</strong>
+                                    {% else %}
+                                        Nebenziel
+                                    {% endif %}
+                                </small>
+                                <small class="text-muted">{{ obj_progress.progress_percentage|floatformat:1 }}%</small>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-info-circle fs-1 mb-3"></i>
+                            <p>Keine Ziele für diesen Spielmodus definiert.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if monthly_scores %}
+        <!-- Score History -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Punkteverlauf (letzte 6 Monate)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for score_data in monthly_scores %}
+                                <div class="col-md-2">
+                                    <div class="text-center">
+                                        <div class="h5">{{ score_data.score|floatformat:0 }}</div>
+                                        <small class="text-muted">{{ score_data.month }}/{{ score_data.year }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex gap-2">
+                <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Zurück zum Spiel
+                </a>
+                
+                {% if is_game_over %}
+                    <a href="{% url 'game_objectives:game_result' session.id %}" class="btn btn-primary">
+                        <i class="fas fa-trophy me-2"></i>
+                        Endergebnis anzeigen
+                    </a>
+                {% else %}
+                    <button type="button" class="btn btn-info" onclick="updateProgress()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        Fortschritt aktualisieren
+                    </button>
+                    
+                    <a href="{% url 'game_objectives:bankruptcy_status' session.id %}" class="btn btn-warning" target="_blank">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Insolvenzrisiko prüfen
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateProgress() {
+    fetch('{% url "game_objectives:check_victory_conditions" session.id %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Fehler beim Aktualisieren des Fortschritts');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Fehler beim Aktualisieren des Fortschritts');
+    });
+}
+</script>
+{% endblock %}

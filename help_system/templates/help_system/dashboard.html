@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hilfe & Tutorials{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'help_system/css/help-system.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="card-title mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Hilfe & Tutorial Center
+                    </h1>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <p class="lead">Willkommen im Hilfe-Center! Hier findest du alle Ressourcen, um das Fahrradgeschäft-Simulator zu meistern.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <button class="btn btn-success btn-lg" onclick="startOnboardingTour()">
+                                    <i class="fas fa-play me-2"></i>
+                                    Geführte Einführung starten
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Search -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-secondary">
+                                <div class="card-body">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                        <input type="text" class="form-control form-control-lg" 
+                                               id="help-search" placeholder="Suche nach Hilfe-Themen..." 
+                                               autocomplete="off">
+                                    </div>
+                                    <div id="search-results" class="mt-3" style="display: none;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Cards -->
+                    <div class="row">
+                        {% for category in categories %}
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="card h-100 help-category-card" data-category="{{ category.category_type }}">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0">
+                                        <i class="{{ category.icon }} me-2"></i>
+                                        {{ category.name }}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">{{ category.description }}</p>
+                                    
+                                    <!-- Quick Stats -->
+                                    <div class="row text-center mb-3">
+                                        <div class="col-4">
+                                            <small class="text-muted">Videos</small>
+                                            <div class="fw-bold">{{ category.videos.count }}</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted">Guides</small>
+                                            <div class="fw-bold">{{ category.guides.count }}</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="text-muted">Tipps</small>
+                                            <div class="fw-bold">{{ category.tooltips.count }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{% url 'help_system:video_library' %}?category={{ category.id }}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-video me-1"></i>Videos
+                                        </a>
+                                        <a href="{% url 'help_system:interactive_guides' %}?category={{ category.id }}" 
+                                           class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-route me-1"></i>Guides
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Noch keine Hilfe-Kategorien verfügbar. Füge Inhalte über das Admin-Panel hinzu.
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Recent Activity -->
+                    {% if user.is_authenticated %}
+                    <div class="row mt-5">
+                        <div class="col-12">
+                            <h3>
+                                <i class="fas fa-history me-2"></i>
+                                Deine letzten Aktivitäten
+                            </h3>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Zuletzt angesehene Videos</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if recent_videos %}
+                                        <div class="list-group list-group-flush">
+                                            {% for video in recent_videos %}
+                                            <a href="{% url 'help_system:video_detail' video.id %}" 
+                                               class="list-group-item list-group-item-action">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h6 class="mb-1">{{ video.title }}</h6>
+                                                    <small>{{ video.duration_minutes }} min</small>
+                                                </div>
+                                                <p class="mb-1">{{ video.description|truncatewords:15 }}</p>
+                                                <small class="text-muted">{{ video.category.name }}</small>
+                                            </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Noch keine Videos angesehen.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Fortschritt</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if user_progress %}
+                                        <div class="mb-3">
+                                            <label class="form-label">Erfahrungslevel</label>
+                                            <span class="badge bg-primary ms-2">{{ user_progress.get_help_level_display }}</span>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Videos angesehen</label>
+                                            <div class="progress">
+                                                <div class="progress-bar" role="progressbar" 
+                                                     style="width: {{ user_progress.videos_watched.count|floatformat:0 }}%">
+                                                    {{ user_progress.videos_watched.count }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Guides abgeschlossen</label>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: {{ user_progress.guides_completed.count|floatformat:0 }}%">
+                                                    {{ user_progress.guides_completed.count }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">Starte mit dem ersten Tutorial, um deinen Fortschritt zu verfolgen!</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'help_system/js/help-system.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize help system
+    const helpSystem = new HelpSystem();
+    helpSystem.init();
+    
+    // Setup search functionality
+    const searchInput = document.getElementById('help-search');
+    const searchResults = document.getElementById('search-results');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            helpSystem.searchHelp(query).then(results => {
+                displaySearchResults(results);
+            });
+        }, 300);
+    });
+    
+    function displaySearchResults(results) {
+        if (results.length === 0) {
+            searchResults.innerHTML = '<p class="text-muted">Keine Ergebnisse gefunden.</p>';
+        } else {
+            let html = '<div class="list-group">';
+            results.forEach(result => {
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${result.title}</h6>
+                            <small class="text-muted">${result.type}</small>
+                        </div>
+                        <p class="mb-1">${result.description}</p>
+                        <small class="text-primary">${result.category}</small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            searchResults.innerHTML = html;
+        }
+        searchResults.style.display = 'block';
+    }
+    
+    // Category card interactions
+    document.querySelectorAll('.help-category-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn-group')) {
+                const category = this.dataset.category;
+                window.location.href = `{% url 'help_system:video_library' %}?category_type=${category}`;
+            }
+        });
+    });
+});
+
+function startOnboardingTour() {
+    if (window.helpSystem) {
+        window.helpSystem.startGuide('onboarding');
+    }
+}
+</script>
+{% endblock %}

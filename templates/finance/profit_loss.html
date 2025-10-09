@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Profit & Loss Statement - {{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-chart-line"></i> Profit & Loss Statement</h1>
+                <a href="{% url 'finance:dashboard' session.id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Current Period P&L -->
+            {% if current_pnl %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Current Month: {{ session.current_month }}/{{ session.current_year }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr class="table-primary">
+                                    <td><strong>Revenue</strong></td>
+                                    <td class="text-right"><strong>€{{ current_pnl.total_revenue|floatformat:2 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;Sales Revenue</td>
+                                    <td class="text-right">€{{ current_pnl.sales_revenue|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;Other Revenue</td>
+                                    <td class="text-right">€{{ current_pnl.other_revenue|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="table-warning">
+                                    <td><strong>Expenses</strong></td>
+                                    <td class="text-right"><strong>€{{ current_pnl.total_expenses|floatformat:2 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;Cost of Goods Sold</td>
+                                    <td class="text-right">€{{ current_pnl.cost_of_goods_sold|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;Operating Expenses</td>
+                                    <td class="text-right">€{{ current_pnl.operating_expenses|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;Labor Costs</td>
+                                    <td class="text-right">€{{ current_pnl.labor_costs|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>&nbsp;&nbsp;Interest Expenses</td>
+                                    <td class="text-right">€{{ current_pnl.interest_expenses|floatformat:2 }}</td>
+                                </tr>
+                                <tr class="table-{% if current_pnl.net_profit >= 0 %}success{% else %}danger{% endif %}">
+                                    <td><strong>Net Profit</strong></td>
+                                    <td class="text-right"><strong>€{{ current_pnl.net_profit|floatformat:2 }}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Historical P&L -->
+            {% if pnl_statements %}
+            <div class="card">
+                <div class="card-header">
+                    <h5>Historical Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Revenue</th>
+                                    <th>Expenses</th>
+                                    <th>Net Profit</th>
+                                    <th>Margin %</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pnl in pnl_statements %}
+                                <tr>
+                                    <td>{{ pnl.month }}/{{ pnl.year }}</td>
+                                    <td class="text-success">€{{ pnl.total_revenue|floatformat:0 }}</td>
+                                    <td class="text-danger">€{{ pnl.total_expenses|floatformat:0 }}</td>
+                                    <td class="{% if pnl.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        €{{ pnl.net_profit|floatformat:0 }}
+                                    </td>
+                                    <td>
+                                        {% if pnl.total_revenue > 0 %}
+                                            {{ pnl.net_profit|div:pnl.total_revenue|mul:100|floatformat:1 }}%
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

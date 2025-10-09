@@ -73,121 +73,6 @@
     </div>
 </div>
 
-<!-- Kapazitäten & Materialien -->
-<div class="row g-4 mb-5">
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header border-0 pb-0">
-                <h4 class="mb-0 fw-bold">
-                    <i class="fas fa-user-friends me-2"></i>Arbeiterkapazität
-                </h4>
-            </div>
-            <div class="card-body">
-                {% if workers %}
-                    {% for worker in workers %}
-                    <div class="d-flex justify-content-between align-items-center mb-3 p-3 rounded" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);">
-                        <div class="d-flex align-items-center">
-                            <div class="worker-icon me-3" style="width: 40px; height: 40px; background: {% if worker.get_worker_type_display == 'Facharbeiter' %}var(--success-gradient){% else %}var(--primary-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
-                                <i class="fas {% if worker.get_worker_type_display == 'Facharbeiter' %}fa-user-graduate{% else %}fa-user{% endif %}"></i>
-                            </div>
-                            <div>
-                                <div class="fw-bold">{{ worker.get_worker_type_display }}</div>
-                                <small class="text-muted">Verfügbare Kapazität</small>
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="fw-bold fs-5">{{ worker.count }} Arbeiter</div>
-                            <small class="text-muted">{{ worker.monthly_hours }}h/Monat</small>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="text-center py-4">
-                        <div class="empty-state" style="opacity: 0.7;">
-                            <i class="fas fa-user-slash display-4 text-muted mb-3"></i>
-                            <h5 class="fw-bold mb-2">Keine Arbeiter verfügbar</h5>
-                            <p class="text-muted mb-0">Stellen Sie Arbeiter ein, um mit der Produktion zu beginnen.</p>
-                        </div>
-                    </div>
-                {% endif %}
-                
-                <!-- Worker Hiring Buttons -->
-                <div class="mt-4 pt-3 border-top">
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <button type="button" class="btn btn-success w-100 hire-worker-btn" data-worker-type="skilled">
-                                <i class="fas fa-user-graduate me-2"></i>Facharbeiter einstellen
-                            </button>
-                        </div>
-                        <div class="col-md-6">
-                            <button type="button" class="btn btn-primary w-100 hire-worker-btn" data-worker-type="unskilled">
-                                <i class="fas fa-user me-2"></i>Hilfsarbeiter einstellen
-                            </button>
-                        </div>
-                    </div>
-                    <div class="text-center mt-2">
-                        <a href="{% url 'workers:dashboard' %}" class="btn btn-outline-secondary btn-sm">
-                            <i class="fas fa-users me-2"></i>Zum Personalbereich
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-header border-0 pb-0">
-                <h4 class="mb-0 fw-bold">
-                    <i class="fas fa-warehouse me-2"></i>Materialbestände
-                </h4>
-            </div>
-            <div class="card-body">
-                {% if component_stocks %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
-                            <tr>
-                                <th class="border-0 fw-bold">Komponente</th>
-                                <th class="border-0 fw-bold">Bestand</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for stock in component_stocks %}
-                            <tr class="border-bottom">
-                                <td class="py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="component-icon me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
-                                            <i class="fas fa-puzzle-piece"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">{{ stock.component.component_type.name }}</div>
-                                            <small class="text-muted">{{ stock.component.name }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge rounded-pill fs-6 px-3 py-2 {% if stock.quantity > 50 %}bg-success{% elif stock.quantity > 10 %}bg-warning{% else %}bg-danger{% endif %}">
-                                        {{ stock.quantity }} Stück
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <div class="empty-state" style="opacity: 0.7;">
-                            <i class="fas fa-box-open display-4 text-muted mb-3"></i>
-                            <h5 class="fw-bold mb-2">Keine Materialien verfügbar</h5>
-                            <p class="text-muted mb-0">Bestellen Sie Komponenten, um mit der Produktion zu beginnen.</p>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Produktionsplanung -->
 <form id="production-form">
@@ -206,6 +91,7 @@
                     <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <tr>
                             <th class="border-0 fw-bold">Fahrradtyp</th>
+                            <th class="border-0 fw-bold text-center">Benötigte Komponenten</th>
                             <th class="border-0 fw-bold text-center">Facharbeiter</th>
                             <th class="border-0 fw-bold text-center">Hilfsarbeiter</th>
                             <th class="border-0 fw-bold text-center">Günstig</th>
@@ -225,6 +111,20 @@
                                         <div class="fw-bold">{{ bike_type.name }}</div>
                                         <small class="text-muted">Fahrradtyp</small>
                                     </div>
+                                </div>
+                            </td>
+                            <td class="py-3" style="max-width: 300px;">
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for component_type, component_names in bike_type.get_required_components.items %}
+                                        <div class="requirement-item mb-1" style="font-size: 0.75rem;">
+                                            <strong class="text-muted">{{ component_type }}:</strong>
+                                            {% for name in component_names %}
+                                                <span class="badge bg-light text-dark me-1">{{ name }}</span>{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% empty %}
+                                        <small class="text-muted">Keine Anforderungen definiert</small>
+                                    {% endfor %}
                                 </div>
                             </td>
                             <td class="text-center">
@@ -450,6 +350,7 @@
 .capacity-ok {
     color: #198754 !important;
 }
+
 </style>
 
 <script>
@@ -538,6 +439,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        submitProductionData(productionData);
+    });
+    
+    // Initialize totals on page load
+    updateTotals();
+    
+    function submitProductionData(productionData, confirmUpgrades = false) {
+        // Add confirmation flag if upgrades were confirmed
+        if (confirmUpgrades) {
+            productionData.forEach(item => {
+                item.confirm_upgrades = true;
+            });
+        }
+        
         fetch('', {
             method: 'POST',
             headers: {
@@ -551,56 +466,89 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 alert('Produktion erfolgreich gestartet!');
                 location.reload();
+            } else if (data.upgrades_needed) {
+                showUpgradeConfirmationModal(data.upgrades, productionData);
             } else {
                 alert('Fehler: ' + data.error);
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
         });
-    });
+    }
     
-    // Initialize totals on page load
-    updateTotals();
-    
-    // Worker hiring functionality
-    document.querySelectorAll('.hire-worker-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const workerType = this.dataset.workerType;
-            showHireModal(workerType);
-        });
-    });
-    
-    function showHireModal(workerType) {
-        const workerTypeName = workerType === 'skilled' ? 'Facharbeiter' : 'Hilfsarbeiter';
-        const workerTypeIcon = workerType === 'skilled' ? 'fa-user-graduate' : 'fa-user';
-        
-        const modalHTML = `
-            <div class="modal fade" id="hireWorkerModal" tabindex="-1" aria-labelledby="hireWorkerModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: var(--card-shadow);">
-                        <div class="modal-header border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 20px 20px 0 0;">
-                            <h5 class="modal-title fw-bold" id="hireWorkerModalLabel">
-                                <i class="fas ${workerTypeIcon} me-2"></i>${workerTypeName} einstellen
+    function showUpgradeConfirmationModal(upgrades, productionData) {
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="upgradeConfirmationModal" tabindex="-1" aria-labelledby="upgradeModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: var(--warning-gradient); color: white;">
+                            <h5 class="modal-title fw-bold" id="upgradeModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Qualitäts-Upgrades erforderlich
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body p-4">
-                            <p class="text-muted mb-4">Wie viele ${workerTypeName} möchten Sie einstellen?</p>
-                            <div class="mb-3">
-                                <label for="workerCount" class="form-label fw-semibold">Anzahl:</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-0">
-                                        <i class="fas fa-users text-muted"></i>
-                                    </span>
-                                    <input type="number" class="form-control" id="workerCount" min="1" max="10" value="1" placeholder="Anzahl">
+                        <div class="modal-body">
+                            <div class="alert alert-warning d-flex align-items-center mb-4">
+                                <i class="fas fa-info-circle me-3 fs-4"></i>
+                                <div>
+                                    <strong>Achtung:</strong> Für die geplante Produktion werden höherwertige Komponenten verwendet als für das Preissegment erforderlich.
                                 </div>
-                                <div class="form-text">Sie können zwischen 1 und 10 ${workerTypeName} gleichzeitig einstellen.</div>
+                            </div>
+                            
+                            <h6 class="fw-bold mb-3">Folgende Komponenten werden aufgewertet:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                        <tr>
+                                            <th class="border-0">Fahrradtyp</th>
+                                            <th class="border-0">Segment</th>
+                                            <th class="border-0">Komponente</th>
+                                            <th class="border-0">Komponentenqualität</th>
+                                            <th class="border-0">Ziel-Segment</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${upgrades.map(upgrade => `
+                                            <tr>
+                                                <td class="fw-bold">${upgrade.bike_type}</td>
+                                                <td>
+                                                    <span class="badge ${getSegmentBadgeClass(upgrade.segment)}">${getSegmentDisplayName(upgrade.segment)}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold">${upgrade.component_type}</div>
+                                                    <small class="text-muted">${upgrade.component_name}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getQualityBadgeClass(upgrade.component_quality)}">${upgrade.component_quality}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getSegmentBadgeClass(upgrade.segment)}">${upgrade.target_segment}</span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="alert alert-info mt-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-lightbulb me-3 fs-4"></i>
+                                    <div>
+                                        <strong>Hinweis:</strong> Die Verwendung höherwertiger Komponenten kann die Produktionskosten erhöhen, 
+                                        aber die Fahrräder behalten die ursprünglich geplanten Verkaufspreise.
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="modal-footer border-0">
+                        <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times me-2"></i>Abbrechen
                             </button>
-                            <button type="button" class="btn btn-${workerType === 'skilled' ? 'success' : 'primary'}" onclick="hireWorkers('${workerType}')">
-                                <i class="fas fa-plus me-2"></i>Einstellen
+                            <button type="button" class="btn btn-warning fw-bold" onclick="confirmUpgrades()">
+                                <i class="fas fa-check me-2"></i>Produktion mit Upgrades starten
                             </button>
                         </div>
                     </div>
@@ -608,100 +556,59 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Remove existing modal if any
-        const existingModal = document.getElementById('hireWorkerModal');
+        // Remove existing modal if present
+        const existingModal = document.getElementById('upgradeConfirmationModal');
         if (existingModal) {
             existingModal.remove();
         }
         
-        // Add modal to body
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Store production data for later use
+        window.pendingProductionData = productionData;
         
         // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('hireWorkerModal'));
+        const modal = new bootstrap.Modal(document.getElementById('upgradeConfirmationModal'));
         modal.show();
     }
     
-    // Global function to hire workers
-    window.hireWorkers = function(workerType) {
-        const count = parseInt(document.getElementById('workerCount').value) || 1;
-        
-        if (count < 1 || count > 10) {
-            alert('Bitte wählen Sie zwischen 1 und 10 Arbeitern.');
-            return;
+    function getSegmentBadgeClass(segment) {
+        switch(segment) {
+            case 'cheap': return 'bg-success';
+            case 'standard': return 'bg-primary';
+            case 'premium': return 'bg-warning text-dark';
+            default: return 'bg-secondary';
         }
+    }
+    
+    function getSegmentDisplayName(segment) {
+        switch(segment) {
+            case 'cheap': return 'Günstig';
+            case 'standard': return 'Standard';
+            case 'premium': return 'Premium';
+            default: return segment;
+        }
+    }
+    
+    function getQualityBadgeClass(quality) {
+        switch(quality) {
+            case 'Basis': return 'bg-success';
+            case 'Standard': return 'bg-primary';
+            case 'Premium': return 'bg-warning text-dark';
+            default: return 'bg-secondary';
+        }
+    }
+    
+    window.confirmUpgrades = function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('upgradeConfirmationModal'));
+        modal.hide();
         
-        // Send hire request
-        fetch('{% url "production:hire_worker" session.id %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                worker_type: workerType,
-                count: count
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('hireWorkerModal'));
-                modal.hide();
-                
-                // Show success message and reload
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Fehler: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Ein Fehler ist aufgetreten.');
-        });
+        // Submit with upgrade confirmation
+        submitProductionData(window.pendingProductionData, true);
     };
+    
 });
 </script>
 
-<!-- Additional Modal Styles -->
-<style>
-.hire-worker-btn {
-    transition: all 0.3s ease;
-}
-
-.hire-worker-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-.modal-content {
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95);
-}
-
-.input-group-text {
-    border-radius: 12px 0 0 12px;
-}
-
-.form-control {
-    border-radius: 0 12px 12px 0;
-    border-left: none;
-}
-
-.form-control:focus {
-    border-left: none;
-    box-shadow: none;
-}
-
-.input-group:focus-within .input-group-text {
-    border-color: #667eea;
-    background-color: rgba(102, 126, 234, 0.1) !important;
-}
-
-.input-group:focus-within .input-group-text i {
-    color: #667eea !important;
-}
-</style>
 {% endblock %}

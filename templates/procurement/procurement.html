@@ -72,6 +72,53 @@
         </div>
     </div>
 </div>
+
+<!-- Bike Type Filter Dropdown -->
+<div class="row mb-4 dropdown-row" id="bike-type-filter-row" style="display: none;">
+    <div class="col-12">
+        <div class="card border-0 dropdown-container" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); overflow: visible;">
+            <div class="card-body p-4" style="overflow: visible;">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-bicycle me-2"></i>Komponenten filtern nach Fahrradtyp
+                </h5>
+                <div class="dropdown" style="position: relative; z-index: 99998;">
+                    <button class="btn btn-success btn-lg dropdown-toggle w-100 w-md-auto" type="button" id="bikeTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative; z-index: 9997;">
+                        <i class="fas fa-filter me-2"></i>
+                        <span id="selected-bike-type-name">Alle Komponenten anzeigen</span>
+                    </button>
+                    <ul class="dropdown-menu w-100" aria-labelledby="bikeTypeDropdown" style="min-width: 300px; position: absolute; z-index: 99998;">
+                        <li>
+                            <a class="dropdown-item bike-type-option p-3 active" href="#" data-bike-type-id="all">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-list me-3 text-primary"></i>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Alle Komponenten</h6>
+                                        <p class="text-muted mb-0 small">Zeige alle verfügbaren Komponenten des Lieferanten</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% for bike_type in bike_types %}
+                        <li>
+                            <a class="dropdown-item bike-type-option p-3" href="#" data-bike-type-id="{{ bike_type.id }}">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-bicycle me-3 text-success"></i>
+                                    <div>
+                                        <h6 class="fw-bold mb-1">{{ bike_type.name }}</h6>
+                                        <p class="text-muted mb-0 small">Zeige nur Komponenten für {{ bike_type.name }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        {% if not forloop.last %}<li><hr class="dropdown-divider"></li>{% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endif %}
 
 <!-- Einkaufs-Statistiken -->
@@ -222,6 +269,11 @@
 <!-- Hidden supplier data for JavaScript -->
 <script type="application/json" id="supplier-data">
 {{ supplier_data_json|safe }}
+</script>
+
+<!-- Hidden bike component mapping for JavaScript -->
+<script type="application/json" id="bike-component-mapping">
+{{ bike_component_mapping|safe }}
 </script>
 
 {% endblock %}
@@ -418,6 +470,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const supplierDataElement = document.getElementById('supplier-data');
     let supplierData = {};
     
+    // Get bike component mapping from Django
+    const bikeComponentMappingElement = document.getElementById('bike-component-mapping');
+    let bikeComponentMapping = {};
+    
     if (supplierDataElement) {
         try {
             supplierData = JSON.parse(supplierDataElement.textContent);
@@ -430,6 +486,15 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('supplier-data element not found');
     }
     
+    if (bikeComponentMappingElement) {
+        try {
+            bikeComponentMapping = JSON.parse(bikeComponentMappingElement.textContent);
+            console.log('Bike component mapping loaded:', bikeComponentMapping);
+        } catch (e) {
+            console.error('Error parsing bike component mapping:', e);
+        }
+    }
+    
     const supplierDetails = document.getElementById('supplier-details');
     const noSupplierSelected = document.getElementById('no-supplier-selected');
     const selectedSupplierName = document.getElementById('selected-supplier-name');
@@ -439,7 +504,51 @@ document.addEventListener('DOMContentLoaded', function() {
     const componentCount = document.getElementById('component-count');
     
     let currentSupplier = null;
+    let currentBikeTypeFilter = 'all';
     let procurementInputs = [];
+    
+    // Bike type filter handling
+    const bikeTypeFilterRow = document.getElementById('bike-type-filter-row');
+    const selectedBikeTypeName = document.getElementById('selected-bike-type-name');
+    const bikeTypeOptions = document.querySelectorAll('.bike-type-option');
+    
+    bikeTypeOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const bikeTypeId = this.dataset.bikeTypeId;
+            selectBikeTypeFilter(bikeTypeId);
+            
+            // Update visual selection
+            bikeTypeOptions.forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+    
+    function selectBikeTypeFilter(bikeTypeId) {
+        currentBikeTypeFilter = bikeTypeId;
+        console.log('Selected bike type filter:', bikeTypeId);
+        
+        // Update button text
+        const selectedOption = document.querySelector(`[data-bike-type-id="${bikeTypeId}"]`);
+        if (selectedOption) {
+            const optionText = selectedOption.querySelector('h6').textContent;
+            selectedBikeTypeName.textContent = optionText;
+        }
+        
+        // Update visual selection
+        bikeTypeOptions.forEach(opt => opt.classList.remove('active'));
+        if (selectedOption) {
+            selectedOption.classList.add('active');
+        }
+        
+        // Re-render supplier components with filter
+        if (currentSupplier) {
+            buildComponentsTable();
+        }
+    }
+    
+    // Make selectBikeTypeFilter globally accessible
+    window.selectBikeTypeFilter = selectBikeTypeFilter;
     
     // Supplier selection handling
     console.log('Setting up supplier option handlers...');
@@ -505,8 +614,8 @@ document.addEventListener('DOMContentLoaded', function() {
             </span>
         `;
         
-        // Update component count
-        componentCount.textContent = currentSupplier.prices.length;
+        // Show bike type filter row
+        bikeTypeFilterRow.style.display = 'block';
         
         // Build components table
         buildComponentsTable();
@@ -543,7 +652,54 @@ document.addEventListener('DOMContentLoaded', function() {
                     <tbody>
         `;
         
-        currentSupplier.prices.forEach(price => {
+        // Filter components based on bike type selection
+        let filteredPrices = currentSupplier.prices;
+        if (currentBikeTypeFilter !== 'all' && bikeComponentMapping[currentBikeTypeFilter]) {
+            const requiredComponentIds = bikeComponentMapping[currentBikeTypeFilter];
+            console.log(`Filtering for bike type ${currentBikeTypeFilter}, required component IDs:`, requiredComponentIds);
+            filteredPrices = currentSupplier.prices.filter(price => 
+                requiredComponentIds.includes(price.component.id)
+            );
+            console.log(`Filtered from ${currentSupplier.prices.length} to ${filteredPrices.length} components`);
+        }
+        
+        // Update component count with filtered count
+        componentCount.textContent = filteredPrices.length;
+        
+        // If no components after filtering, show appropriate message
+        if (filteredPrices.length === 0) {
+            const bikeTypeName = currentBikeTypeFilter === 'all' ? 'alle Fahrradtypen' : 
+                document.querySelector(`[data-bike-type-id="${currentBikeTypeFilter}"] h6`).textContent;
+            
+            // Check if bike type has any component requirements at all
+            const hasComponentRequirements = bikeComponentMapping[currentBikeTypeFilter] && 
+                                           bikeComponentMapping[currentBikeTypeFilter].length > 0;
+            
+            let message = '';
+            if (currentBikeTypeFilter === 'all') {
+                message = 'Dieser Lieferant hat derzeit keine Komponenten im Angebot.';
+            } else if (!hasComponentRequirements) {
+                message = `Für ${bikeTypeName} sind noch keine Komponenten-Anforderungen definiert. Wählen Sie "Alle Komponenten" um alle verfügbaren Komponenten zu sehen.`;
+            } else {
+                message = `Dieser Lieferant bietet keine kompatiblen Komponenten für ${bikeTypeName} an.`;
+            }
+            
+            supplierComponents.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="empty-state" style="opacity: 0.7;">
+                        <i class="fas fa-filter display-4 text-info mb-3"></i>
+                        <h5 class="fw-bold mb-2">Keine passenden Komponenten</h5>
+                        <p class="text-muted mb-0">${message}</p>
+                        ${!hasComponentRequirements && currentBikeTypeFilter !== 'all' ? 
+                            '<button class="btn btn-outline-primary mt-2" onclick="selectBikeTypeFilter(\'all\')">Alle Komponenten anzeigen</button>' : ''
+                        }
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        filteredPrices.forEach(price => {
             tableHTML += `
                 <tr class="border-bottom">
                     <td class="py-3">

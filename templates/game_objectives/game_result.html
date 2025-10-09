@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Spielergebnis - {{ session_game_mode.game_mode.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Result Header -->
+            <div class="text-center mb-5">
+                {% if session_game_mode.is_completed %}
+                    <div class="mb-4">
+                        <i class="fas fa-trophy text-warning" style="font-size: 4rem;"></i>
+                    </div>
+                    <h1 class="h2 text-success">
+                        <i class="fas fa-crown text-warning me-2"></i>
+                        Herzlichen Glückwunsch!
+                    </h1>
+                    <p class="lead">Sie haben den Spielmodus "{{ session_game_mode.game_mode.name }}" erfolgreich abgeschlossen!</p>
+                {% else %}
+                    <div class="mb-4">
+                        <i class="fas fa-skull text-danger" style="font-size: 4rem;"></i>
+                    </div>
+                    <h1 class="h2 text-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Spiel beendet
+                    </h1>
+                    <p class="lead">Das Spiel wurde beendet: {{ game_result.failure_reason|default:"Unbekannter Grund" }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Final Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-4 {% if session_game_mode.is_completed %}text-success{% else %}text-danger{% endif %}">
+                                {{ game_result.final_score|floatformat:0 }}
+                            </div>
+                            <small class="text-muted">Endpunktzahl</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-4 text-info">{{ game_result.completion_percentage|floatformat:1 }}%</div>
+                            <small class="text-muted">Zielerreichung</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-4 text-primary">{{ game_result.duration_months }}</div>
+                            <small class="text-muted">Gespielte Monate</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="display-4 {% if session.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                €{{ session.balance|floatformat:0 }}
+                            </div>
+                            <small class="text-muted">Endkapital</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objectives Results -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bullseye me-2"></i>
+                        Zielergebnisse
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for result in objective_results %}
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <h6 class="mb-1">
+                                        {% if result.objective.is_primary %}
+                                            <i class="fas fa-star text-warning me-1"></i>
+                                        {% elif result.objective.is_failure_condition %}
+                                            <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                                        {% else %}
+                                            <i class="fas fa-circle text-secondary me-1"></i>
+                                        {% endif %}
+                                        {{ result.objective.name }}
+                                        {% if result.is_met %}
+                                            <i class="fas fa-check text-success ms-2"></i>
+                                        {% else %}
+                                            <i class="fas fa-times text-danger ms-2"></i>
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">{{ result.objective.description }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold {% if result.is_met %}text-success{% else %}text-danger{% endif %}">
+                                        {{ result.current_value|floatformat:0 }} / {{ result.target_value|floatformat:0 }}
+                                    </div>
+                                    <small class="text-muted">{{ result.achievement_percentage|floatformat:1 }}% erreicht</small>
+                                </div>
+                            </div>
+                            
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar {% if result.is_met %}bg-success{% else %}bg-danger{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ result.achievement_percentage|floatformat:1 }}%"
+                                     aria-valuenow="{{ result.achievement_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-info-circle fs-1 mb-3"></i>
+                            <p>Keine Ziele definiert.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Bankruptcy Events (if any) -->
+            {% if bankruptcy_events %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0 text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Insolvenz-Ereignisse
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for event in bankruptcy_events %}
+                            <div class="alert alert-danger">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="alert-heading">Insolvenz in Monat {{ event.trigger_month }}/{{ event.trigger_year }}</h6>
+                                        <p class="mb-1">{{ event.elimination_reason }}</p>
+                                        <small class="text-muted">
+                                            Kontostand: €{{ event.balance_at_bankruptcy|floatformat:0 }} 
+                                            (Mindestbetrag: €{{ event.bankruptcy_threshold|floatformat:0 }})
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-danger">{{ event.get_primary_cause_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Score History -->
+            {% if monthly_scores %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Punkteverlauf
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for score_data in monthly_scores %}
+                                <div class="col-md-2 mb-3">
+                                    <div class="text-center">
+                                        <div class="h5">{{ score_data.score|floatformat:0 }}</div>
+                                        <small class="text-muted">{{ score_data.month }}/{{ score_data.year }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Game Summary -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Spielzusammenfassung
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-6">Spielmodus:</dt>
+                                <dd class="col-sm-6">{{ session_game_mode.game_mode.name }}</dd>
+                                
+                                <dt class="col-sm-6">Schwierigkeit:</dt>
+                                <dd class="col-sm-6">{{ session_game_mode.game_mode.get_difficulty_level_display }}</dd>
+                                
+                                <dt class="col-sm-6">Gestartet:</dt>
+                                <dd class="col-sm-6">{{ session_game_mode.created_at|date:"d.m.Y H:i" }}</dd>
+                                
+                                <dt class="col-sm-6">Beendet:</dt>
+                                <dd class="col-sm-6">{{ game_result.created_at|date:"d.m.Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-6">Startkapital:</dt>
+                                <dd class="col-sm-6">€{{ session_game_mode.game_mode.starting_balance|floatformat:0 }}</dd>
+                                
+                                <dt class="col-sm-6">Endkapital:</dt>
+                                <dd class="col-sm-6">€{{ session.balance|floatformat:0 }}</dd>
+                                
+                                <dt class="col-sm-6">Gewinn/Verlust:</dt>
+                                <dd class="col-sm-6 {% if session.balance >= session_game_mode.game_mode.starting_balance %}text-success{% else %}text-danger{% endif %}">
+                                    {% widthratio session.balance session_game_mode.game_mode.starting_balance 1 as balance_ratio %}
+                                    €{{ session.balance|add:session_game_mode.game_mode.starting_balance|floatformat:0 }}
+                                </dd>
+                                
+                                <dt class="col-sm-6">Ergebnis:</dt>
+                                <dd class="col-sm-6">
+                                    {% if session_game_mode.is_completed %}
+                                        <span class="badge bg-success">Sieg</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Niederlage</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center">
+                <a href="{% url 'bikeshop:session_detail' session.id %}" class="btn btn-primary btn-lg px-5 me-3">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Zurück zum Spiel
+                </a>
+                
+                <a href="{% url 'game_objectives:leaderboard' %}" class="btn btn-secondary btn-lg px-5 me-3">
+                    <i class="fas fa-trophy me-2"></i>
+                    Bestenliste
+                </a>
+                
+                <a href="{% url 'bikeshop:create_session' %}" class="btn btn-success btn-lg px-5">
+                    <i class="fas fa-plus me-2"></i>
+                    Neues Spiel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}Financial Dashboard - {{ game.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="mb-4">
+                <h1><i class="fas fa-chart-bar"></i> Financial Dashboard</h1>
+                <p class="text-muted">{{ player_session.company_name }} - {{ game.name }}</p>
+            </div>
+
+            <!-- Financial Overview -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white {% if player_session.balance >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Current Balance</h6>
+                                    <h4 class="mb-0">€{{ player_session.balance|floatformat:0 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-wallet fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Monthly Revenue</h6>
+                                    <h4 class="mb-0">€{{ monthly_revenue|default:0|floatformat:0 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-coins fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Monthly Expenses</h6>
+                                    <h4 class="mb-0">€{{ monthly_expenses|default:0|floatformat:0 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-receipt fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card text-white {% if monthly_profit >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title">Monthly Profit</h6>
+                                    <h4 class="mb-0">€{{ monthly_profit|default:0|floatformat:0 }}</h4>
+                                </div>
+                                <div class="ml-3">
+                                    <i class="fas fa-chart-line fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Health -->
+            {% if financial_health %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-heartbeat"></i> Financial Health Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Health Score</h6>
+                                    <div class="progress mb-3" style="height: 25px;">
+                                        <div class="progress-bar {% if financial_health.score >= 70 %}bg-success{% elif financial_health.score >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                             style="width: {{ financial_health.score }}%">
+                                            {{ financial_health.score|floatformat:0 }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Risk Assessment</h6>
+                                    <span class="badge badge-{% if financial_health.risk_level == 'low' %}success{% elif financial_health.risk_level == 'medium' %}warning{% else %}danger{% endif %} badge-lg">
+                                        {{ financial_health.risk_level|title }} Risk
+                                    </span>
+                                    {% if financial_health.recommendations %}
+                                    <small class="d-block text-muted mt-2">{{ financial_health.recommendations|truncatechars:100 }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Performance -->
+            {% if recent_turns %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-history"></i> Recent Performance</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Month</th>
+                                            <th>Balance</th>
+                                            <th>Revenue</th>
+                                            <th>Expenses</th>
+                                            <th>Net Change</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for turn in recent_turns %}
+                                        <tr>
+                                            <td>{{ turn.month }}/{{ turn.year }}</td>
+                                            <td>€{{ turn.balance_end|floatformat:0 }}</td>
+                                            <td class="text-success">€{{ turn.revenue|default:0|floatformat:0 }}</td>
+                                            <td class="text-danger">€{{ turn.expenses|default:0|floatformat:0 }}</td>
+                                            <td class="{% if turn.net_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if turn.net_change >= 0 %}+{% endif %}€{{ turn.net_change|default:0|floatformat:0 }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

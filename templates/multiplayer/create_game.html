@@ -1,0 +1,244 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}Create Multiplayer Game{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-plus-circle"></i> Create New Multiplayer Game</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Game Information -->
+                        <div class="form-group">
+                            <label for="name"><strong>Game Name *</strong></label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="Epic Bike Battle 2024" maxlength="100">
+                            <small class="form-text text-muted">Choose a memorable name for your game</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description"><strong>Description</strong></label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="A competitive bike manufacturing simulation..."></textarea>
+                            <small class="form-text text-muted">Optional description for other players</small>
+                        </div>
+
+                        <!-- Player Configuration -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="max_players"><strong>Maximum Players</strong></label>
+                                    <select class="form-control" id="max_players" name="max_players">
+                                        <option value="2">2 Players</option>
+                                        <option value="3">3 Players</option>
+                                        <option value="4">4 Players</option>
+                                        <option value="5">5 Players</option>
+                                        <option value="6" selected>6 Players</option>
+                                        <option value="7">7 Players</option>
+                                        <option value="8">8 Players</option>
+                                        <option value="9">9 Players</option>
+                                        <option value="10">10 Players</option>
+                                    </select>
+                                    <small class="form-text text-muted">Total players including AI</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="human_players"><strong>Human Players Slots</strong></label>
+                                    <select class="form-control" id="human_players" name="human_players">
+                                        <option value="1">1 Human Player</option>
+                                        <option value="2" selected>2 Human Players</option>
+                                        <option value="3">3 Human Players</option>
+                                        <option value="4">4 Human Players</option>
+                                        <option value="5">5 Human Players</option>
+                                        <option value="6">6 Human Players</option>
+                                        <option value="7">7 Human Players</option>
+                                        <option value="8">8 Human Players</option>
+                                        <option value="9">9 Human Players</option>
+                                        <option value="10">10 Human Players</option>
+                                    </select>
+                                    <small class="form-text text-muted">Remaining slots filled with AI</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Game Difficulty -->
+                        <div class="form-group">
+                            <label for="difficulty"><strong>AI Difficulty</strong></label>
+                            <select class="form-control" id="difficulty" name="difficulty">
+                                <option value="easy">Easy - AI makes basic decisions with mistakes</option>
+                                <option value="medium" selected>Medium - Balanced AI with good strategies</option>
+                                <option value="hard">Hard - Advanced AI with aggressive tactics</option>
+                                <option value="expert">Expert - Near-optimal AI performance</option>
+                            </select>
+                            <small class="form-text text-muted">This affects how challenging AI competitors will be</small>
+                        </div>
+
+                        <!-- Game Timing -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="turn_deadline"><strong>Turn Deadline (Hours)</strong></label>
+                                    <select class="form-control" id="turn_deadline" name="turn_deadline">
+                                        <option value="6">6 Hours</option>
+                                        <option value="12">12 Hours</option>
+                                        <option value="24" selected>24 Hours (1 Day)</option>
+                                        <option value="48">48 Hours (2 Days)</option>
+                                        <option value="72">72 Hours (3 Days)</option>
+                                        <option value="168">1 Week</option>
+                                        <option value="0">No Deadline</option>
+                                    </select>
+                                    <small class="form-text text-muted">Time limit for players to submit decisions</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="max_months"><strong>Game Duration (Months)</strong></label>
+                                    <select class="form-control" id="max_months" name="max_months">
+                                        <option value="24">2 Years (24 Months)</option>
+                                        <option value="36">3 Years (36 Months)</option>
+                                        <option value="48">4 Years (48 Months)</option>
+                                        <option value="60" selected>5 Years (60 Months)</option>
+                                        <option value="84">7 Years (84 Months)</option>
+                                        <option value="120">10 Years (120 Months)</option>
+                                    </select>
+                                    <small class="form-text text-muted">Maximum game length</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Settings -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="starting_balance"><strong>Starting Balance (€)</strong></label>
+                                    <input type="number" class="form-control" id="starting_balance" name="starting_balance" 
+                                           value="80000" step="1000" min="10000" max="1000000">
+                                    <small class="form-text text-muted">Initial cash for all players</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="bankruptcy_threshold"><strong>Bankruptcy Threshold (€)</strong></label>
+                                    <input type="number" class="form-control" id="bankruptcy_threshold" name="bankruptcy_threshold" 
+                                           value="-50000" step="1000" max="0">
+                                    <small class="form-text text-muted">Balance below which players go bankrupt</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Section -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> Game Preview</h6>
+                            <div id="game-preview">
+                                <p><strong>Game Summary:</strong> <span id="preview-text">6 players (2 human, 4 AI) • Medium difficulty • 24h turns • 5 years • €80,000 start</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'multiplayer:lobby' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Lobby
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-gamepad"></i> Create Game
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update preview when form values change
+function updatePreview() {
+    const maxPlayers = document.getElementById('max_players').value;
+    const humanPlayers = document.getElementById('human_players').value;
+    const aiPlayers = maxPlayers - humanPlayers;
+    const difficulty = document.getElementById('difficulty').selectedOptions[0].text.split(' - ')[0];
+    const turnDeadline = document.getElementById('turn_deadline').value;
+    const maxMonths = document.getElementById('max_months').value;
+    const startingBalance = document.getElementById('starting_balance').value;
+    
+    const turnText = turnDeadline == 0 ? 'No deadline' : `${turnDeadline}h turns`;
+    const durationYears = Math.floor(maxMonths / 12);
+    const durationText = `${durationYears} years`;
+    
+    const previewText = `${maxPlayers} players (${humanPlayers} human, ${aiPlayers} AI) • ${difficulty} difficulty • ${turnText} • ${durationText} • €${parseInt(startingBalance).toLocaleString()} start`;
+    
+    document.getElementById('preview-text').textContent = previewText;
+}
+
+// Update human players max based on max players
+document.getElementById('max_players').addEventListener('change', function() {
+    const maxPlayers = parseInt(this.value);
+    const humanPlayersSelect = document.getElementById('human_players');
+    const currentHumanPlayers = parseInt(humanPlayersSelect.value);
+    
+    // Clear existing options
+    humanPlayersSelect.innerHTML = '';
+    
+    // Add new options up to max players
+    for (let i = 1; i <= maxPlayers; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `${i} Human Player${i > 1 ? 's' : ''}`;
+        if (i === Math.min(currentHumanPlayers, maxPlayers)) {
+            option.selected = true;
+        }
+        humanPlayersSelect.appendChild(option);
+    }
+    
+    updatePreview();
+});
+
+// Add event listeners for preview updates
+['max_players', 'human_players', 'difficulty', 'turn_deadline', 'max_months', 'starting_balance'].forEach(id => {
+    document.getElementById(id).addEventListener('change', updatePreview);
+});
+
+// Initial preview update
+updatePreview();
+</script>
+
+<style>
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #0d7377 0%, #2dd653 100%);
+}
+
+.alert-info {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-left: 4px solid #17a2b8;
+}
+</style>
+{% endblock %}

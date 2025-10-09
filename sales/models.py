@@ -9,6 +9,10 @@ class Market(models.Model):
     location = models.CharField(max_length=100)
     transport_cost_home = models.DecimalField(max_digits=6, decimal_places=2)
     transport_cost_foreign = models.DecimalField(max_digits=6, decimal_places=2)
+    
+    # Market volume constraints
+    monthly_volume_capacity = models.IntegerField(default=200, help_text="Maximum bikes that can be sold per month")
+    price_elasticity_factor = models.FloatField(default=1.0, help_text="Price sensitivity factor for demand curves")
 
 class MarketDemand(models.Model):
     """Marktnachfrage"""

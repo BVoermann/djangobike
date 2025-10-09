@@ -1,0 +1,100 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}Leaderboard - {{ game.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="mb-4">
+                <h1><i class="fas fa-trophy"></i> Game Leaderboard</h1>
+                <p class="text-muted">{{ game.name }} - Current Rankings</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5>Player Rankings</h5>
+                </div>
+                <div class="card-body">
+                    {% if players %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Company</th>
+                                    <th>Player</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for player in players %}
+                                <tr class="{% if player.user == user %}table-primary{% endif %}">
+                                    <td>
+                                        {% if forloop.counter == 1 %}
+                                            <i class="fas fa-trophy text-warning"></i> #1
+                                        {% elif forloop.counter == 2 %}
+                                            <i class="fas fa-medal text-secondary"></i> #2
+                                        {% elif forloop.counter == 3 %}
+                                            <i class="fas fa-award text-warning"></i> #3
+                                        {% else %}
+                                            #{{ forloop.counter }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ player.company_name }}</strong>
+                                        {% if player.user == user %}
+                                        <small class="text-primary">(You)</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if player.player_type == 'human' %}
+                                            <i class="fas fa-user text-primary"></i> {{ player.user.username }}
+                                        {% else %}
+                                            <i class="fas fa-robot text-secondary"></i> AI Player
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="{% if player.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                            €{{ player.balance|floatformat:0 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if player.is_bankrupt %}
+                                            <span class="badge badge-danger">Bankrupt</span>
+                                        {% elif not player.is_active %}
+                                            <span class="badge badge-secondary">Inactive</span>
+                                        {% else %}
+                                            <span class="badge badge-success">Active</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <!-- Performance metrics could go here -->
+                                        <small class="text-muted">
+                                            {% if player.total_revenue %}
+                                                Revenue: €{{ player.total_revenue|floatformat:0 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No Players Yet</h6>
+                        <p class="text-muted">Rankings will appear as players join the game.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

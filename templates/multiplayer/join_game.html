@@ -1,0 +1,145 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}Join Game - {{ game.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-sign-in-alt"></i> Join Multiplayer Game</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Game Information -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h5 class="mb-3">{{ game.name }}</h5>
+                        {% if game.description %}
+                        <p class="text-muted mb-3">{{ game.description }}</p>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Players:</strong><br>
+                                <span class="text-muted">{{ game.players.count }}/{{ game.max_players }}</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Difficulty:</strong><br>
+                                <span class="badge badge-{% if game.difficulty == 'easy' %}success{% elif game.difficulty == 'medium' %}warning{% else %}danger{% endif %}">
+                                    {{ game.get_difficulty_display }}
+                                </span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Status:</strong><br>
+                                <span class="badge badge-{% if game.status == 'setup' %}primary{% elif game.status == 'waiting' %}warning{% else %}success{% endif %}">
+                                    {{ game.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Players -->
+                    {% if game.players.exists %}
+                    <div class="mb-4">
+                        <h6>Current Players:</h6>
+                        <div class="row">
+                            {% for player in game.players.all %}
+                            <div class="col-md-6 mb-2">
+                                <div class="d-flex align-items-center">
+                                    {% if player.player_type == 'human' %}
+                                        <i class="fas fa-user text-primary mr-2"></i>
+                                        {{ player.company_name }}
+                                        <small class="text-muted ml-1">({{ player.user.username }})</small>
+                                    {% else %}
+                                        <i class="fas fa-robot text-secondary mr-2"></i>
+                                        {{ player.company_name }}
+                                        <small class="text-muted ml-1">(AI)</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Join Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="company_name">
+                                <i class="fas fa-building"></i> Your Company Name
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="company_name" 
+                                name="company_name" 
+                                value="{{ user.username }}'s Company" 
+                                maxlength="100"
+                                required
+                            >
+                            <small class="form-text text-muted">
+                                This will be your company name visible to other players during the game.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Game Settings:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li><strong>Starting Balance:</strong> €{{ game.starting_balance|floatformat:0 }}</li>
+                                    <li><strong>Game Duration:</strong> {{ game.max_months }} months</li>
+                                    <li><strong>Turn Deadline:</strong> {{ game.turn_deadline_hours }} hours</li>
+                                    <li><strong>Bankruptcy Threshold:</strong> €{{ game.bankruptcy_threshold|floatformat:0 }}</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="form-group d-flex justify-content-between">
+                            <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Game Details
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-sign-in-alt"></i> Join Game
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.badge {
+    font-size: 0.8em;
+    padding: 0.4em 0.6em;
+}
+
+.alert {
+    border-left: 4px solid #17a2b8;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+</style>
+{% endblock %}

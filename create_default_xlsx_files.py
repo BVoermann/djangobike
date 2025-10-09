@@ -242,25 +242,25 @@ def create_lager_xlsx():
         {
             'Standort': 'Hamburg',
             'Miete_pro_qm': 12.50,
-            'Verfuegbare_Flaeche': 1000,
+            'Verfuegbare_Flaeche': 200,  # Reduced from 1000 to realistic size
             'Entfernung_zu_Produktion': 0
         },
         {
             'Standort': 'Berlin',
             'Miete_pro_qm': 15.00,
-            'Verfuegbare_Flaeche': 800,
+            'Verfuegbare_Flaeche': 150,  # Reduced from 800
             'Entfernung_zu_Produktion': 300
         },
         {
             'Standort': 'München',
             'Miete_pro_qm': 18.00,
-            'Verfuegbare_Flaeche': 600,
+            'Verfuegbare_Flaeche': 120,  # Reduced from 600
             'Entfernung_zu_Produktion': 600
         },
         {
             'Standort': 'Köln',
             'Miete_pro_qm': 14.00,
-            'Verfuegbare_Flaeche': 750,
+            'Verfuegbare_Flaeche': 180,  # Reduced from 750
             'Entfernung_zu_Produktion': 400
         }
     ]
@@ -306,27 +306,27 @@ def create_maerkte_xlsx():
         {
             'Markt': 'Hamburg',
             'Entfernung': 0,
-            'Transportkosten_pro_km': 0.50
+            'Transportkosten_pro_km': 0.10  # Reduced from €0.50 to €0.10
         },
         {
             'Markt': 'Berlin',
             'Entfernung': 300,
-            'Transportkosten_pro_km': 0.50
+            'Transportkosten_pro_km': 0.10  # Transport: €30 instead of €150
         },
         {
             'Markt': 'München',
             'Entfernung': 600,
-            'Transportkosten_pro_km': 0.50
+            'Transportkosten_pro_km': 0.10  # Transport: €60 instead of €300
         },
         {
             'Markt': 'Köln',
             'Entfernung': 400,
-            'Transportkosten_pro_km': 0.50
+            'Transportkosten_pro_km': 0.10  # Transport: €40 instead of €200
         },
         {
             'Markt': 'Frankfurt',
             'Entfernung': 500,
-            'Transportkosten_pro_km': 0.50
+            'Transportkosten_pro_km': 0.10  # Transport: €50 instead of €250
         }
     ]
     
@@ -409,6 +409,187 @@ def create_personal_xlsx():
     df = pd.DataFrame(workers_data)
     df.to_excel('personal.xlsx', index=False)
 
+def create_konkurrenten_xlsx():
+    """Create konkurrenten.xlsx with AI competitor configuration"""
+    
+    # AI Competitors
+    competitors_data = [
+        {
+            'Name': 'BudgetCycles GmbH',
+            'Strategie': 'cheap_only',
+            'Startkapital': 45000.00,
+            'Marktanteil_Start': 18.0,
+            'Aggressivität': 0.8,
+            'Effizienz': 0.6,
+            'Wachstumsrate': 0.05,
+            'Aktiv': True
+        },
+        {
+            'Name': 'CycleTech Solutions',
+            'Strategie': 'balanced',
+            'Startkapital': 65000.00,
+            'Marktanteil_Start': 22.0,
+            'Aggressivität': 0.5,
+            'Effizienz': 0.8,
+            'Wachstumsrate': 0.08,
+            'Aktiv': True
+        },
+        {
+            'Name': 'PremiumWheels AG',
+            'Strategie': 'premium_focus',
+            'Startkapital': 55000.00,
+            'Marktanteil_Start': 12.0,
+            'Aggressivität': 0.3,
+            'Effizienz': 0.9,
+            'Wachstumsrate': 0.03,
+            'Aktiv': True
+        },
+        {
+            'Name': 'E-Motion Bikes',
+            'Strategie': 'e_bike_specialist',
+            'Startkapital': 60000.00,
+            'Marktanteil_Start': 16.0,
+            'Aggressivität': 0.6,
+            'Effizienz': 0.7,
+            'Wachstumsrate': 0.12,
+            'Aktiv': True
+        },
+        {
+            'Name': 'FastTrack Racing',
+            'Strategie': 'premium_focus',
+            'Startkapital': 40000.00,
+            'Marktanteil_Start': 8.0,
+            'Aggressivität': 0.4,
+            'Effizienz': 0.85,
+            'Wachstumsrate': 0.06,
+            'Aktiv': False
+        }
+    ]
+    
+    # Strategy configurations
+    strategien_data = [
+        {
+            'Strategie': 'cheap_only',
+            'Bezeichnung': 'Billig-Strategie',
+            'Günstig_Anteil': 0.7,
+            'Standard_Anteil': 0.25,
+            'Premium_Anteil': 0.05,
+            'Preisfaktor': 0.75,
+            'Produktionsvolumen': 1.4,
+            'Qualitätsfokus': 0.3,
+            'Marketingbudget': 0.05
+        },
+        {
+            'Strategie': 'balanced',
+            'Bezeichnung': 'Ausgewogene Strategie',
+            'Günstig_Anteil': 0.4,
+            'Standard_Anteil': 0.4,
+            'Premium_Anteil': 0.2,
+            'Preisfaktor': 1.0,
+            'Produktionsvolumen': 1.0,
+            'Qualitätsfokus': 0.6,
+            'Marketingbudget': 0.08
+        },
+        {
+            'Strategie': 'premium_focus',
+            'Bezeichnung': 'Premium-Fokus',
+            'Günstig_Anteil': 0.1,
+            'Standard_Anteil': 0.3,
+            'Premium_Anteil': 0.6,
+            'Preisfaktor': 1.3,
+            'Produktionsvolumen': 0.6,
+            'Qualitätsfokus': 0.9,
+            'Marketingbudget': 0.12
+        },
+        {
+            'Strategie': 'e_bike_specialist',
+            'Bezeichnung': 'E-Bike Spezialist',
+            'Günstig_Anteil': 0.2,
+            'Standard_Anteil': 0.5,
+            'Premium_Anteil': 0.3,
+            'Preisfaktor': 1.1,
+            'Produktionsvolumen': 0.8,
+            'Qualitätsfokus': 0.7,
+            'Marketingbudget': 0.10
+        }
+    ]
+    
+    # Market dynamics settings
+    marktdynamik_data = [
+        {
+            'Parameter': 'Basiswettbewerb',
+            'Wert': 0.15,
+            'Beschreibung': 'Grundlegende Wettbewerbsintensität'
+        },
+        {
+            'Parameter': 'Sättigungsgrenze',
+            'Wert': 1.5,
+            'Beschreibung': 'Markt gilt als gesättigt ab diesem Nachfrage-Faktor'
+        },
+        {
+            'Parameter': 'Preisdruck_Maximum',
+            'Wert': 0.4,
+            'Beschreibung': 'Maximaler Preisdruck-Effekt'
+        },
+        {
+            'Parameter': 'Saisonalität_Stärke',
+            'Wert': 0.2,
+            'Beschreibung': 'Stärke der saisonalen Schwankungen'
+        },
+        {
+            'Parameter': 'KI_Lernrate',
+            'Wert': 0.05,
+            'Beschreibung': 'Anpassungsgeschwindigkeit der KI-Konkurrenten'
+        },
+        {
+            'Parameter': 'Marktanteil_Volatilität',
+            'Wert': 0.1,
+            'Beschreibung': 'Schwankung der Marktanteile pro Monat'
+        }
+    ]
+    
+    # Bike type preferences for strategies
+    fahrradtyp_vorlieben_data = []
+    strategies = ['cheap_only', 'balanced', 'premium_focus', 'e_bike_specialist']
+    bike_types = ['Damenrad', 'Herrenrad', 'Mountainbike', 'Rennrad', 'E-Bike', 'E-Mountainbike', 'E-Mountain-Bike']
+    
+    # Define preferences for each strategy-bike combination
+    preferences = {
+        'cheap_only': {
+            'Damenrad': 0.25, 'Herrenrad': 0.25, 'Mountainbike': 0.2,
+            'Rennrad': 0.1, 'E-Bike': 0.1, 'E-Mountainbike': 0.05, 'E-Mountain-Bike': 0.05
+        },
+        'balanced': {
+            'Damenrad': 0.18, 'Herrenrad': 0.18, 'Mountainbike': 0.15,
+            'Rennrad': 0.12, 'E-Bike': 0.15, 'E-Mountainbike': 0.12, 'E-Mountain-Bike': 0.10
+        },
+        'premium_focus': {
+            'Damenrad': 0.05, 'Herrenrad': 0.05, 'Mountainbike': 0.15,
+            'Rennrad': 0.25, 'E-Bike': 0.15, 'E-Mountainbike': 0.15, 'E-Mountain-Bike': 0.20
+        },
+        'e_bike_specialist': {
+            'Damenrad': 0.05, 'Herrenrad': 0.05, 'Mountainbike': 0.05,
+            'Rennrad': 0.05, 'E-Bike': 0.35, 'E-Mountainbike': 0.25, 'E-Mountain-Bike': 0.20
+        }
+    }
+    
+    for strategy in strategies:
+        for bike_type in bike_types:
+            fahrradtyp_vorlieben_data.append({
+                'Strategie': strategy,
+                'Fahrradtyp': bike_type,
+                'Vorliebe': preferences[strategy][bike_type],
+                'Produktionswahrscheinlichkeit': preferences[strategy][bike_type]
+            })
+    
+    # Create Excel file with multiple sheets
+    with pd.ExcelWriter('konkurrenten.xlsx', engine='openpyxl') as writer:
+        pd.DataFrame(competitors_data).to_excel(writer, sheet_name='Konkurrenten', index=False)
+        pd.DataFrame(strategien_data).to_excel(writer, sheet_name='Strategien', index=False)
+        pd.DataFrame(marktdynamik_data).to_excel(writer, sheet_name='Marktdynamik', index=False)
+        pd.DataFrame(fahrradtyp_vorlieben_data).to_excel(writer, sheet_name='Fahrradtyp_Vorlieben', index=False)
+
+
 def create_finanzen_xlsx():
     """Create finanzen.xlsx with financial data"""
     
@@ -439,6 +620,12 @@ def create_finanzen_xlsx():
             'Maximaler_Betrag': 20000.00,
             'Zinssatz': 8.9,
             'Laufzeit_Monate': 24
+        },
+        {
+            'Kreditgeber': 'Sofortkredit',
+            'Maximaler_Betrag': 15000.00,
+            'Zinssatz': 12.9,
+            'Laufzeit_Monate': 12
         }
     ]
     
@@ -466,11 +653,34 @@ def create_finanzen_xlsx():
         }
     ]
     
+    # Transport costs
+    transportkosten_data = [
+        {
+            'Transportart': 'Standard Lieferung',
+            'Kosten_pro_km': 0.50,
+            'Basis_Transportkosten': 5.00,
+            'Mindestkosten': 10.00
+        },
+        {
+            'Transportart': 'Express Lieferung',
+            'Kosten_pro_km': 0.80,
+            'Basis_Transportkosten': 8.00,
+            'Mindestkosten': 15.00
+        },
+        {
+            'Transportart': 'Sperrgut',
+            'Kosten_pro_km': 1.20,
+            'Basis_Transportkosten': 12.00,
+            'Mindestkosten': 25.00
+        }
+    ]
+    
     # Create Excel file with multiple sheets
     with pd.ExcelWriter('finanzen.xlsx', engine='openpyxl') as writer:
         pd.DataFrame(startkapital_data).to_excel(writer, sheet_name='Startkapital', index=False)
         pd.DataFrame(kredite_data).to_excel(writer, sheet_name='Kredite', index=False)
         pd.DataFrame(sonstiges_data).to_excel(writer, sheet_name='Sonstiges', index=False)
+        pd.DataFrame(transportkosten_data).to_excel(writer, sheet_name='Transportkosten', index=False)
 
 def main():
     """Create all required XLSX files"""
@@ -497,6 +707,9 @@ def main():
         
         create_finanzen_xlsx()
         print("✓ Created finanzen.xlsx")
+        
+        create_konkurrenten_xlsx()
+        print("✓ Created konkurrenten.xlsx")
         
         print("\nAll files created successfully!")
         print("You can now zip these files and upload them to the bikeshop simulation.")

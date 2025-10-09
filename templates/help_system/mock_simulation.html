@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}BikeShop Simulator - Guided Tour{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --dark-gradient: linear-gradient(135deg, #434343 0%, #000000 100%);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --card-hover-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .mock-banner {
+            background: linear-gradient(90deg, #ff9a56 0%, #ff6b8a 100%);
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .sidebar {
+            min-height: calc(100vh - 50px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sidebar-brand {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .nav-link {
+            color: #6c757d;
+            border-radius: 12px;
+            margin: 2px 8px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+            border: none;
+            background: transparent;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: var(--primary-gradient);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .main-content {
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin: 20px;
+            box-shadow: var(--card-shadow);
+            min-height: calc(100vh - 140px);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+        
+        .btn {
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: 500;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn-success {
+            background: var(--success-gradient);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6);
+        }
+        
+        .close-guide-banner {
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1001;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+        
+        .close-guide-banner:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Mock simulation banner -->
+    <div class="mock-banner">
+        <i class="fas fa-graduation-cap me-2"></i>
+        Dies ist eine Übungsumgebung - Guided Tour Modus
+        <i class="fas fa-graduation-cap ms-2"></i>
+    </div>
+    
+    <!-- Close guide button -->
+    <div class="close-guide-banner" onclick="closeMockGuide()">
+        <i class="fas fa-times me-2"></i>Guide beenden
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-0">
+                <div class="d-flex flex-column h-100">
+                    <div class="p-3 border-bottom">
+                        <h4 class="sidebar-brand mb-0">
+                            <i class="fas fa-bicycle me-2"></i>BikeShop
+                        </h4>
+                        <small class="text-muted">Guided Tour</small>
+                    </div>
+                    
+                    <nav class="nav nav-pills flex-column p-2 flex-grow-1">
+                        <a class="nav-link" id="nav-overview" href="#" onclick="switchMockView('overview')">
+                            <i class="fas fa-tachometer-alt me-2"></i>Übersicht
+                        </a>
+                        <a class="nav-link" id="nav-procurement" href="#" onclick="switchMockView('procurement')">
+                            <i class="fas fa-shopping-cart me-2"></i>Einkauf
+                        </a>
+                        <a class="nav-link" id="nav-production" href="#" onclick="switchMockView('production')">
+                            <i class="fas fa-cogs me-2"></i>Produktion
+                        </a>
+                        <a class="nav-link" id="nav-sales" href="#" onclick="switchMockView('sales')">
+                            <i class="fas fa-handshake me-2"></i>Verkauf
+                        </a>
+                        <a class="nav-link" id="nav-finance" href="#" onclick="switchMockView('finance')">
+                            <i class="fas fa-euro-sign me-2"></i>Finanzen
+                        </a>
+                        <a class="nav-link" id="nav-warehouse" href="#" onclick="switchMockView('warehouse')">
+                            <i class="fas fa-warehouse me-2"></i>Lager
+                        </a>
+                    </nav>
+                    
+                    <div class="p-3 border-top">
+                        <div class="budget-display">
+                            <small class="text-muted">Verfügbares Budget</small>
+                            <div class="h5 mb-0 text-success">€ 50.000</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <div class="main-content" id="mock-content">
+                    <!-- Content will be loaded here based on the guide -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Interactive Guide Continuation System -->
+    <script src="{% static 'help_system/js/guide-continuation.js' %}"></script>
+    
+    <script>
+        // Mock content templates
+        const mockContent = {
+            overview: `
+                <h1><i class="fas fa-tachometer-alt me-3"></i>Simulation Übersicht</h1>
+                <p class="lead">Willkommen bei der BikeShop Simulation! Hier verwalten Sie Ihr eigenes Fahrradunternehmen.</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-shopping-cart fa-3x text-primary mb-3"></i>
+                                <h5 class="card-title">Einkauf</h5>
+                                <p class="card-text">Bestellen Sie Komponenten von verschiedenen Lieferanten</p>
+                                <button class="btn btn-primary" onclick="switchMockView('procurement')">Zum Einkauf</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-cogs fa-3x text-success mb-3"></i>
+                                <h5 class="card-title">Produktion</h5>
+                                <p class="card-text">Produzieren Sie Fahrräder aus Ihren Komponenten</p>
+                                <button class="btn btn-success" onclick="switchMockView('production')">Zur Produktion</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-handshake fa-3x text-info mb-3"></i>
+                                <h5 class="card-title">Verkauf</h5>
+                                <p class="card-text">Verkaufen Sie Ihre Fahrräder auf verschiedenen Märkten</p>
+                                <button class="btn btn-info" onclick="switchMockView('sales')">Zum Verkauf</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-euro-sign fa-3x text-warning mb-3"></i>
+                                <h5 class="card-title">Finanzen</h5>
+                                <p class="card-text">Verwalten Sie Ihr Budget und Ihre Kredite</p>
+                                <button class="btn btn-warning" onclick="switchMockView('finance')">Zu den Finanzen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            
+            procurement: `
+                <h1><i class="fas fa-shopping-cart me-3"></i>Einkauf</h1>
+                <p class="lead">Bestellen Sie Komponenten für Ihre Fahrradproduktion</p>
+                
+                <div class="row mt-4">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Komponenten bestellen</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="components-table">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Komponente</th>
+                                                <th>Lieferant</th>
+                                                <th>Qualität</th>
+                                                <th>Preis</th>
+                                                <th>Menge</th>
+                                                <th>Aktion</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Rahmen</strong></td>
+                                                <td>
+                                                    <select class="form-select supplier-dropdown">
+                                                        <option>Rahmen GmbH</option>
+                                                        <option>Premium Frames</option>
+                                                        <option>Budget Frames</option>
+                                                    </select>
+                                                </td>
+                                                <td><span class="badge bg-success">Hoch</span></td>
+                                                <td>€ 120,00</td>
+                                                <td>
+                                                    <input type="number" class="form-control" value="10" min="0" max="100">
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-primary btn-sm">Bestellen</button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Räder</strong></td>
+                                                <td>
+                                                    <select class="form-select supplier-dropdown">
+                                                        <option>Wheel Works</option>
+                                                        <option>Speedy Wheels</option>
+                                                        <option>Economy Wheels</option>
+                                                    </select>
+                                                </td>
+                                                <td><span class="badge bg-warning">Mittel</span></td>
+                                                <td>€ 80,00</td>
+                                                <td>
+                                                    <input type="number" class="form-control" value="20" min="0" max="100">
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-primary btn-sm">Bestellen</button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Bremsen</strong></td>
+                                                <td>
+                                                    <select class="form-select supplier-dropdown">
+                                                        <option>SafeStop</option>
+                                                        <option>BrakeMax</option>
+                                                        <option>StopFast</option>
+                                                    </select>
+                                                </td>
+                                                <td><span class="badge bg-success">Hoch</span></td>
+                                                <td>€ 45,00</td>
+                                                <td>
+                                                    <input type="number" class="form-control" value="15" min="0" max="100">
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-primary btn-sm">Bestellen</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="order-form mt-4 p-3 bg-light rounded">
+                                    <h6>Bestellübersicht</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p><strong>Gesamtkosten:</strong> € 3.275,00</p>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <button class="btn btn-success">
+                                                <i class="fas fa-shopping-cart me-2"></i>Bestellung aufgeben
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card supplier-info-card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Lieferanten-Info</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <small class="text-muted">Lieferzeit</small>
+                                    <div><strong>2-3 Werktage</strong></div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Rabatt ab</small>
+                                    <div><strong>50 Stück: 5%</strong></div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Zahlungsbedingungen</small>
+                                    <div><strong>30 Tage netto</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            
+            production: `
+                <h1><i class="fas fa-cogs me-3"></i>Produktion</h1>
+                <p class="lead">Produzieren Sie Fahrräder aus Ihren Komponenten</p>
+                
+                <div class="row mt-4">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Produktionsplanung</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="bike-type-selector mb-4">
+                                    <h6>Fahrradtyp auswählen</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <i class="fas fa-bicycle fa-2x text-primary mb-2"></i>
+                                                    <h6>Cityrad</h6>
+                                                    <button class="btn btn-outline-primary btn-sm">Auswählen</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <i class="fas fa-bicycle fa-2x text-success mb-2"></i>
+                                                    <h6>Mountainbike</h6>
+                                                    <button class="btn btn-outline-success btn-sm">Auswählen</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <i class="fas fa-bicycle fa-2x text-warning mb-2"></i>
+                                                    <h6>Rennrad</h6>
+                                                    <button class="btn btn-outline-warning btn-sm">Auswählen</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="components-status">
+                                    <h6>Verfügbare Komponenten</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Komponente</th>
+                                                <th>Verfügbar</th>
+                                                <th>Benötigt</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Rahmen</td>
+                                                <td>25</td>
+                                                <td>10</td>
+                                                <td><span class="badge bg-success">✓</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Räder</td>
+                                                <td>45</td>
+                                                <td>20</td>
+                                                <td><span class="badge bg-success">✓</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Bremsen</td>
+                                                <td>30</td>
+                                                <td>10</td>
+                                                <td><span class="badge bg-success">✓</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button class="btn btn-success start-production-btn">
+                                        <i class="fas fa-play me-2"></i>Produktion starten
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card worker-management-card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Arbeiter</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <small class="text-muted">Aktuelle Mitarbeiter</small>
+                                    <div><strong>5 Personen</strong></div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Produktionskapazität</small>
+                                    <div><strong>20 Fahrräder/Monat</strong></div>
+                                </div>
+                                <button class="btn btn-primary hire-worker-btn">
+                                    <i class="fas fa-user-plus me-2"></i>Arbeiter einstellen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            
+            sales: `
+                <h1><i class="fas fa-handshake me-3"></i>Verkauf</h1>
+                <p class="lead">Verkaufen Sie Ihre Fahrräder auf verschiedenen Märkten</p>
+                
+                <div class="row mt-4">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Marktanalyse & Preise</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="market-analysis mb-4">
+                                    <h6>Marktübersicht</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-body text-center">
+                                                    <h6>Deutschland</h6>
+                                                    <div class="text-success"><strong>Nachfrage: Hoch</strong></div>
+                                                    <small class="text-muted">Ø Preis: € 450</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-body text-center">
+                                                    <h6>Österreich</h6>
+                                                    <div class="text-warning"><strong>Nachfrage: Mittel</strong></div>
+                                                    <small class="text-muted">Ø Preis: € 420</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card">
+                                                <div class="card-body text-center">
+                                                    <h6>Schweiz</h6>
+                                                    <div class="text-info"><strong>Nachfrage: Niedrig</strong></div>
+                                                    <small class="text-muted">Ø Preis: € 520</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="price-setting">
+                                    <h6>Preise festlegen</h6>
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Fahrradtyp</th>
+                                                <th>Markt</th>
+                                                <th>Aktueller Preis</th>
+                                                <th>Neuer Preis</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Cityrad</td>
+                                                <td>Deutschland</td>
+                                                <td>€ 450</td>
+                                                <td><input type="number" class="form-control" value="450" min="200" max="800"></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Mountainbike</td>
+                                                <td>Österreich</td>
+                                                <td>€ 650</td>
+                                                <td><input type="number" class="form-control" value="650" min="400" max="1200"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <button class="btn btn-success">
+                                        <i class="fas fa-save me-2"></i>Preise speichern
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card marketing-budget">
+                            <div class="card-header">
+                                <h6 class="mb-0">Marketing</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Marketing-Budget</label>
+                                    <input type="range" class="form-range" min="0" max="5000" value="1000">
+                                    <div class="text-center"><strong>€ 1.000</strong></div>
+                                </div>
+                                <div class="mb-3 marketing-impact">
+                                    <small class="text-muted">Erwartete Nachfrage-Steigerung</small>
+                                    <div><strong>+15%</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-3 sales-forecast">
+                            <div class="card-header">
+                                <h6 class="mb-0">Verkaufsprognose</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <small class="text-muted">Erwarteter Umsatz</small>
+                                    <div><strong>€ 12.500</strong></div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Erwartete Verkäufe</small>
+                                    <div><strong>28 Fahrräder</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            
+            finance: `
+                <h1><i class="fas fa-euro-sign me-3"></i>Finanzen</h1>
+                <p class="lead">Verwalten Sie Ihr Budget und überwachen Sie Ihre Finanzen</p>
+                
+                <div class="row mt-4">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Finanzübersicht</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="balance-display p-3 bg-success text-white rounded text-center">
+                                            <h6>Aktueller Kontostand</h6>
+                                            <h3>€ 47.250</h3>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-info text-white rounded text-center">
+                                            <h6>Monatlicher Gewinn</h6>
+                                            <h3>€ 8.750</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="profit-loss-section mt-4">
+                                    <h6>Gewinn- und Verlustrechnung</h6>
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Kategorie</th>
+                                                <th>Betrag</th>
+                                                <th>Anteil</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="table-success">
+                                                <td><strong>Umsatz</strong></td>
+                                                <td><strong>€ 25.000</strong></td>
+                                                <td><strong>100%</strong></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Materialkosten</td>
+                                                <td>€ 12.000</td>
+                                                <td>48%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Personalkosten</td>
+                                                <td>€ 3.500</td>
+                                                <td>14%</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Marketing</td>
+                                                <td>€ 1.000</td>
+                                                <td>4%</td>
+                                            </tr>
+                                            <tr class="table-info">
+                                                <td><strong>Gewinn</strong></td>
+                                                <td><strong>€ 8.500</strong></td>
+                                                <td><strong>34%</strong></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="card credit-management">
+                            <div class="card-header">
+                                <h6 class="mb-0">Kredite</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <small class="text-muted">Verfügbarer Kreditrahmen</small>
+                                    <div><strong>€ 100.000</strong></div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Zinssatz</small>
+                                    <div><strong>3,5% p.a.</strong></div>
+                                </div>
+                                <button class="btn btn-warning">
+                                    <i class="fas fa-hand-holding-usd me-2"></i>Kredit aufnehmen
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-3 financial-reports">
+                            <div class="card-header">
+                                <h6 class="mb-0">Berichte</h6>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-outline-primary btn-sm mb-2 w-100">
+                                    <i class="fas fa-chart-line me-2"></i>Umsatzreport
+                                </button>
+                                <button class="btn btn-outline-success btn-sm mb-2 w-100">
+                                    <i class="fas fa-file-alt me-2"></i>Bilanz
+                                </button>
+                                <button class="btn btn-outline-info btn-sm w-100">
+                                    <i class="fas fa-coins me-2"></i>Cashflow
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            
+            warehouse: `
+                <h1><i class="fas fa-warehouse me-3"></i>Lager</h1>
+                <p class="lead">Überblick über Ihre Lagerbestände</p>
+                
+                <div class="row mt-4">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Lagerbestand</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 col-lg-3 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-bicycle fa-2x text-primary mb-2"></i>
+                                                <h6>Fertige Fahrräder</h6>
+                                                <h4 class="text-primary">15</h4>
+                                                <small class="text-muted">Stück verfügbar</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-lg-3 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-square fa-2x text-success mb-2"></i>
+                                                <h6>Rahmen</h6>
+                                                <h4 class="text-success">25</h4>
+                                                <small class="text-muted">Stück verfügbar</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-lg-3 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-circle fa-2x text-warning mb-2"></i>
+                                                <h6>Räder</h6>
+                                                <h4 class="text-warning">45</h4>
+                                                <small class="text-muted">Stück verfügbar</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-lg-3 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-stop fa-2x text-danger mb-2"></i>
+                                                <h6>Bremsen</h6>
+                                                <h4 class="text-danger">30</h4>
+                                                <small class="text-muted">Stück verfügbar</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <h6>Lageraktivitäten</h6>
+                                    <div class="list-group">
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Bestellung erhalten</h6>
+                                                <small>vor 2 Stunden</small>
+                                            </div>
+                                            <p class="mb-1">10 Rahmen von Rahmen GmbH erhalten</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Produktion abgeschlossen</h6>
+                                                <small>vor 4 Stunden</small>
+                                            </div>
+                                            <p class="mb-1">5 Citybikes fertiggestellt und eingelagert</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Verkauf</h6>
+                                                <small>vor 6 Stunden</small>
+                                            </div>
+                                            <p class="mb-1">3 Mountainbikes an Deutschland verkauft</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        function switchMockView(view) {
+            // Update active nav
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            document.getElementById('nav-' + view).classList.add('active');
+            
+            // Update content
+            document.getElementById('mock-content').innerHTML = mockContent[view] || mockContent.overview;
+        }
+
+        function closeMockGuide() {
+            // End any active guide
+            if (typeof window.endGuide === 'function') {
+                window.endGuide();
+            }
+            
+            // Show confirmation before closing
+            if (confirm('Möchten Sie die Guided Tour wirklich beenden?')) {
+                // Close this window/tab
+                window.close();
+            }
+        }
+
+        // Initialize with overview
+        switchMockView('overview');
+        
+        // Handle messages from parent window for guide navigation
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'switchMockView') {
+                switchMockView(event.data.view);
+            }
+        });
+    </script>
+</body>
+</html>

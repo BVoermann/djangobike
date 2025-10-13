@@ -698,11 +698,6 @@ async function createInteractiveGuide(guide, startStep = 0) {
                     <p style="margin: 0; color: #555; line-height: 1.5; font-size: 14px;">
                         ${step.content}
                     </p>
-                    ${step.target && step.target !== 'body' ? `
-                        <div style="margin-top: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px; font-size: 12px; color: #1976d2;">
-                            💡 <strong>Schauen Sie sich an:</strong> ${step.target}
-                        </div>
-                    ` : ''}
                 </div>
                 
                 <!-- Buttons -->
@@ -738,7 +733,7 @@ async function createInteractiveGuide(guide, startStep = 0) {
             height: ${rect.height + 10}px;
             border: 3px solid #007bff;
             border-radius: 8px;
-            background: rgba(0, 123, 255, 0.1);
+            background: transparent;
             z-index: 10000;
             pointer-events: none;
             box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);

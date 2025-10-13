@@ -170,10 +170,17 @@
                 border-right: none;
                 border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             }
-            
+
             .content {
                 padding: 1rem;
             }
+        }
+
+        /* Hide help button, menu, and question mark icons */
+        .help-button,
+        .help-menu,
+        .question-mark-icon {
+            display: none !important;
         }
     </style>
 </head>
@@ -742,90 +749,6 @@
             document.getElementById('advance-month-form').submit();
         }
     </script>
-    
-    <!-- Help System Integration -->
-    {% if user.is_authenticated %}
-    <button class="help-button" id="help-button" title="Hilfe & Tutorials">
-        <i class="fas fa-question"></i>
-    </button>
-    
-    <div class="help-menu" id="help-menu">
-        <div class="help-menu-item" onclick="openHelpDashboard()">
-            <i class="fas fa-home"></i>
-            <span>Hilfe-Center</span>
-        </div>
-        <div class="help-menu-item" onclick="openVideoLibrary()">
-            <i class="fas fa-video"></i>
-            <span>Video Tutorials</span>
-        </div>
-        <div class="help-menu-item" onclick="openInteractiveGuides()">
-            <i class="fas fa-route"></i>
-            <span>Interaktive Guides</span>
-        </div>
-        <div class="help-menu-item" onclick="startOnboardingTour()">
-            <i class="fas fa-play"></i>
-            <span>Einführung starten</span>
-        </div>
-        <div class="help-menu-item" onclick="toggleTooltips()">
-            <i class="fas fa-info-circle"></i>
-            <span>Tooltips ein/aus</span>
-        </div>
-    </div>
-    
-    <script>
-        // Initialize Help System
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize help system
-            if (typeof HelpSystem !== 'undefined') {
-                window.helpSystem = new HelpSystem();
-                window.helpSystem.init();
-            }
-            
-            // Help button functionality
-            const helpButton = document.getElementById('help-button');
-            const helpMenu = document.getElementById('help-menu');
-            let isMenuOpen = false;
-            
-            helpButton.addEventListener('click', function() {
-                isMenuOpen = !isMenuOpen;
-                helpMenu.classList.toggle('show', isMenuOpen);
-            });
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!helpButton.contains(e.target) && !helpMenu.contains(e.target)) {
-                    isMenuOpen = false;
-                    helpMenu.classList.remove('show');
-                }
-            });
-        });
-        
-        // Help system functions
-        function openHelpDashboard() {
-            window.open('{% url "help_system:dashboard" %}', '_blank');
-        }
-        
-        function openVideoLibrary() {
-            window.open('{% url "help_system:video_library" %}', '_blank');
-        }
-        
-        function openInteractiveGuides() {
-            window.open('{% url "help_system:interactive_guides" %}', '_blank');
-        }
-        
-        function startOnboardingTour() {
-            if (window.helpSystem) {
-                window.helpSystem.startOnboardingTour();
-            }
-        }
-        
-        function toggleTooltips() {
-            if (window.helpSystem) {
-                window.helpSystem.toggleTooltips();
-            }
-        }
-    </script>
-    {% endif %}
     
     {% block scripts %}
     {% endblock %}

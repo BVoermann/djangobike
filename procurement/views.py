@@ -110,18 +110,61 @@ def procurement_view(request, session_id):
                 order_data = json.loads(request.body)
                 total_cost = Decimal('0')
 
-                # Get or create warehouse for this session
-                warehouse, created = Warehouse.objects.get_or_create(
-                    session=session,
-                    defaults={
-                        'name': 'Hauptlager',
-                        'location': 'Standort 1',
-                        'capacity_m2': 200.0,  # Reduced to realistic size
-                        'rent_per_month': Decimal('2500.00')  # €12.50/m² 
-                    }
-                )
+                # Get all warehouses for this session
+                warehouses = Warehouse.objects.filter(session=session)
 
-                # Erstelle Bestellungen für jeden Lieferanten
+                # Create warehouse if none exist
+                if not warehouses.exists():
+                    warehouse = Warehouse.objects.create(
+                        session=session,
+                        name='Hauptlager',
+                        location='Standort 1',
+                        capacity_m2=200.0,
+                        rent_per_month=Decimal('2500.00')
+                    )
+                    warehouses = [warehouse]
+
+                # Calculate total remaining capacity across all warehouses
+                total_remaining_capacity = sum(w.remaining_capacity for w in warehouses)
+                total_current_usage = sum(w.current_usage for w in warehouses)
+                total_capacity = sum(w.capacity_m2 for w in warehouses)
+
+                # First pass: Check warehouse capacity for all items
+                total_required_space = 0
+                for supplier_id, items in order_data.items():
+                    if not items:
+                        continue
+
+                    for item in items:
+                        component_id = item['component_id']
+                        quantity = int(item['quantity'])
+
+                        if quantity <= 0:
+                            continue
+
+                        price_obj = SupplierPrice.objects.filter(
+                            session=session,
+                            supplier_id=supplier_id,
+                            component_id=component_id
+                        ).first()
+
+                        if price_obj:
+                            # Use a warehouse to calculate required space (any will do for calculation)
+                            required_space = warehouses[0].get_required_space_for_components(price_obj.component, quantity)
+                            total_required_space += required_space
+
+                # Check if total order would exceed total warehouse capacity
+                if total_required_space > total_remaining_capacity:
+                    current_percentage = (total_current_usage / total_capacity * 100) if total_capacity > 0 else 100
+                    new_usage = total_current_usage + total_required_space
+                    new_percentage = (new_usage / total_capacity) * 100 if total_capacity > 0 else 100
+
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Lagerkapazität überschritten! Diese Bestellung würde {total_required_space:.1f}m² benötigen, aber nur {total_remaining_capacity:.1f}m² sind in allen Lagern verfügbar. Aktuelle Auslastung: {current_percentage:.1f}%, nach Bestellung: {new_percentage:.1f}%. Bitte kaufen Sie zusätzliche Lagerkapazität oder reduzieren Sie die Bestellmenge.'
+                    })
+
+                # Second pass: Create orders (capacity check passed)
                 for supplier_id, items in order_data.items():
                     if not items:
                         continue
@@ -157,10 +200,23 @@ def procurement_view(request, session_id):
                             unit_price=price_obj.price
                         )
 
+                        # Find a warehouse with available capacity
+                        required_space = warehouses[0].get_required_space_for_components(price_obj.component, quantity)
+                        target_warehouse = None
+
+                        for wh in warehouses:
+                            if wh.remaining_capacity >= required_space:
+                                target_warehouse = wh
+                                break
+
+                        # If no single warehouse has enough space, use the one with most space
+                        if not target_warehouse:
+                            target_warehouse = max(warehouses, key=lambda w: w.remaining_capacity)
+
                         # Add to warehouse inventory
                         component_stock, created = ComponentStock.objects.get_or_create(
                             session=session,
-                            warehouse=warehouse,
+                            warehouse=target_warehouse,
                             component=price_obj.component,
                             defaults={'quantity': 0}
                         )

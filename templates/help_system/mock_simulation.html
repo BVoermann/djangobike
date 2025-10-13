@@ -146,6 +146,129 @@
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(220, 53, 69, 0.6);
         }
+
+        /* Grey overlay for explanatory mode */
+        .explanation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        /* Make Einkauf tab visible through overlay */
+        #nav-procurement {
+            position: relative;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+
+        /* Explanation tooltips */
+        .explanation-tooltip {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            z-index: 1002;
+            max-width: 300px;
+            animation: tooltipFadeIn 0.3s ease-in-out;
+        }
+
+        .explanation-tooltip::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        .explanation-tooltip.top::before {
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0 10px;
+            border-color: white transparent transparent transparent;
+        }
+
+        .explanation-tooltip.bottom::before {
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0 10px 10px 10px;
+            border-color: transparent transparent white transparent;
+        }
+
+        .explanation-tooltip.left::before {
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 0 10px 10px;
+            border-color: transparent transparent transparent white;
+        }
+
+        .explanation-tooltip.right::before {
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 10px 10px 0;
+            border-color: transparent white transparent transparent;
+        }
+
+        .explanation-tooltip h6 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .explanation-tooltip p {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .explanation-marker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            z-index: 1001;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+            animation: markerPulse 2s infinite;
+        }
+
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes markerPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.8);
+            }
+        }
     </style>
 </head>
 <body>
@@ -270,121 +393,205 @@
             `,
             
             procurement: `
-                <h1><i class="fas fa-shopping-cart me-3"></i>Einkauf</h1>
-                <p class="lead">Bestellen Sie Komponenten für Ihre Fahrradproduktion</p>
-                
-                <div class="row mt-4">
-                    <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Komponenten bestellen</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="components-table">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Komponente</th>
-                                                <th>Lieferant</th>
-                                                <th>Qualität</th>
-                                                <th>Preis</th>
-                                                <th>Menge</th>
-                                                <th>Aktion</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td><strong>Rahmen</strong></td>
-                                                <td>
-                                                    <select class="form-select supplier-dropdown">
-                                                        <option>Rahmen GmbH</option>
-                                                        <option>Premium Frames</option>
-                                                        <option>Budget Frames</option>
-                                                    </select>
-                                                </td>
-                                                <td><span class="badge bg-success">Hoch</span></td>
-                                                <td>€ 120,00</td>
-                                                <td>
-                                                    <input type="number" class="form-control" value="10" min="0" max="100">
-                                                </td>
-                                                <td>
-                                                    <button class="btn btn-primary btn-sm">Bestellen</button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Räder</strong></td>
-                                                <td>
-                                                    <select class="form-select supplier-dropdown">
-                                                        <option>Wheel Works</option>
-                                                        <option>Speedy Wheels</option>
-                                                        <option>Economy Wheels</option>
-                                                    </select>
-                                                </td>
-                                                <td><span class="badge bg-warning">Mittel</span></td>
-                                                <td>€ 80,00</td>
-                                                <td>
-                                                    <input type="number" class="form-control" value="20" min="0" max="100">
-                                                </td>
-                                                <td>
-                                                    <button class="btn btn-primary btn-sm">Bestellen</button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Bremsen</strong></td>
-                                                <td>
-                                                    <select class="form-select supplier-dropdown">
-                                                        <option>SafeStop</option>
-                                                        <option>BrakeMax</option>
-                                                        <option>StopFast</option>
-                                                    </select>
-                                                </td>
-                                                <td><span class="badge bg-success">Hoch</span></td>
-                                                <td>€ 45,00</td>
-                                                <td>
-                                                    <input type="number" class="form-control" value="15" min="0" max="100">
-                                                </td>
-                                                <td>
-                                                    <button class="btn btn-primary btn-sm">Bestellen</button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <div class="order-form mt-4 p-3 bg-light rounded">
-                                    <h6>Bestellübersicht</h6>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>Gesamtkosten:</strong> € 3.275,00</p>
-                                        </div>
-                                        <div class="col-md-6 text-end">
-                                            <button class="btn btn-success">
-                                                <i class="fas fa-shopping-cart me-2"></i>Bestellung aufgeben
-                                            </button>
-                                        </div>
-                                    </div>
+                <!-- Header -->
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <div class="text-center">
+                            <h1 class="display-4 fw-bold mb-3">
+                                <i class="fas fa-shopping-cart" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                                Einkauf
+                            </h1>
+                            <p class="lead text-muted">Bestellen Sie hochwertige Komponenten von Ihren Lieferanten</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supplier Selection Dropdown -->
+                <div class="row mb-4 dropdown-row">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-3">
+                                    <i class="fas fa-filter me-2"></i>Lieferant auswählen
+                                </h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-primary btn-lg dropdown-toggle w-100 w-md-auto" type="button" id="mockSupplierDropdown">
+                                        <i class="fas fa-industry me-2"></i>
+                                        <span>Premium Parts GmbH</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="col-lg-4">
-                        <div class="card supplier-info-card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Lieferanten-Info</h6>
+                </div>
+
+                <!-- Einkaufs-Statistiken -->
+                <div class="row g-4 mb-5">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-3">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <h2 class="fw-bold">50.000,00€</h2>
+                                <p class="mb-0 opacity-75">Verfügbares Budget</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-3">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                                <h2 class="fw-bold">3</h2>
+                                <p class="mb-0 opacity-75">Verfügbare Lieferanten</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-3">
+                                    <i class="fas fa-boxes"></i>
+                                </div>
+                                <h2 class="fw-bold">12</h2>
+                                <p class="mb-0 opacity-75">Komponenten verfügbar</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-3">
+                                    <i class="fas fa-calculator"></i>
+                                </div>
+                                <h2 class="fw-bold">3.275,00€</h2>
+                                <p class="mb-0 opacity-75">Bestellwert gesamt</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Supplier Details -->
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <div class="card h-100">
+                            <div class="card-header border-0 pb-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h4 class="fw-bold mb-1">
+                                            <i class="fas fa-industry me-2"></i>Premium Parts GmbH
+                                        </h4>
+                                        <div class="supplier-badges">
+                                            <span class="badge rounded-pill me-2" style="background: var(--success-gradient); color: white;">
+                                                <i class="fas fa-crown me-1"></i>Premium Qualität
+                                            </span>
+                                            <span class="badge rounded-pill me-2" style="background: var(--primary-gradient); color: white;">
+                                                <i class="fas fa-truck me-1"></i>30 Tage
+                                            </span>
+                                            <span class="badge rounded-pill" style="background: var(--warning-gradient); color: white;">
+                                                <i class="fas fa-calendar me-1"></i>60 Tage Zahlungsziel
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="supplier-total-display">
+                                        <span class="fs-4 fw-bold text-primary">3.275,00€</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="card-body">
-                                <div class="mb-3">
-                                    <small class="text-muted">Lieferzeit</small>
-                                    <div><strong>2-3 Werktage</strong></div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                            <tr>
+                                                <th class="border-0 fw-bold">Komponente</th>
+                                                <th class="border-0 fw-bold">Preis</th>
+                                                <th class="border-0 fw-bold">Menge</th>
+                                                <th class="border-0 fw-bold">Gesamt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-bottom">
+                                                <td class="py-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                            <i class="fas fa-cog"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold">Rahmen</div>
+                                                            <small class="text-muted">Carbon Rahmen Premium</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="fw-bold text-success">120,00€</span></td>
+                                                <td>
+                                                    <input type="number" class="form-control" value="10" min="0" placeholder="0">
+                                                </td>
+                                                <td><span class="fw-bold text-primary">1.200,00€</span></td>
+                                            </tr>
+                                            <tr class="border-bottom">
+                                                <td class="py-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                            <i class="fas fa-cog"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold">Laufradsatz</div>
+                                                            <small class="text-muted">28" Alu Laufradsatz</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="fw-bold text-success">80,00€</span></td>
+                                                <td>
+                                                    <input type="number" class="form-control" value="20" min="0" placeholder="0">
+                                                </td>
+                                                <td><span class="fw-bold text-primary">1.600,00€</span></td>
+                                            </tr>
+                                            <tr class="border-bottom">
+                                                <td class="py-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                            <i class="fas fa-cog"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-bold">Schaltung</div>
+                                                            <small class="text-muted">Shimano 21-Gang</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="fw-bold text-success">45,00€</span></td>
+                                                <td>
+                                                    <input type="number" class="form-control" value="15" min="0" placeholder="0">
+                                                </td>
+                                                <td><span class="fw-bold text-primary">675,00€</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div class="mb-3">
-                                    <small class="text-muted">Rabatt ab</small>
-                                    <div><strong>50 Stück: 5%</strong></div>
-                                </div>
-                                <div class="mb-3">
-                                    <small class="text-muted">Zahlungsbedingungen</small>
-                                    <div><strong>30 Tage netto</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bestellübersicht -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="fw-bold mb-1">
+                                            <i class="fas fa-shopping-basket me-2"></i>Bestellübersicht
+                                        </h3>
+                                        <p class="text-muted mb-0">Gesamtkosten Ihrer Bestellung</p>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="display-5 fw-bold text-primary mb-2">3.275,00€</div>
+                                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                                            <i class="fas fa-paper-plane me-2"></i>Bestellung aufgeben
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -469,7 +676,17 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                
+
+                                <div class="production-quantity mt-4">
+                                    <h6>Produktionsmenge</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Anzahl Fahrräder</label>
+                                            <input type="number" class="form-control" value="10" min="1" max="100">
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="mt-4">
                                     <button class="btn btn-success start-production-btn">
                                         <i class="fas fa-play me-2"></i>Produktion starten
@@ -513,6 +730,15 @@
                                 <h5 class="mb-0">Marktanalyse & Preise</h5>
                             </div>
                             <div class="card-body">
+                                <div class="market-selector mb-4">
+                                    <h6>Markt auswählen</h6>
+                                    <select class="form-select">
+                                        <option selected>Deutschland</option>
+                                        <option>Österreich</option>
+                                        <option>Schweiz</option>
+                                    </select>
+                                </div>
+
                                 <div class="market-analysis mb-4">
                                     <h6>Marktübersicht</h6>
                                     <div class="row">
@@ -545,7 +771,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="price-setting">
                                     <h6>Preise festlegen</h6>
                                     <table class="table">
@@ -562,13 +788,13 @@
                                                 <td>Cityrad</td>
                                                 <td>Deutschland</td>
                                                 <td>€ 450</td>
-                                                <td><input type="number" class="form-control" value="450" min="200" max="800"></td>
+                                                <td><input type="number" class="form-control price-input" value="450" min="200" max="800"></td>
                                             </tr>
                                             <tr>
                                                 <td>Mountainbike</td>
                                                 <td>Österreich</td>
                                                 <td>€ 650</td>
-                                                <td><input type="number" class="form-control" value="650" min="400" max="1200"></td>
+                                                <td><input type="number" class="form-control price-input" value="650" min="400" max="1200"></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -685,16 +911,69 @@
                                         </tbody>
                                     </table>
                                 </div>
+
+                                <div class="liquidity-section mt-4">
+                                    <h6>Liquidität</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <small class="text-muted">Bargeld</small>
+                                                <div class="h5">€ 47.250</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 bg-light rounded">
+                                                <small class="text-muted">Liquiditätsgrad</small>
+                                                <div class="h5 text-success">Sehr gut</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="chart-section mt-4">
+                                    <h6>Finanzentwicklung</h6>
+                                    <div class="p-3 bg-light rounded text-center">
+                                        <i class="fas fa-chart-area fa-3x text-primary mb-2"></i>
+                                        <p class="text-muted">Diagramm zeigt Umsatz und Gewinn der letzten 12 Monate</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="col-lg-4">
-                        <div class="card credit-management">
+                        <div class="card credit-form">
                             <div class="card-header">
-                                <h6 class="mb-0">Kredite</h6>
+                                <h6 class="mb-0">Kredit aufnehmen</h6>
                             </div>
                             <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Kredittyp</label>
+                                    <select class="form-select">
+                                        <option>Kurzfristiger Kredit (6 Monate, 5% Zinsen)</option>
+                                        <option>Mittelfristiger Kredit (12 Monate, 7% Zinsen)</option>
+                                        <option>Langfristiger Kredit (24 Monate, 10% Zinsen)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Betrag</label>
+                                    <input type="number" class="form-control" value="10000" min="1000" max="50000">
+                                </div>
+                                <button class="btn btn-primary w-100">Kredit aufnehmen</button>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3 active-credits">
+                            <div class="card-header">
+                                <h6 class="mb-0">Laufende Kredite</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <small class="text-muted">Kurzfristiger Kredit</small>
+                                    <div><strong>€ 5.000</strong></div>
+                                    <small>Monatliche Rate: € 850</small><br>
+                                    <small>Restlaufzeit: 4 Monate</small>
+                                </div>
                                 <div class="mb-3">
                                     <small class="text-muted">Verfügbarer Kreditrahmen</small>
                                     <div><strong>€ 100.000</strong></div>
@@ -732,7 +1011,7 @@
             warehouse: `
                 <h1><i class="fas fa-warehouse me-3"></i>Lager</h1>
                 <p class="lead">Überblick über Ihre Lagerbestände</p>
-                
+
                 <div class="row mt-4">
                     <div class="col-lg-12">
                         <div class="card">
@@ -741,17 +1020,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6 col-lg-3 mb-3">
-                                        <div class="card bg-light">
-                                            <div class="card-body text-center">
-                                                <i class="fas fa-bicycle fa-2x text-primary mb-2"></i>
-                                                <h6>Fertige Fahrräder</h6>
-                                                <h4 class="text-primary">15</h4>
-                                                <small class="text-muted">Stück verfügbar</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 col-lg-3 mb-3">
+                                    <div class="col-md-6 col-lg-3 mb-3 component-stock-card">
                                         <div class="card bg-light">
                                             <div class="card-body text-center">
                                                 <i class="fas fa-square fa-2x text-success mb-2"></i>
@@ -761,7 +1030,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6 col-lg-3 mb-3">
+                                    <div class="col-md-6 col-lg-3 mb-3 component-stock-card">
                                         <div class="card bg-light">
                                             <div class="card-body text-center">
                                                 <i class="fas fa-circle fa-2x text-warning mb-2"></i>
@@ -771,13 +1040,56 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6 col-lg-3 mb-3">
+                                    <div class="col-md-6 col-lg-3 mb-3 component-stock-card">
                                         <div class="card bg-light">
                                             <div class="card-body text-center">
                                                 <i class="fas fa-stop fa-2x text-danger mb-2"></i>
                                                 <h6>Bremsen</h6>
                                                 <h4 class="text-danger">30</h4>
                                                 <small class="text-muted">Stück verfügbar</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-lg-3 mb-3 component-stock-card">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-cog fa-2x text-info mb-2"></i>
+                                                <h6>Schaltung</h6>
+                                                <h4 class="text-info">35</h4>
+                                                <small class="text-muted">Stück verfügbar</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="finished-bikes-section mt-4">
+                                    <h6>Fertige Fahrräder</h6>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card bg-primary text-white">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-bicycle fa-2x mb-2"></i>
+                                                    <h6>Citybike</h6>
+                                                    <h4>8 Stück</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card bg-success text-white">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-bicycle fa-2x mb-2"></i>
+                                                    <h6>Mountainbike</h6>
+                                                    <h4>5 Stück</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card bg-warning text-white">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-bicycle fa-2x mb-2"></i>
+                                                    <h6>Rennrad</h6>
+                                                    <h4>2 Stück</h4>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -830,7 +1142,12 @@
             if (typeof window.endGuide === 'function') {
                 window.endGuide();
             }
-            
+
+            // End explanatory mode if active
+            if (typeof window.endExplanatoryMode === 'function') {
+                window.endExplanatoryMode();
+            }
+
             // Show confirmation before closing
             if (confirm('Möchten Sie die Guided Tour wirklich beenden?')) {
                 // Close this window/tab
@@ -838,15 +1155,228 @@
             }
         }
 
-        // Initialize with overview
-        switchMockView('overview');
-        
+        // Initialize with correct view based on URL parameter or mock_type from server
+        const urlParams = new URLSearchParams(window.location.search);
+        const mockTypeFromServer = '{{ mock_type }}';
+
+        // Priority: URL parameter > server mock_type > default overview
+        let initialView = urlParams.get('view');
+        if (!initialView && mockTypeFromServer && mockTypeFromServer !== 'None') {
+            initialView = mockTypeFromServer;
+        }
+        if (!initialView || initialView === 'None') {
+            initialView = 'overview';
+        }
+
+        console.log('=== INITIALIZATION DEBUG ===');
+        console.log('Mock type from server:', mockTypeFromServer);
+        console.log('URL parameter view:', urlParams.get('view'));
+        console.log('Final initialView:', initialView);
+        console.log('URL search params:', window.location.search);
+        console.log('URL pathname:', window.location.pathname);
+        console.log('About to call switchMockView with:', initialView);
+
+        // Switch view immediately - don't wait for DOM ready since we're at bottom of body
+        switchMockView(initialView);
+
+        console.log('switchMockView called, checking content...');
+        setTimeout(() => {
+            const content = document.getElementById('mock-content').innerHTML;
+            console.log('Current content length:', content.length);
+            console.log('Content preview (first 100 chars):', content.substring(0, 100));
+        }, 100);
+
         // Handle messages from parent window for guide navigation
         window.addEventListener('message', function(event) {
             if (event.data.type === 'switchMockView') {
                 switchMockView(event.data.view);
             }
         });
+
+        // Auto-start guide if guideId is provided in URL
+        const guideId = urlParams.get('guideId');
+        const explanatoryMode = urlParams.get('explanatory') === 'true';
+
+        if (guideId) {
+            // Wait a bit for content to load
+            setTimeout(() => {
+                if (explanatoryMode && initialView === 'procurement') {
+                    console.log('Starting explanatory mode for procurement guide');
+                    // Ensure procurement view is loaded first
+                    switchMockView('procurement');
+                    // Wait a bit more for DOM to update, then start explanatory mode
+                    setTimeout(() => {
+                        initExplanatoryMode();
+                    }, 200);
+                } else {
+                    // Load help system if not loaded
+                    if (!window.helpSystem) {
+                        const script = document.createElement('script');
+                        script.src = '{% static "help_system/js/help-system.js" %}';
+                        script.onload = () => {
+                            window.helpSystem = new HelpSystem();
+                            window.helpSystem.init().then(() => {
+                                window.helpSystem.startGuide(parseInt(guideId));
+                            });
+                        };
+                        document.head.appendChild(script);
+                    } else {
+                        window.helpSystem.startGuide(parseInt(guideId));
+                    }
+                }
+            }, 500);
+        }
+
+        // Explanatory mode for Einkauf guide
+        function initExplanatoryMode() {
+            console.log('Initializing explanatory mode for Einkauf guide');
+
+            // Add grey overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'explanation-overlay';
+            overlay.id = 'explanation-overlay';
+            document.body.appendChild(overlay);
+
+            // Define explanations for Einkauf components
+            const explanations = [
+                {
+                    selector: '#nav-procurement',
+                    title: 'Einkauf-Tab öffnen',
+                    text: 'Klicken Sie auf den Einkauf-Tab in der linken Seitenleiste, um zum Einkaufsbereich zu gelangen.',
+                    position: 'right',
+                    number: 1
+                },
+                {
+                    selector: '#mockSupplierDropdown',
+                    title: 'Lieferant auswählen',
+                    text: 'Wählen Sie hier einen Lieferanten aus. Jeder Lieferant bietet unterschiedliche Qualitätsstufen, Lieferzeiten und Zahlungsbedingungen.',
+                    position: 'bottom',
+                    number: 2
+                },
+                {
+                    selector: '.col-lg-3:first-child .card',
+                    title: 'Verfügbares Budget',
+                    text: 'Hier sehen Sie Ihr verfügbares Budget. Achten Sie darauf, dass Sie nicht mehr ausgeben als verfügbar ist!',
+                    position: 'right',
+                    number: 3
+                },
+                {
+                    selector: '.supplier-badges',
+                    title: 'Lieferanten-Informationen',
+                    text: 'Diese Badges zeigen wichtige Informationen: Qualitätsstufe, Lieferzeit und Zahlungsziel des ausgewählten Lieferanten.',
+                    position: 'bottom',
+                    number: 4
+                },
+                {
+                    selector: '.table-responsive',
+                    title: 'Komponenten bestellen',
+                    text: 'In dieser Tabelle sehen Sie alle verfügbaren Komponenten. Geben Sie die gewünschte Menge ein und beobachten Sie, wie sich der Gesamtpreis ändert.',
+                    position: 'top',
+                    number: 5
+                },
+                {
+                    selector: '.btn-primary.btn-lg.px-4',
+                    title: 'Bestellung aufgeben',
+                    text: 'Prüfen Sie den Gesamtpreis Ihrer Bestellung und klicken Sie hier, um die Komponenten zu bestellen.',
+                    position: 'top',
+                    number: 6
+                }
+            ];
+
+            // Add explanation tooltips
+            setTimeout(() => {
+                explanations.forEach(exp => {
+                    addExplanationTooltip(exp);
+                });
+            }, 800);
+        }
+
+        function addExplanationTooltip(explanation) {
+            const element = document.querySelector(explanation.selector);
+            if (!element) {
+                console.warn('Element not found for selector:', explanation.selector);
+                return;
+            }
+
+            const rect = element.getBoundingClientRect();
+
+            // Create marker
+            const marker = document.createElement('div');
+            marker.className = 'explanation-marker';
+            marker.textContent = explanation.number;
+            marker.style.position = 'fixed';
+
+            // Position marker based on element position and tooltip placement
+            switch(explanation.position) {
+                case 'top':
+                    marker.style.left = rect.left + (rect.width / 2) - 15 + 'px';
+                    marker.style.top = rect.bottom + 10 + 'px';
+                    break;
+                case 'bottom':
+                    marker.style.left = rect.left + (rect.width / 2) - 15 + 'px';
+                    marker.style.top = rect.top - 40 + 'px';
+                    break;
+                case 'left':
+                    marker.style.left = rect.right + 10 + 'px';
+                    marker.style.top = rect.top + (rect.height / 2) - 15 + 'px';
+                    break;
+                case 'right':
+                    marker.style.left = rect.left - 40 + 'px';
+                    marker.style.top = rect.top + (rect.height / 2) - 15 + 'px';
+                    break;
+            }
+
+            document.body.appendChild(marker);
+
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = `explanation-tooltip ${explanation.position}`;
+            tooltip.style.position = 'fixed';
+            tooltip.innerHTML = `
+                <h6>${explanation.number}. ${explanation.title}</h6>
+                <p>${explanation.text}</p>
+            `;
+
+            // Position tooltip
+            switch(explanation.position) {
+                case 'top':
+                    tooltip.style.left = rect.left + (rect.width / 2) - 150 + 'px';
+                    tooltip.style.bottom = window.innerHeight - rect.top + 20 + 'px';
+                    break;
+                case 'bottom':
+                    tooltip.style.left = rect.left + (rect.width / 2) - 150 + 'px';
+                    tooltip.style.top = rect.bottom + 20 + 'px';
+                    break;
+                case 'left':
+                    tooltip.style.right = window.innerWidth - rect.left + 20 + 'px';
+                    tooltip.style.top = rect.top + (rect.height / 2) - 50 + 'px';
+                    break;
+                case 'right':
+                    tooltip.style.left = rect.right + 20 + 'px';
+                    tooltip.style.top = rect.top + (rect.height / 2) - 50 + 'px';
+                    break;
+            }
+
+            document.body.appendChild(tooltip);
+
+            // Make marker clickable to toggle tooltip
+            marker.addEventListener('click', () => {
+                if (tooltip.style.display === 'none') {
+                    tooltip.style.display = 'block';
+                } else {
+                    tooltip.style.display = 'none';
+                }
+            });
+        }
+
+        // Global function to end explanatory mode
+        window.endExplanatoryMode = function() {
+            const overlay = document.getElementById('explanation-overlay');
+            if (overlay) overlay.remove();
+
+            document.querySelectorAll('.explanation-marker').forEach(el => el.remove());
+            document.querySelectorAll('.explanation-tooltip').forEach(el => el.remove());
+        }
     </script>
 </body>
 </html>

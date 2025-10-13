@@ -187,10 +187,8 @@
                                         <div>
                                             <div class="fw-bold">Facharbeiter</div>
                                             <div class="small text-muted">
-                                                <span id="total-skilled">0</span>h benötigt / 
-                                                {% for worker in workers %}
-                                                    {% if worker.get_worker_type_display == "Facharbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}
-                                                {% endfor %}h verfügbar
+                                                <span id="total-skilled">0</span>h benötigt /
+                                                <span id="skilled-remaining">{{ skilled_remaining|floatformat:0 }}</span>h noch verfügbar diesen Monat
                                             </div>
                                         </div>
                                     </div>
@@ -201,10 +199,8 @@
                                         <div>
                                             <div class="fw-bold">Hilfsarbeiter</div>
                                             <div class="small text-muted">
-                                                <span id="total-unskilled">0</span>h benötigt / 
-                                                {% for worker in workers %}
-                                                    {% if worker.get_worker_type_display == "Hilfsarbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}
-                                                {% endfor %}h verfügbar
+                                                <span id="total-unskilled">0</span>h benötigt /
+                                                <span id="unskilled-remaining">{{ unskilled_remaining|floatformat:0 }}</span>h noch verfügbar diesen Monat
                                             </div>
                                         </div>
                                     </div>
@@ -383,10 +379,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check capacity constraints and highlight if exceeded
         const skilledCapacityElement = document.getElementById('total-skilled');
         const unskilledCapacityElement = document.getElementById('total-unskilled');
-        
-        // Get available capacities (you may need to adjust these based on your data structure)
-        const maxSkilledHours = {% for worker in workers %}{% if worker.get_worker_type_display == "Facharbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}{% endfor %} || 0;
-        const maxUnskilledHours = {% for worker in workers %}{% if worker.get_worker_type_display == "Hilfsarbeiter" %}{{ worker.count|default:0|mul:worker.monthly_hours|default:0 }}{% endif %}{% endfor %} || 0;
+
+        // Get remaining available hours for this month
+        const maxSkilledHours = {{ skilled_remaining|default:0 }};
+        const maxUnskilledHours = {{ unskilled_remaining|default:0 }};
         
         // Apply warning styles if capacity exceeded
         if (totalSkilled > maxSkilledHours) {

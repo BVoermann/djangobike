@@ -13,6 +13,11 @@
                 Lager
             </h1>
             <p class="lead text-muted">Übersicht über Ihre Lagerbestände und Kapazitäten</p>
+            <div class="mt-3">
+                <a href="{% url 'warehouse:purchase_warehouse' session.id %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus-circle me-2"></i>Neues Lager kaufen
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -36,11 +41,7 @@
                 <div class="display-6 mb-3">
                     <i class="fas fa-expand-arrows-alt"></i>
                 </div>
-                <h2 class="fw-bold">
-                    {% for data in warehouse_data %}
-                        {% if forloop.first %}{{ data.warehouse.capacity_m2 }}{% endif %}
-                    {% endfor %}
-                </h2>
+                <h2 class="fw-bold">{{ total_capacity|floatformat:0 }}</h2>
                 <p class="mb-0 opacity-75">Gesamtkapazität m²</p>
             </div>
         </div>
@@ -66,11 +67,7 @@
                 <div class="display-6 mb-3">
                     <i class="fas fa-euro-sign"></i>
                 </div>
-                <h2 class="fw-bold">
-                    {% for data in warehouse_data %}
-                        {{ data.warehouse.rent_per_month|floatformat:0 }}{% if not forloop.last %} + {% endif %}
-                    {% endfor %}€
-                </h2>
+                <h2 class="fw-bold">{{ total_rent|floatformat:0 }}€</h2>
                 <p class="mb-0 opacity-75">Monatliche Miete</p>
             </div>
         </div>

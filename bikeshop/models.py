@@ -369,12 +369,48 @@ class Worker(models.Model):
     monthly_hours = models.IntegerField(default=150)
     count = models.IntegerField(default=0)
 
+    # Time tracking for current month
+    used_hours_this_month = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    tracking_month = models.IntegerField(null=True, blank=True)
+    tracking_year = models.IntegerField(null=True, blank=True)
+
     class Meta:
         unique_together = ['session', 'worker_type']
 
     def __str__(self):
         worker_type_display = dict(self._meta.get_field('worker_type').choices)[self.worker_type]
         return f"{worker_type_display} ({self.count} Arbeiter, {self.hourly_wage}€/h)"
+
+    def get_total_monthly_capacity(self):
+        """Returns total hours available per month for all workers of this type"""
+        return self.count * self.monthly_hours
+
+    def get_remaining_hours(self, current_month, current_year):
+        """Returns remaining available hours for the current month"""
+        from decimal import Decimal
+
+        # Reset tracking if month has changed
+        if self.tracking_month != current_month or self.tracking_year != current_year:
+            self.used_hours_this_month = Decimal('0')
+            self.tracking_month = current_month
+            self.tracking_year = current_year
+            self.save()
+
+        total_capacity = self.get_total_monthly_capacity()
+        return total_capacity - float(self.used_hours_this_month)
+
+    def use_hours(self, hours, current_month, current_year):
+        """Subtracts hours from available time for the current month"""
+        from decimal import Decimal
+
+        # Ensure we're tracking the current month
+        if self.tracking_month != current_month or self.tracking_year != current_year:
+            self.used_hours_this_month = Decimal('0')
+            self.tracking_month = current_month
+            self.tracking_year = current_year
+
+        self.used_hours_this_month += Decimal(str(hours))
+        self.save()
 
 
 class TransportCost(models.Model):

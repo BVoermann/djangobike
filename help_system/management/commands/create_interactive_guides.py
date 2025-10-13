@@ -3,12 +3,22 @@ from help_system.models import HelpCategory, InteractiveGuide
 
 
 class Command(BaseCommand):
-    help = 'Create sample interactive guides for the bike shop simulation'
+    help = 'Create interactive guides for all simulation tabs'
 
     def handle(self, *args, **options):
-        self.stdout.write('Creating interactive guides...')
-        
+        self.stdout.write('Creating interactive guides for simulation tabs...')
+
         # Get or create categories
+        general_cat, _ = HelpCategory.objects.get_or_create(
+            category_type='general',
+            defaults={
+                'name': 'Allgemein',
+                'description': 'Allgemeine Anleitungen zur Simulation',
+                'icon': 'fas fa-info-circle',
+                'order': 0
+            }
+        )
+
         procurement_cat, _ = HelpCategory.objects.get_or_create(
             category_type='procurement',
             defaults={
@@ -18,7 +28,7 @@ class Command(BaseCommand):
                 'order': 1
             }
         )
-        
+
         production_cat, _ = HelpCategory.objects.get_or_create(
             category_type='production',
             defaults={
@@ -28,17 +38,17 @@ class Command(BaseCommand):
                 'order': 2
             }
         )
-        
-        sales_cat, _ = HelpCategory.objects.get_or_create(
-            category_type='sales',
+
+        warehouse_cat, _ = HelpCategory.objects.get_or_create(
+            category_type='warehouse',
             defaults={
-                'name': 'Verkauf',
-                'description': 'Anleitungen für den Verkauf und Marketing',
-                'icon': 'fas fa-handshake',
+                'name': 'Lager',
+                'description': 'Anleitungen für die Lagerverwaltung',
+                'icon': 'fas fa-warehouse',
                 'order': 3
             }
         )
-        
+
         finance_cat, _ = HelpCategory.objects.get_or_create(
             category_type='finance',
             defaults={
@@ -48,91 +58,106 @@ class Command(BaseCommand):
                 'order': 4
             }
         )
-        
-        # Create Procurement Guide
-        procurement_guide, created = InteractiveGuide.objects.get_or_create(
-            title='Erste Schritte - Einkauf',
+
+        sales_cat, _ = HelpCategory.objects.get_or_create(
+            category_type='sales',
             defaults={
-                'description': 'Lernen Sie, wie Sie Komponenten einkaufen und Lieferanten verwalten',
+                'name': 'Verkauf',
+                'description': 'Anleitungen für den Verkauf und Marketing',
+                'icon': 'fas fa-handshake',
+                'order': 5
+            }
+        )
+
+        # Create Procurement Guide
+        InteractiveGuide.objects.update_or_create(
+            title='Einkauf: Komponenten bestellen',
+            defaults={
+                'description': 'Lernen Sie, wie Sie Komponenten von Lieferanten bestellen',
                 'category': procurement_cat,
-                'guide_type': 'onboarding',
-                'target_url_pattern': '/procurement/*',
+                'guide_type': 'walkthrough',
+                'target_url_pattern': '/help/mock-simulation/procurement/',
                 'user_level_required': 'beginner',
                 'steps': [
                     {
                         'title': 'Willkommen beim Einkauf',
-                        'content': 'In diesem Bereich können Sie Komponenten für Ihre Fahrräder bestellen. Lassen Sie uns durch die wichtigsten Funktionen gehen.',
-                        'target': 'body',
-                        'placement': 'center',
-                        'navigate_to': 'procurement'
-                    },
-                    {
-                        'title': 'Komponentenübersicht',
-                        'content': 'Hier sehen Sie alle verfügbaren Komponenten. Jede Komponente hat verschiedene Qualitätsstufen und Preise.',
-                        'target': '.components-table',
-                        'placement': 'top'
-                    },
-                    {
-                        'title': 'Lieferanten verwalten',
-                        'content': 'Wählen Sie den besten Lieferanten basierend auf Preis, Qualität und Lieferzeit.',
-                        'target': '.supplier-dropdown',
+                        'content': 'Im Einkaufs-Tab können Sie Komponenten für Ihre Fahrradproduktion bestellen. Diese Übungsumgebung zeigt Ihnen die wichtigsten Funktionen.',
+                        'target': '.display-4',
                         'placement': 'bottom'
                     },
                     {
-                        'title': 'Bestellung aufgeben',
-                        'content': 'Geben Sie die gewünschte Menge ein und klicken Sie auf "Bestellen", um Ihre Bestellung abzuschicken.',
-                        'target': '.order-form',
+                        'title': 'Lieferant auswählen',
+                        'content': 'Wählen Sie hier einen Lieferanten aus. Jeder Lieferant bietet unterschiedliche Qualitätsstufen, Lieferzeiten und Zahlungsbedingungen.',
+                        'target': '#mockSupplierDropdown',
+                        'placement': 'bottom'
+                    },
+                    {
+                        'title': 'Budget überwachen',
+                        'content': 'Hier sehen Sie Ihr verfügbares Budget. Achten Sie darauf, dass Sie nicht mehr ausgeben als verfügbar ist!',
+                        'target': '.col-lg-3:first-child .card',
+                        'placement': 'right'
+                    },
+                    {
+                        'title': 'Lieferanten-Informationen',
+                        'content': 'Diese Badges zeigen wichtige Informationen: Qualitätsstufe, Lieferzeit und Zahlungsziel des ausgewählten Lieferanten.',
+                        'target': '.supplier-badges',
+                        'placement': 'left'
+                    },
+                    {
+                        'title': 'Komponenten bestellen',
+                        'content': 'In dieser Tabelle sehen Sie alle verfügbaren Komponenten. Geben Sie die gewünschte Menge ein und beobachten Sie, wie sich der Gesamtpreis ändert.',
+                        'target': '.table-responsive',
                         'placement': 'top'
                     },
                     {
-                        'title': 'Budget im Blick behalten',
-                        'content': 'Achten Sie auf Ihr verfügbares Budget oben rechts. Überziehen Sie nicht Ihre finanziellen Möglichkeiten!',
-                        'target': '.budget-display',
-                        'placement': 'left'
+                        'title': 'Bestellung aufgeben',
+                        'content': 'Prüfen Sie den Gesamtpreis Ihrer Bestellung und klicken Sie auf "Bestellung aufgeben", um die Komponenten zu bestellen.',
+                        'target': '.btn-primary.btn-lg.px-4',
+                        'placement': 'top'
                     }
                 ],
                 'order': 1,
                 'is_active': True
             }
         )
-        
+
         # Create Production Guide
-        production_guide, created = InteractiveGuide.objects.get_or_create(
-            title='Fahrradproduktion starten',
+        InteractiveGuide.objects.update_or_create(
+            title='Produktion: Fahrräder herstellen',
             defaults={
-                'description': 'Lernen Sie, wie Sie Fahrräder produzieren und Ihre Produktionskapazität verwalten',
+                'description': 'Lernen Sie, wie Sie aus Komponenten Fahrräder produzieren',
                 'category': production_cat,
                 'guide_type': 'walkthrough',
-                'target_url_pattern': '/production/*',
+                'target_url_pattern': '/help/mock-simulation/production/',
                 'user_level_required': 'beginner',
                 'steps': [
                     {
-                        'title': 'Produktionsübersicht',
-                        'content': 'Hier verwalten Sie Ihre Fahrradproduktion. Sie können verschiedene Fahrradtypen produzieren.',
-                        'target': 'body',
-                        'placement': 'center'
+                        'title': 'Willkommen bei der Produktion',
+                        'content': 'Im Produktions-Tab stellen Sie aus Ihren eingekauften Komponenten fertige Fahrräder her.',
+                        'target': 'h1',
+                        'placement': 'bottom'
                     },
                     {
                         'title': 'Fahrradtyp auswählen',
-                        'content': 'Wählen Sie den Typ des Fahrrads, den Sie produzieren möchten. Jeder Typ benötigt verschiedene Komponenten.',
+                        'content': 'Wählen Sie den Typ des Fahrrads aus, den Sie produzieren möchten. Jeder Typ benötigt unterschiedliche Komponenten.',
                         'target': '.bike-type-selector',
-                        'placement': 'top'
+                        'placement': 'bottom'
                     },
                     {
-                        'title': 'Komponenten prüfen',
-                        'content': 'Stellen Sie sicher, dass Sie genügend Komponenten im Lager haben, bevor Sie die Produktion starten.',
+                        'title': 'Verfügbare Komponenten',
+                        'content': 'Hier sehen Sie, welche Komponenten Sie auf Lager haben. Stellen Sie sicher, dass genügend Komponenten für die gewünschte Anzahl vorhanden sind.',
                         'target': '.components-status',
                         'placement': 'right'
                     },
                     {
-                        'title': 'Arbeiter einstellen',
-                        'content': 'Sie benötigen qualifizierte Arbeiter für die Produktion. Hier können Sie neue Mitarbeiter einstellen.',
-                        'target': '.hire-worker-btn',
-                        'placement': 'bottom'
+                        'title': 'Produktionsmenge festlegen',
+                        'content': 'Geben Sie an, wie viele Fahrräder Sie produzieren möchten. Die benötigten Komponenten werden automatisch berechnet.',
+                        'target': '.production-quantity',
+                        'placement': 'left'
                     },
                     {
                         'title': 'Produktion starten',
-                        'content': 'Wenn alle Voraussetzungen erfüllt sind, können Sie die Produktion für diesen Monat starten.',
+                        'content': 'Klicken Sie hier, um die Produktion zu starten. Die fertigen Fahrräder werden in Ihr Lager aufgenommen.',
                         'target': '.start-production-btn',
                         'placement': 'top'
                     }
@@ -141,180 +166,171 @@ class Command(BaseCommand):
                 'is_active': True
             }
         )
-        
-        # Create Sales Guide  
-        sales_guide, created = InteractiveGuide.objects.get_or_create(
-            title='Verkauf und Marketing',
+
+        # Create Warehouse Guide
+        InteractiveGuide.objects.update_or_create(
+            title='Lager: Bestand verwalten',
             defaults={
-                'description': 'Verstehen Sie die Marktdynamik und optimieren Sie Ihre Verkaufsstrategie',
-                'category': sales_cat,
+                'description': 'Lernen Sie, wie Sie Ihren Lagerbestand überwachen und verwalten',
+                'category': warehouse_cat,
                 'guide_type': 'walkthrough',
-                'target_url_pattern': '/sales/*',
-                'user_level_required': 'intermediate',
+                'target_url_pattern': '/help/mock-simulation/warehouse/',
+                'user_level_required': 'beginner',
                 'steps': [
                     {
-                        'title': 'Verkaufsbereich',
-                        'content': 'Hier analysieren Sie Markttrends und setzen Verkaufspreise für Ihre Fahrräder fest.',
-                        'target': 'body',
-                        'placement': 'center'
-                    },
-                    {
-                        'title': 'Marktanalyse',
-                        'content': 'Studieren Sie die Nachfrage nach verschiedenen Fahrradtypen in verschiedenen Märkten.',
-                        'target': '.market-analysis',
-                        'placement': 'top'
-                    },
-                    {
-                        'title': 'Preise festlegen',
-                        'content': 'Setzen Sie competitive Preise, die sowohl profitabel als auch marktgerecht sind.',
-                        'target': '.price-setting',
+                        'title': 'Willkommen im Lager',
+                        'content': 'Im Lager-Tab können Sie Ihren gesamten Bestand an Komponenten und fertigen Fahrrädern überwachen.',
+                        'target': 'h1',
                         'placement': 'bottom'
                     },
                     {
-                        'title': 'Marketing-Budget',
-                        'content': 'Investieren Sie in Marketing, um die Nachfrage nach Ihren Produkten zu steigern.',
-                        'target': '.marketing-budget',
-                        'placement': 'left'
+                        'title': 'Komponenten-Bestand',
+                        'content': 'Diese Karten zeigen Ihren aktuellen Bestand an Komponenten. Achten Sie darauf, dass Sie immer genügend für die Produktion haben.',
+                        'target': '.component-stock-card:first-child',
+                        'placement': 'right'
                     },
                     {
-                        'title': 'Verkaufsprognose',
-                        'content': 'Überprüfen Sie die Verkaufsprognose, um Ihre Produktionsplanung anzupassen.',
-                        'target': '.sales-forecast',
-                        'placement': 'right'
+                        'title': 'Fertige Fahrräder',
+                        'content': 'Hier sehen Sie, wie viele fertige Fahrräder Sie auf Lager haben und zum Verkauf bereit sind.',
+                        'target': '.finished-bikes-section',
+                        'placement': 'top'
+                    },
+                    {
+                        'title': 'Lageraktivitäten',
+                        'content': 'Diese Liste zeigt die letzten Bewegungen in Ihrem Lager: Eingänge von Bestellungen, fertige Produktionen und Verkäufe.',
+                        'target': '.list-group',
+                        'placement': 'left'
                     }
                 ],
                 'order': 3,
                 'is_active': True
             }
         )
-        
-        # Create Finance Guide
-        finance_guide, created = InteractiveGuide.objects.get_or_create(
-            title='Finanzmanagement Grundlagen',
+
+        # Create Finance/Kredite Guide
+        InteractiveGuide.objects.update_or_create(
+            title='Kredite: Finanzierung verwalten',
             defaults={
-                'description': 'Behalten Sie Ihre Finanzen im Griff und verstehen Sie wichtige Kennzahlen',
+                'description': 'Lernen Sie, wie Sie Kredite aufnehmen und Ihre Finanzen verwalten',
                 'category': finance_cat,
-                'guide_type': 'onboarding',
-                'target_url_pattern': '/finance/*',
+                'guide_type': 'walkthrough',
+                'target_url_pattern': '/help/mock-simulation/finance/',
                 'user_level_required': 'beginner',
                 'steps': [
                     {
-                        'title': 'Finanz-Dashboard',
-                        'content': 'Ihr Finanz-Dashboard zeigt alle wichtigen Kennzahlen auf einen Blick.',
-                        'target': 'body',
-                        'placement': 'center'
-                    },
-                    {
-                        'title': 'Aktueller Kontostand',
-                        'content': 'Hier sehen Sie Ihren aktuellen Kontostand. Achten Sie darauf, dass er nicht ins Negative rutscht!',
-                        'target': '.balance-display',
+                        'title': 'Willkommen im Finanz-Tab',
+                        'content': 'Hier können Sie Ihren Kontostand überwachen und bei Bedarf Kredite aufnehmen.',
+                        'target': 'h1',
                         'placement': 'bottom'
                     },
                     {
-                        'title': 'Gewinn- und Verlustrechnung',
-                        'content': 'Diese Übersicht zeigt Ihnen Ihre Einnahmen und Ausgaben im Detail.',
-                        'target': '.profit-loss-section',
-                        'placement': 'top'
-                    },
-                    {
-                        'title': 'Kredite verwalten',
-                        'content': 'Falls Sie zusätzliches Kapital benötigen, können Sie hier Kredite aufnehmen.',
-                        'target': '.credit-management',
+                        'title': 'Aktueller Kontostand',
+                        'content': 'Dies ist Ihr aktueller Kontostand. Wenn dieser niedrig ist, können Sie einen Kredit aufnehmen.',
+                        'target': '.balance-display',
                         'placement': 'right'
                     },
                     {
-                        'title': 'Finanzberichte',
-                        'content': 'Regelmäßige Finanzberichte helfen Ihnen, den Überblick über Ihr Unternehmen zu behalten.',
-                        'target': '.financial-reports',
+                        'title': 'Kredit aufnehmen',
+                        'content': 'Wählen Sie einen Kredittyp, geben Sie den Betrag ein und bestätigen Sie. Beachten Sie die Zinsen und Laufzeiten!',
+                        'target': '.credit-form',
                         'placement': 'left'
+                    },
+                    {
+                        'title': 'Laufende Kredite',
+                        'content': 'Hier sehen Sie alle Ihre aktiven Kredite mit monatlichen Raten und verbleibender Laufzeit.',
+                        'target': '.active-credits',
+                        'placement': 'top'
                     }
                 ],
                 'order': 4,
                 'is_active': True
             }
         )
-        
-        # Create multi-page simulation guide
-        simulation_guide, created = InteractiveGuide.objects.get_or_create(
-            title='Komplette Simulation - Rundgang',
+
+        # Create Sales Guide
+        InteractiveGuide.objects.update_or_create(
+            title='Verkauf: Fahrräder verkaufen',
             defaults={
-                'description': 'Ein vollständiger Rundgang durch alle Bereiche der Simulation',
-                'category': procurement_cat,  # Using procurement as general category
+                'description': 'Lernen Sie, wie Sie Ihre Fahrräder auf verschiedenen Märkten verkaufen',
+                'category': sales_cat,
                 'guide_type': 'walkthrough',
-                'target_url_pattern': '/session/*',
+                'target_url_pattern': '/help/mock-simulation/sales/',
                 'user_level_required': 'beginner',
                 'steps': [
                     {
-                        'title': 'Willkommen zur Simulation',
-                        'content': 'Dieser Rundgang führt Sie durch alle wichtigen Bereiche der Fahrrad-Simulation. Wir beginnen mit dem Einkauf.',
-                        'target': 'body',
-                        'placement': 'center',
-                        'navigate_to': '/procurement/{{ session_id }}/'
+                        'title': 'Willkommen im Verkaufs-Tab',
+                        'content': 'Hier können Sie Ihre produzierten Fahrräder auf verschiedenen Märkten verkaufen und Preise festlegen.',
+                        'target': 'h1',
+                        'placement': 'bottom'
                     },
                     {
-                        'title': 'Einkauf - Komponenten bestellen',
-                        'content': 'Im Einkaufsbereich bestellen Sie alle Komponenten, die Sie für die Fahrradproduktion benötigen.',
-                        'target': '.main-content',
+                        'title': 'Markt auswählen',
+                        'content': 'Wählen Sie den Markt aus, auf dem Sie verkaufen möchten. Jeder Markt hat unterschiedliche Nachfrage und Preissensibilität.',
+                        'target': '.market-selector',
+                        'placement': 'bottom'
+                    },
+                    {
+                        'title': 'Preise festlegen',
+                        'content': 'Legen Sie hier Ihre Verkaufspreise fest. Höhere Preise = mehr Gewinn, aber möglicherweise weniger Verkäufe.',
+                        'target': '.price-input',
+                        'placement': 'left'
+                    },
+                    {
+                        'title': 'Verkaufsprognose',
+                        'content': 'Diese Prognose zeigt Ihnen, wie viele Fahrräder Sie voraussichtlich verkaufen werden und welchen Umsatz Sie erzielen.',
+                        'target': '.sales-forecast',
+                        'placement': 'right'
+                    },
+                    {
+                        'title': 'Preise speichern',
+                        'content': 'Klicken Sie hier, um Ihre Preise zu speichern. Sie werden im nächsten Monat für die Verkäufe verwendet.',
+                        'target': '.btn-success',
                         'placement': 'top'
-                    },
-                    {
-                        'title': 'Zur Produktion wechseln',
-                        'content': 'Nachdem Sie Komponenten bestellt haben, gehen wir zur Produktion über.',
-                        'target': 'body',
-                        'placement': 'center',
-                        'navigate_to': '/production/{{ session_id }}/'
-                    },
-                    {
-                        'title': 'Produktion - Fahrräder herstellen',
-                        'content': 'Hier produzieren Sie Ihre Fahrräder aus den bestellten Komponenten.',
-                        'target': '.main-content',
-                        'placement': 'top'
-                    },
-                    {
-                        'title': 'Zum Verkauf wechseln',
-                        'content': 'Jetzt schauen wir uns an, wie Sie Ihre produzierten Fahrräder verkaufen.',
-                        'target': 'body',
-                        'placement': 'center',
-                        'navigate_to': '/sales/{{ session_id }}/'
-                    },
-                    {
-                        'title': 'Verkauf - Markt erobern',
-                        'content': 'Im Verkaufsbereich legen Sie Preise fest und investieren in Marketing.',
-                        'target': '.main-content',
-                        'placement': 'top'
-                    },
-                    {
-                        'title': 'Finanzen prüfen',
-                        'content': 'Zum Abschluss schauen wir uns Ihre Finanzen an.',
-                        'target': 'body',
-                        'placement': 'center',
-                        'navigate_to': '/finance/{{ session_id }}/'
-                    },
-                    {
-                        'title': 'Finanz-Übersicht',
-                        'content': 'Hier behalten Sie Ihre Finanzen im Blick und können wichtige Entscheidungen treffen.',
-                        'target': '.main-content',
-                        'placement': 'top'
-                    },
-                    {
-                        'title': 'Simulation komplett!',
-                        'content': 'Gratulation! Sie haben alle wichtigen Bereiche der Simulation kennengelernt. Viel Erfolg beim Aufbau Ihres Fahrrad-Imperiums!',
-                        'target': 'body',
-                        'placement': 'center'
                     }
                 ],
-                'order': 0,  # First guide
+                'order': 5,
                 'is_active': True
             }
         )
-        
-        if created:
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'Successfully created {InteractiveGuide.objects.count()} interactive guides'
-                )
-            )
-        else:
-            self.stdout.write(
-                self.style.WARNING('Guides already exist, skipping creation')
-            )
+
+        # Create Financial Reports Guide
+        InteractiveGuide.objects.update_or_create(
+            title='Finanzberichte: Kennzahlen verstehen',
+            defaults={
+                'description': 'Lernen Sie, wie Sie Ihre Finanzberichte lesen und interpretieren',
+                'category': finance_cat,
+                'guide_type': 'walkthrough',
+                'target_url_pattern': '/help/mock-simulation/finance/',
+                'user_level_required': 'intermediate',
+                'steps': [
+                    {
+                        'title': 'Finanzielle Übersicht',
+                        'content': 'Der Finanzberichte-Tab zeigt Ihnen detaillierte Informationen über Ihre wirtschaftliche Leistung.',
+                        'target': 'h1',
+                        'placement': 'bottom'
+                    },
+                    {
+                        'title': 'Gewinn und Verlust',
+                        'content': 'Die Gewinn- und Verlustrechnung zeigt Ihre Einnahmen, Ausgaben und den resultierenden Gewinn oder Verlust.',
+                        'target': '.profit-loss-section',
+                        'placement': 'right'
+                    },
+                    {
+                        'title': 'Liquidität',
+                        'content': 'Die Liquidität zeigt, wie viel Bargeld Sie verfügbar haben. Eine gute Liquidität ist wichtig für die Zahlungsfähigkeit.',
+                        'target': '.liquidity-section',
+                        'placement': 'left'
+                    },
+                    {
+                        'title': 'Trends analysieren',
+                        'content': 'Nutzen Sie diese Diagramme, um Trends in Ihren Finanzen zu erkennen und bessere Entscheidungen zu treffen.',
+                        'target': '.chart-section',
+                        'placement': 'top'
+                    }
+                ],
+                'order': 6,
+                'is_active': True
+            }
+        )
+
+        self.stdout.write(self.style.SUCCESS(f'Successfully created 6 interactive guides for simulation tabs'))

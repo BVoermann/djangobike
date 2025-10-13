@@ -67,11 +67,6 @@
                                                     {{ step.title|default:"Schritt ohne Titel" }}
                                                 </h6>
                                                 <p class="mb-1">{{ step.content|default:"Keine Beschreibung verfügbar" }}</p>
-                                                {% if step.target %}
-                                                <small class="text-muted">
-                                                    <i class="fas fa-crosshairs me-1"></i>Ziel: {{ step.target }}
-                                                </small>
-                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
@@ -238,7 +233,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function startGuide(guideId) {
-    if (window.helpSystem) {
+    // Check if guide has a target URL pattern that includes mock-simulation
+    const targetUrl = '{{ guide.target_url_pattern }}';
+    const guideTitle = '{{ guide.title }}';
+
+    console.log('Starting guide with target URL:', targetUrl);
+
+    if (targetUrl.includes('mock-simulation')) {
+        // Extract view type from URL (e.g., /help/mock-simulation/procurement/ => procurement)
+        const viewMatch = targetUrl.match(/mock-simulation\/(\w+)/);
+        const view = viewMatch ? viewMatch[1] : 'overview';
+
+        console.log('Extracted view:', view);
+
+        // Check if this is the Einkauf guide (procurement guide)
+        const isEinkaufGuide = view === 'procurement' && guideTitle.includes('Komponenten bestellen');
+
+        // Open mock simulation in new window with guide ID
+        // Add view parameter and explanatory mode parameter for Einkauf guide
+        const mockUrl = `/help/mock-simulation/${view}/?view=${view}&guideId=${guideId}${isEinkaufGuide ? '&explanatory=true' : ''}`;
+        console.log('Opening mock URL:', mockUrl);
+
+        window.open(mockUrl, '_blank', 'width=1400,height=900');
+    } else if (window.helpSystem) {
+        // Start guide in current page
         window.helpSystem.startGuide(guideId);
     } else {
         console.error('Help system not initialized');

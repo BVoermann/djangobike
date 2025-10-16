@@ -522,88 +522,35 @@ class SimulationEngine:
             production_summary[bike_key]['cost'] += float(bike.production_cost)
         
         # ACTUAL COMPLETED SALES DATA (bikes actually sold this month)
-        # Use sales transactions created this month as the source of truth
-        sales_transactions = Transaction.objects.filter(
+        # Get sales orders created this month directly from SalesOrder model
+        sales_orders_this_month = SalesOrder.objects.filter(
             session=self.session,
-            transaction_type='income',
-            category='Verkäufe',
-            month=current_month,
-            year=current_year
-        )
-        
-        bikes_sold_count = sales_transactions.count()
-        # Calculate total gross revenue from the completed sales
+            sale_month=current_month,
+            sale_year=current_year
+        ).select_related('bike', 'bike__bike_type', 'market')
+
+        bikes_sold_count = sales_orders_this_month.count()
+
+        # Calculate revenues directly from sales orders
         total_sales_revenue = Decimal('0')
-        total_net_revenue = sum(transaction.amount for transaction in sales_transactions)
-        
-        # Create sales summary from transaction data
-        # Parse transaction descriptions to extract bike info
-        completed_this_month = []
-        for transaction in sales_transactions:
-            # Try to extract bike info from description
-            # Format: "Verkauf {bike_type.name} ({price_segment}) an {market.name}"
-            description = transaction.description
-            
-            # Try to find matching sales order by looking for sales in the same month
-            # that match the transaction amount (considering transport cost)
-            matching_sales = SalesOrder.objects.filter(
-                session=self.session,
-                sale_month=current_month,
-                sale_year=current_year
-            ).select_related('bike', 'bike__bike_type', 'market')
-            
-            # Find the best match based on transaction amount and description content
-            best_match = None
-            for sale in matching_sales:
-                # Calculate expected net revenue (sale price - transport cost)
-                expected_net_revenue = sale.sale_price - sale.transport_cost
-                
-                # Check if amounts match (within 1 cent for decimal precision) and description matches
-                if (abs(float(transaction.amount) - float(expected_net_revenue)) < 0.01 and
-                    sale.bike.bike_type.name in description and 
-                    sale.market.name in description):
-                    best_match = sale
-                    break
-            
-            if best_match:
-                completed_this_month.append({
-                    'bike_type': best_match.bike.bike_type.name,
-                    'price_segment': best_match.bike.get_price_segment_display(),
-                    'market': best_match.market.name,
-                    'net_revenue': float(transaction.amount),
-                    'sale_price': float(best_match.sale_price),
-                    'transport_cost': float(best_match.transport_cost)
-                })
-                
-                # Mark the sales order as completed now that we've matched it
-                best_match.is_completed = True
-                best_match.save()
-            else:
-                # Fallback: create from transaction data only
-                completed_this_month.append({
-                    'bike_type': 'Unbekannt',
-                    'price_segment': '',
-                    'market': 'Unbekannt',
-                    'net_revenue': float(transaction.amount),
-                    'sale_price': float(transaction.amount),
-                    'transport_cost': 0.0
-                })
-        
+        total_transport_costs = Decimal('0')
+
+        # Create sales summary from sales orders
         sales_summary = {}
-        for sale_data in completed_this_month:
-            bike_key = f"{sale_data['bike_type']}"
-            if sale_data['price_segment']:
-                bike_key += f" ({sale_data['price_segment']})"
-                
+        for sale_order in sales_orders_this_month:
+            bike_key = f"{sale_order.bike.bike_type.name} ({sale_order.bike.get_price_segment_display()})"
+
             if bike_key not in sales_summary:
                 sales_summary[bike_key] = {'count': 0, 'revenue': 0, 'transport_cost': 0, 'net_revenue': 0}
+
             sales_summary[bike_key]['count'] += 1
-            sales_summary[bike_key]['revenue'] += sale_data['sale_price'] 
-            sales_summary[bike_key]['transport_cost'] += sale_data['transport_cost']
-            sales_summary[bike_key]['net_revenue'] += sale_data['net_revenue']
-            
-            # Add to total gross revenue
-            total_sales_revenue += Decimal(str(sale_data['sale_price']))
+            sales_summary[bike_key]['revenue'] += float(sale_order.sale_price)
+            sales_summary[bike_key]['transport_cost'] += float(sale_order.transport_cost)
+            sales_summary[bike_key]['net_revenue'] += float(sale_order.sale_price - sale_order.transport_cost)
+
+            # Add to totals
+            total_sales_revenue += sale_order.sale_price
+            total_transport_costs += sale_order.transport_cost
         
         # PLANNED SALES DATA (sales orders created this month but not necessarily completed)
         planned_sales = SalesOrder.objects.filter(

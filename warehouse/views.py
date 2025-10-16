@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db import transaction
+from django.db.models import Count, Sum, F
 from bikeshop.models import GameSession
 from .models import Warehouse, ComponentStock, BikeStock, WarehouseType
 from decimal import Decimal
@@ -20,11 +21,23 @@ def warehouse_view(request, session_id):
 
     for warehouse in warehouses:
         stocks = ComponentStock.objects.filter(warehouse=warehouse).select_related('component__component_type')
-        bike_stocks = BikeStock.objects.filter(warehouse=warehouse).select_related('bike__bike_type')
+
+        # Group bikes by bike_type and price_segment
+        bike_groups = BikeStock.objects.filter(
+            warehouse=warehouse
+        ).values(
+            'bike__bike_type__id',
+            'bike__bike_type__name',
+            'bike__price_segment',
+            'bike__bike_type__storage_space_per_unit'
+        ).annotate(
+            count=Count('id')
+        ).order_by('bike__bike_type__name', 'bike__price_segment')
+
         warehouse_data.append({
             'warehouse': warehouse,
             'stocks': stocks,
-            'bike_stocks': bike_stocks,
+            'bike_groups': bike_groups,
             'usage': warehouse.current_usage,
             'remaining': warehouse.remaining_capacity
         })

@@ -144,7 +144,7 @@ def finance_view(request, session_id):
 
             if action == 'take_credit':
                 credit_type = data.get('credit_type')
-                amount = float(data.get('amount'))
+                amount = Decimal(str(data.get('amount')))
 
                 # Kreditkonditionen
                 credit_conditions = {
@@ -158,14 +158,14 @@ def finance_view(request, session_id):
 
                 # Sofortkredit hat niedrigere Maximalgrenze (15% des Guthabens)
                 if credit_type == 'instant':
-                    max_amount = session.balance * 0.15
+                    max_amount = session.balance * Decimal('0.15')
                 else:
-                    max_amount = session.balance * 0.25  # Andere Kredite: 25% des Guthabens
+                    max_amount = session.balance * Decimal('0.25')  # Andere Kredite: 25% des Guthabens
 
                 if amount > max_amount:
                     return JsonResponse({'success': False, 'error': 'Kreditbetrag zu hoch!'})
 
-                monthly_payment = amount * (1 + conditions['rate'] / 100) / conditions['months']
+                monthly_payment = amount * (Decimal('1') + Decimal(str(conditions['rate'])) / Decimal('100')) / Decimal(str(conditions['months']))
 
                 Credit.objects.create(
                     session=session,

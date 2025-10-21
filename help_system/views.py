@@ -377,24 +377,32 @@ def start_guide_api(request, guide_id):
     
     # Get or create user progress
     user_progress = get_or_create_user_progress(request.user)
-    
-    # Create or update guide progress
-    guide_progress, created = GuideProgress.objects.get_or_create(
+
+    # Handle guide progress - use filter().first() to avoid MultipleObjectsReturned error
+    # This can happen if there are duplicate records in the database
+    guide_progress = GuideProgress.objects.filter(
         user_progress=user_progress,
-        guide=guide,
-        defaults={
-            'total_steps': len(guide.steps),
-            'current_step': 0,
-        }
-    )
-    
-    # Reset if restarting
-    if not created:
+        guide=guide
+    ).first()
+
+    if guide_progress:
+        # Reset existing progress
         guide_progress.current_step = 0
         guide_progress.steps_completed = []
         guide_progress.completed_at = None
         guide_progress.was_skipped = False
+        guide_progress.total_steps = len(guide.steps)
         guide_progress.save()
+        created = False
+    else:
+        # Create new guide progress
+        guide_progress = GuideProgress.objects.create(
+            user_progress=user_progress,
+            guide=guide,
+            total_steps=len(guide.steps),
+            current_step=0
+        )
+        created = True
     
     # Record analytics
     HelpAnalytics.objects.create(

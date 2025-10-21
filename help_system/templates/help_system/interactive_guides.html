@@ -5,7 +5,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'help_system/css/help-system.css' %}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/css/shepherd.css">
 {% endblock %}
 
 {% block content %}
@@ -61,6 +60,112 @@
 
                     <!-- Guide Cards -->
                     <div class="row" id="guides-grid">
+                        <!-- Static Procurement Tutorial Card -->
+                        <div class="col-lg-6 col-xl-4 mb-4 guide-card">
+                            <div class="card h-100 border-2 d-flex flex-column" style="border-color: #007bff !important;">
+                                <div class="card-header bg-light">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-shopping-cart me-2"></i>Einkauf: Komponenten bestellen
+                                        </h5>
+                                        <span class="badge bg-info">Interaktiv</span>
+                                    </div>
+                                </div>
+                                <div class="card-body d-flex flex-column flex-grow-1">
+                                    <p class="card-text flex-grow-1">Lernen Sie Schritt für Schritt, wie Sie Komponenten von Lieferanten bestellen. Dieser interaktive Guide führt Sie durch den gesamten Bestellprozess.</p>
+
+                                    <div class="guide-stats mb-3">
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <small class="text-muted">Schritte</small>
+                                                <div class="fw-bold">9</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Dauer</small>
+                                                <div class="fw-bold">~5 Min</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Level</small>
+                                                <div class="fw-bold">Anfänger</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <small class="text-primary">
+                                            <i class="fas fa-folder me-1"></i>Einkauf
+                                        </small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-star me-1"></i>Empfohlen für Einsteiger
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent mt-auto">
+                                    <div class="d-grid">
+                                        <button class="btn btn-success" onclick="window.startProcurementTutorial(); return false;">
+                                            <i class="fas fa-play me-2"></i>Tutorial starten
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Static Production Tutorial Card -->
+                        <div class="col-lg-6 col-xl-4 mb-4 guide-card">
+                            <div class="card h-100 border-2 d-flex flex-column" style="border-color: #ffc107 !important;">
+                                <div class="card-header bg-light">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-cogs me-2"></i>Produktion: Fahrräder herstellen
+                                        </h5>
+                                        <span class="badge bg-info">Interaktiv</span>
+                                    </div>
+                                </div>
+                                <div class="card-body d-flex flex-column flex-grow-1">
+                                    <p class="card-text flex-grow-1">Lernen Sie, wie Sie aus Komponenten fertige Fahrräder produzieren. Dieser Guide erklärt Ihnen die Produktionsplanung und Kapazitätsauslastung.</p>
+
+                                    <div class="guide-stats mb-3">
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <small class="text-muted">Schritte</small>
+                                                <div class="fw-bold">15</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Dauer</small>
+                                                <div class="fw-bold">~7 Min</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Level</small>
+                                                <div class="fw-bold">Anfänger</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <small class="text-warning">
+                                            <i class="fas fa-folder me-1"></i>Produktion
+                                        </small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-star me-1"></i>Nach Einkauf empfohlen
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent mt-auto">
+                                    <div class="d-grid">
+                                        <button class="btn btn-warning" onclick="window.startProductionTutorial(); return false;">
+                                            <i class="fas fa-play me-2"></i>Tutorial starten
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {% for guide in guides %}
                         <div class="col-lg-6 col-xl-4 mb-4 guide-card" 
                              data-category="{{ guide.category.id }}" 
@@ -146,7 +251,9 @@
                                 </div>
                                 <div class="card-footer bg-transparent mt-auto">
                                     <div class="d-grid">
-                                        <button class="btn btn-success" onclick="startGuide({{ guide.id }})">
+                                        <button class="btn btn-success guide-start-btn"
+                                                data-guide-id="{{ guide.id }}"
+                                                onclick="if(window.startGuide){window.startGuide({{ guide.id }})}else{alert('Guide system not loaded. Please refresh the page.');}return false;">
                                             <i class="fas fa-play me-2"></i>Guide starten
                                         </button>
                                     </div>
@@ -168,6 +275,22 @@
         </div>
     </div>
 </div>
+
+<!-- Emergency inline script to verify guide system loads -->
+<script>
+(function() {
+    console.log('📌 Emergency inline script executing...');
+    console.log('📌 Checking if window.startGuide exists:', typeof window.startGuide);
+
+    // Set a flag that we can check later
+    window.guideSystemCheckpoint = {
+        inlineScriptRan: true,
+        timestamp: Date.now()
+    };
+
+    console.log('📌 Emergency checkpoint set');
+})();
+</script>
 
 <!-- Guide Preview Modal -->
 <div class="modal fade" id="guidePreviewModal" tabindex="-1" aria-labelledby="guidePreviewModalLabel" aria-hidden="true">
@@ -196,9 +319,252 @@
 {% csrf_token %}
 {% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'help_system/js/help-system.js' %}"></script>
+{% block scripts %}
+<!-- help-system.js is already loaded in base.html, don't load it again -->
 <script>
+console.log('🎯 Interactive guides script loading...');
+
+// Helper function to get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Define the startGuide function globally BEFORE DOMContentLoaded
+window.startGuide = async function(guideId) {
+    console.log('🚀 ========================================');
+    console.log('🚀 STARTING INTERACTIVE GUIDE');
+    console.log('🚀 Guide ID:', guideId);
+    console.log('🚀 typeof guideId:', typeof guideId);
+    console.log('🚀 ========================================');
+
+    // Validate guide ID
+    if (!guideId || (typeof guideId !== 'number' && typeof guideId !== 'string')) {
+        console.error('❌ Invalid guide ID:', guideId);
+        alert('Fehler: Ungültige Anleitungs-ID. Bitte versuchen Sie es erneut.');
+        return;
+    }
+
+    // Prevent any form submissions or navigation during this process
+    console.log('🔒 Preventing navigation during guide load...');
+
+    // Show loading message
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'guide-loading';
+    loadingDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        z-index: 10000;
+        text-align: center;
+        min-width: 300px;
+    `;
+    loadingDiv.innerHTML = `
+        <div style="margin-bottom: 15px;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+        <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">Guide wird geladen...</div>
+        <div style="font-size: 12px; color: #666;">Bitte warten Sie einen Moment</div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+    document.body.appendChild(loadingDiv);
+
+    try {
+        // Get CSRF token
+        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (!csrfToken) {
+            csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        }
+        if (!csrfToken) {
+            csrfToken = getCookie('csrftoken');
+        }
+        if (!csrfToken) {
+            throw new Error('CSRF token not found - please reload the page');
+        }
+
+        const guideUrl = `/help/api/guides/${guideId}/start/`;
+        console.log('📡 Fetching guide data from:', guideUrl);
+        console.log('📡 Using CSRF token:', csrfToken ? 'Yes' : 'No');
+
+        let response;
+        try {
+            response = await fetch(guideUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            console.log('📊 Response received!');
+            console.log('📊 Response status:', response.status);
+            console.log('📊 Response ok:', response.ok);
+        } catch (fetchError) {
+            console.error('❌ Fetch failed:', fetchError);
+            console.error('❌ Fetch error name:', fetchError.name);
+            console.error('❌ Fetch error type:', typeof fetchError);
+            console.error('❌ Full fetch error:', fetchError);
+
+            // Check if it's an abort error
+            if (fetchError.name === 'AbortError' || fetchError.name === 'NS_ERROR_ABORT' ||
+                (fetchError.message && fetchError.message.includes('abort'))) {
+                throw new Error(`Die Anfrage wurde abgebrochen.\n\nMöglicherweise gibt es ein Netzwerkproblem oder die Seite wurde geschlossen.\n\nBitte versuchen Sie es erneut.`);
+            }
+
+            throw new Error(`Netzwerkfehler beim Laden der Anleitung: ${fetchError.message || fetchError.name || 'Unbekannter Fehler'}`);
+        }
+
+        if (!response.ok) {
+            console.error('❌ Response not OK!');
+            if (response.status === 401) {
+                const errorData = await response.json().catch(() => ({ error: 'Authentication required' }));
+                throw new Error(`Sie müssen sich anmelden, um die Anleitungen zu verwenden.\n\nFehler: ${errorData.message || errorData.error}`);
+            }
+            const errorText = await response.text();
+            console.error('❌ HTTP Error:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}\nResponse: ${errorText}`);
+        }
+
+        console.log('✅ Response OK, parsing JSON...');
+        const data = await response.json();
+        console.log('📋 Guide data received:', data);
+        console.log('📋 Guide data.success:', data.success);
+        console.log('📋 Guide data.guide:', data.guide ? 'exists' : 'missing');
+
+        if (data.success && data.guide) {
+            // Get user's active session ID
+            console.log('🔍 Fetching active sessions from: /api/sessions/');
+
+            let sessionsResponse;
+            try {
+                sessionsResponse = await fetch('/api/sessions/', {
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    }
+                });
+
+                console.log('📊 Sessions response status:', sessionsResponse.status);
+                console.log('📊 Sessions response ok:', sessionsResponse.ok);
+            } catch (fetchError) {
+                console.error('❌ Sessions fetch failed:', fetchError);
+                console.error('❌ Sessions error name:', fetchError.name);
+                console.error('❌ Sessions error type:', typeof fetchError);
+                console.error('❌ Full sessions error:', fetchError);
+
+                // Check if it's an abort error
+                if (fetchError.name === 'AbortError' || fetchError.name === 'NS_ERROR_ABORT' ||
+                    (fetchError.message && fetchError.message.includes('abort'))) {
+                    throw new Error(`Die Sitzungsabfrage wurde abgebrochen.\n\nBitte versuchen Sie es erneut.`);
+                }
+
+                throw new Error(`Netzwerkfehler beim Laden der Sitzungsdaten: ${fetchError.message || fetchError.name || 'Unbekannter Fehler'}`);
+            }
+
+            let targetUrl = '';
+            if (sessionsResponse.ok) {
+                const sessionsData = await sessionsResponse.json();
+                console.log('📊 Sessions data:', sessionsData);
+
+                if (sessionsData.success && sessionsData.sessions && sessionsData.sessions.length > 0) {
+                    // Use the first session
+                    const sessionId = sessionsData.sessions[0].id;
+                    targetUrl = `/procurement/${sessionId}/`;
+                    console.log('✅ Target URL:', targetUrl);
+                } else {
+                    throw new Error('Sie haben keine aktive Simulation.\n\nBitte erstellen Sie zunächst eine Sitzung unter "Neue Simulation".');
+                }
+            } else {
+                throw new Error('Konnte Sitzungsinformationen nicht laden.\n\nBitte versuchen Sie es später erneut.');
+            }
+
+            // Store guide data in sessionStorage to load it on the procurement page
+            sessionStorage.setItem('pendingGuide', JSON.stringify({
+                guideId: guideId,
+                guideData: data.guide,
+                timestamp: Date.now()
+            }));
+
+            console.log('💾 Guide data stored in sessionStorage');
+
+            // Remove loading message
+            loadingDiv.remove();
+
+            // Open procurement page in popup window
+            console.log('🪟 Opening popup window:', targetUrl);
+            const popupFeatures = 'width=1400,height=900,scrollbars=yes,resizable=yes,toolbar=no,location=no,menubar=no,status=yes';
+            const popup = window.open(targetUrl, 'BikeShopGuide_' + guideId, popupFeatures);
+
+            if (!popup) {
+                throw new Error('Pop-up wurde blockiert.\n\nBitte erlauben Sie Pop-ups für diese Seite und versuchen Sie es erneut.');
+            }
+
+            // Check if popup was opened successfully
+            try {
+                popup.focus();
+                console.log('✅ Popup window opened and focused successfully');
+            } catch (e) {
+                console.warn('⚠️ Could not focus popup window:', e);
+            }
+
+            // Monitor popup to detect if it was closed prematurely
+            const popupCheckInterval = setInterval(() => {
+                if (popup.closed) {
+                    console.log('🚪 Popup window was closed');
+                    clearInterval(popupCheckInterval);
+                    sessionStorage.removeItem('pendingGuide');
+                }
+            }, 1000);
+
+            // The popup will automatically check sessionStorage and start the guide
+            console.log('✅ Guide setup complete, waiting for popup to load...');
+
+        } else {
+            throw new Error('Anleitung nicht gefunden oder ungültig');
+        }
+
+    } catch (error) {
+        console.error('❌ Error starting guide:', error);
+        console.error('❌ Error name:', error.name);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+
+        if (loadingDiv && loadingDiv.parentNode) {
+            loadingDiv.remove();
+        }
+
+        // Show error message with more details
+        let errorMessage = error.message || error.toString() || 'Unknown error';
+        if (error.name) {
+            errorMessage = `${error.name}: ${errorMessage}`;
+        }
+
+        alert(`❌ Die Anleitung konnte nicht geladen werden.\n\nFehler: ${errorMessage}\n\nBitte überprüfen Sie die Browser-Konsole für weitere Details.`);
+    }
+};
+
+console.log('✅ window.startGuide function defined:', typeof window.startGuide);
+
+// NOW setup the DOMContentLoaded listener
 document.addEventListener('DOMContentLoaded', function() {
     // Check if we need to continue a guide from another page
     const continueGuideData = sessionStorage.getItem('continueGuide');
@@ -255,166 +621,41 @@ document.addEventListener('DOMContentLoaded', function() {
     categoryFilter.addEventListener('change', applyFilters);
     typeFilter.addEventListener('change', applyFilters);
     difficultyFilter.addEventListener('change', applyFilters);
-    
-    // Help system initialization removed - using direct approach instead
-    console.log('Interactive guides page loaded');
-    
+
+    // Add event listeners to all guide start buttons
+    // NOTE: Event listeners are DISABLED because we're using onclick handlers in HTML
+    // This prevents double-firing of the startGuide function
+    const guideStartButtons = document.querySelectorAll('.guide-start-btn');
+    console.log('✅ Found guide start buttons:', guideStartButtons.length);
+
+    guideStartButtons.forEach((button, index) => {
+        console.log(`  Button ${index + 1}:`, {
+            id: button.getAttribute('data-guide-id'),
+            text: button.textContent.trim(),
+            hasOnclick: button.hasAttribute('onclick')
+        });
+    });
+
+    console.log('ℹ️ Using inline onclick handlers (not event listeners) to prevent double-firing');
+
+    console.log('✅ Interactive guides page loaded');
+    console.log('✅ window.startGuide defined:', typeof window.startGuide);
+
     // Store current guide ID for modal
     window.currentGuideId = null;
-    
+
     // Start guide button in modal
-    document.getElementById('start-guide-btn').addEventListener('click', function() {
-        if (window.currentGuideId && window.helpSystem) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('guidePreviewModal'));
-            modal.hide();
-            window.helpSystem.startGuide(window.currentGuideId);
-        }
-    });
-});
-
-// Helper function to get CSRF token from cookie
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-async function startGuide(guideId) {
-    console.log('🚀 Starting interactive guide:', guideId);
-    
-    // Show loading message
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'guide-loading';
-    loadingDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        z-index: 10000;
-        text-align: center;
-    `;
-    loadingDiv.innerHTML = `
-        <div style="margin-bottom: 15px;">
-            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        </div>
-        <div>Mock-Simulation wird geöffnet...</div>
-        <style>
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-    `;
-    document.body.appendChild(loadingDiv);
-    
-    try {
-        // Get CSRF token
-        let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-        if (!csrfToken) {
-            // Try to get from meta tag
-            csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        }
-        if (!csrfToken) {
-            // Try to get from cookie as fallback
-            csrfToken = getCookie('csrftoken');
-        }
-        if (!csrfToken) {
-            throw new Error('CSRF token not found - please reload the page');
-        }
-        
-        console.log('📡 Fetching guide data...');
-        const response = await fetch(`/help/api/guides/${guideId}/start/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'Content-Type': 'application/json',
+    const modalStartBtn = document.getElementById('start-guide-btn');
+    if (modalStartBtn) {
+        modalStartBtn.addEventListener('click', function() {
+            if (window.currentGuideId && window.helpSystem) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('guidePreviewModal'));
+                modal.hide();
+                window.helpSystem.startGuide(window.currentGuideId);
             }
         });
-        
-        console.log('📊 Response status:', response.status);
-        
-        if (!response.ok) {
-            if (response.status === 401) {
-                const errorData = await response.json().catch(() => ({ error: 'Authentication required' }));
-                throw new Error(`Sie müssen sich anmelden, um die Anleitungen zu verwenden.\\n\\nFehler: ${errorData.message || errorData.error}`);
-            }
-            const errorText = await response.text();
-            console.error('HTTP Error:', response.status, errorText);
-            throw new Error(`HTTP ${response.status}: ${response.statusText}\\nResponse: ${errorText}`);
-        }
-        
-        const data = await response.json();
-        console.log('📋 Guide data received:', data);
-        
-        if (data.success && data.guide) {
-            // Remove loading
-            loadingDiv.remove();
-            
-            // Open mock simulation in new tab
-            const mockUrl = '/help/mock-simulation/';
-            const mockWindow = window.open(mockUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-            
-            if (mockWindow) {
-                // Wait for mock window to load, then start guide there
-                const checkLoaded = setInterval(() => {
-                    try {
-                        if (mockWindow.document.readyState === 'complete') {
-                            clearInterval(checkLoaded);
-                            
-                            // Start guide in mock window
-                            setTimeout(() => {
-                                if (mockWindow.createInteractiveGuide) {
-                                    // Switch to appropriate view if guide has navigation
-                                    const firstStep = data.guide.steps[0];
-                                    if (firstStep && firstStep.navigate_to && mockWindow.switchMockView) {
-                                        const targetView = extractViewFromUrl(firstStep.navigate_to);
-                                        mockWindow.switchMockView(targetView);
-                                    }
-                                    
-                                    mockWindow.createInteractiveGuide(data.guide);
-                                } else {
-                                    console.error('Mock window not ready for guides');
-                                }
-                            }, 1000);
-                        }
-                    } catch (e) {
-                        // Window might not be accessible yet
-                        console.log('Waiting for mock window to load...');
-                    }
-                }, 500);
-                
-                // Timeout after 10 seconds
-                setTimeout(() => {
-                    clearInterval(checkLoaded);
-                }, 10000);
-            } else {
-                throw new Error('Pop-up wurde blockiert. Bitte erlauben Sie Pop-ups für diese Seite.');
-            }
-        } else {
-            throw new Error('Anleitung nicht gefunden oder ungültig');
-        }
-        
-    } catch (error) {
-        console.error('❌ Error starting guide:', error);
-        loadingDiv.remove();
-        
-        // Show error message
-        alert(`❌ Die Anleitung konnte nicht geladen werden.\\n\\nFehler: ${error.message}\\n\\nBitte laden Sie die Seite neu.`);
     }
-}
+});
 
 function loadScript(src) {
     return new Promise((resolve, reject) => {
@@ -426,8 +667,8 @@ function loadScript(src) {
     });
 }
 
-async function createInteractiveGuide(guide, startStep = 0) {
-    console.log('🎬 Creating interactive guide:', guide.title, 'starting at step', startStep);
+async function createInteractiveGuide(guide, startStep = 0, isPopup = false) {
+    console.log('🎬 Creating interactive guide:', guide.title, 'starting at step', startStep, 'isPopup:', isPopup);
     
     // Create grey overlay that covers entire page
     const overlay = document.createElement('div');
@@ -463,26 +704,104 @@ async function createInteractiveGuide(guide, startStep = 0) {
     let currentHighlight = null;
     let currentTargetElement = null;
     let currentPlacement = 'right';
-    
-    const positionGuideContainer = (targetElement, placement = 'right') => {
+
+    const expandElementIfNeeded = async (targetElement) => {
+        // Check if element is inside a dropdown menu
+        const dropdownMenu = targetElement.closest('.dropdown-menu');
+        if (dropdownMenu) {
+            // Find the dropdown toggle button
+            const dropdown = dropdownMenu.previousElementSibling;
+            if (dropdown && dropdown.classList.contains('dropdown-toggle')) {
+                // Check if dropdown is not already shown
+                if (!dropdownMenu.classList.contains('show')) {
+                    console.log('Opening dropdown for:', targetElement);
+                    dropdown.click();
+                    // Wait for dropdown animation
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+        }
+
+        // Check if element is a dropdown toggle itself
+        if (targetElement.classList.contains('dropdown-toggle') ||
+            targetElement.hasAttribute('data-bs-toggle')) {
+            const nextElement = targetElement.nextElementSibling;
+            if (nextElement && nextElement.classList.contains('dropdown-menu') &&
+                !nextElement.classList.contains('show')) {
+                console.log('Opening dropdown toggle:', targetElement);
+                targetElement.click();
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+
+        // Check if element is inside a collapse
+        const collapseParent = targetElement.closest('.collapse');
+        if (collapseParent && !collapseParent.classList.contains('show')) {
+            // Find the button that controls this collapse
+            const collapseId = collapseParent.id;
+            if (collapseId) {
+                const collapseToggle = document.querySelector(`[data-bs-toggle="collapse"][data-bs-target="#${collapseId}"]`);
+                if (collapseToggle) {
+                    console.log('Expanding collapse for:', targetElement);
+                    collapseToggle.click();
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+        }
+
+        // Check if element has display: none or visibility: hidden
+        const styles = window.getComputedStyle(targetElement);
+        if (styles.display === 'none' || styles.visibility === 'hidden') {
+            console.log('Element is hidden, checking for show/hide mechanisms');
+
+            // Try to find parent with display:none
+            let parent = targetElement.parentElement;
+            while (parent && parent !== document.body) {
+                const parentStyles = window.getComputedStyle(parent);
+                if (parentStyles.display === 'none') {
+                    // Try to show the parent
+                    parent.style.display = 'block';
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    break;
+                }
+                parent = parent.parentElement;
+            }
+        }
+
+        // Extra wait to ensure everything is rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+    };
+
+    const positionGuideContainer = async (targetElement, placement = 'right') => {
         if (!targetElement) {
             // Default position if no target element
             guideContainer.style.top = '20px';
             guideContainer.style.right = '20px';
             guideContainer.style.left = 'auto';
             guideContainer.style.bottom = 'auto';
-            return;
+            return Promise.resolve();
         }
-        
+
+        // Scroll element into view and wait
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+        // Wait for scroll animation and layout to settle
+        await new Promise(resolve => setTimeout(resolve, 400));
+
         const rect = targetElement.getBoundingClientRect();
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
         const containerWidth = 350;
-        const containerHeight = 300; // Approximate height
-        const margin = 15; // Space between target and container
-        
+        const containerHeight = guideContainer.offsetHeight || 300;
+        const margin = 20;
+
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
         let top, left;
-        
+        let finalPlacement = placement;
+
+        // Calculate initial position based on placement
         switch (placement) {
             case 'top':
                 top = rect.top + scrollTop - containerHeight - margin;
@@ -502,32 +821,65 @@ async function createInteractiveGuide(guide, startStep = 0) {
                 left = rect.right + scrollLeft + margin;
                 break;
         }
-        
-        // Ensure container stays within viewport
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        // Adjust horizontal position
-        if (left < 0) {
-            left = margin;
-        } else if (left + containerWidth > viewportWidth) {
-            left = viewportWidth - containerWidth - margin;
+
+        // Adjust if going off-screen horizontally
+        if (left + containerWidth > scrollLeft + viewportWidth - margin) {
+            // Try left side instead
+            left = rect.left + scrollLeft - containerWidth - margin;
+            finalPlacement = 'left';
         }
-        
-        // Adjust vertical position
-        if (top < scrollTop) {
-            top = scrollTop + margin;
-        } else if (top + containerHeight > scrollTop + viewportHeight) {
-            top = scrollTop + viewportHeight - containerHeight - margin;
+        if (left < scrollLeft + margin) {
+            // Try right side
+            left = rect.right + scrollLeft + margin;
+            finalPlacement = 'right';
+            // If still off, center below
+            if (left + containerWidth > scrollLeft + viewportWidth - margin) {
+                left = Math.max(scrollLeft + margin, (viewportWidth - containerWidth) / 2 + scrollLeft);
+                top = rect.bottom + scrollTop + margin;
+                finalPlacement = 'bottom';
+            }
         }
-        
+
+        // Adjust if going off-screen vertically
+        if (top < scrollTop + margin) {
+            top = rect.bottom + scrollTop + margin;
+            finalPlacement = 'bottom';
+        }
+        if (top + containerHeight > scrollTop + viewportHeight - margin) {
+            top = Math.max(scrollTop + margin, scrollTop + viewportHeight - containerHeight - margin);
+        }
+
+        // Apply positioning
+        guideContainer.style.position = 'absolute';
         guideContainer.style.top = top + 'px';
         guideContainer.style.left = left + 'px';
         guideContainer.style.right = 'auto';
         guideContainer.style.bottom = 'auto';
-        
-        // Add pointer arrow
-        addPointerArrow(placement);
+        guideContainer.style.transform = 'none';
+
+        // Add arrow
+        addPointerArrow(finalPlacement);
+
+        // Ensure guide box is visible - scroll if needed
+        await new Promise(resolve => setTimeout(resolve, 50));
+        const containerRect = guideContainer.getBoundingClientRect();
+        // viewportHeight and viewportWidth already declared above
+
+        // Check if guide box extends beyond viewport
+        if (containerRect.bottom > viewportHeight || containerRect.top < 0 ||
+            containerRect.right > viewportWidth || containerRect.left < 0) {
+            // Scroll to make guide box visible
+            const scrollTargetY = top - 100; // Add some padding
+            const scrollTargetX = left - 20;
+            window.scrollTo({
+                top: Math.max(0, scrollTargetY),
+                left: Math.max(0, scrollTargetX),
+                behavior: 'smooth'
+            });
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        return Promise.resolve();
     };
     
     const addPointerArrow = (placement) => {
@@ -605,7 +957,17 @@ async function createInteractiveGuide(guide, startStep = 0) {
         if (stepIndex >= guide.steps.length) {
             // Guide completed
             endGuide();
-            alert('🎉 Anleitung erfolgreich abgeschlossen!\\n\\nSie haben alle Schritte durchlaufen. Viel Erfolg bei der Simulation!');
+            if (isPopup) {
+                alert('🎉 Anleitung erfolgreich abgeschlossen!\\n\\nSie haben alle Schritte durchlaufen. Das Fenster wird nun geschlossen.');
+                // Close the popup window
+                if (window.guideWindow) {
+                    window.guideWindow.close();
+                } else {
+                    window.close();
+                }
+            } else {
+                alert('🎉 Anleitung erfolgreich abgeschlossen!\\n\\nSie haben alle Schritte durchlaufen. Viel Erfolg bei der Simulation!');
+            }
             return;
         }
         
@@ -642,42 +1004,10 @@ async function createInteractiveGuide(guide, startStep = 0) {
             return; // Let the page load and continue guide there
         }
         
-        // Find and highlight target element
-        let targetElement = null;
-        if (step.target && step.target !== 'body') {
-            targetElement = document.querySelector(step.target);
-            if (targetElement) {
-                currentTargetElement = targetElement;
-                currentPlacement = step.placement || 'right';
-                highlightElement(targetElement);
-                // Position guide container next to target element
-                positionGuideContainer(targetElement, currentPlacement);
-            } else {
-                console.warn(`⚠️ Target element not found: ${step.target}`);
-                currentTargetElement = null;
-                // Use default positioning if target not found
-                positionGuideContainer(null);
-            }
-        } else {
-            // Center the guide for body/general steps
-            currentTargetElement = null;
-            guideContainer.style.top = '50%';
-            guideContainer.style.left = '50%';
-            guideContainer.style.transform = 'translate(-50%, -50%)';
-            guideContainer.style.right = 'auto';
-            guideContainer.style.bottom = 'auto';
-            
-            // Remove arrow for centered guides
-            const existingArrow = guideContainer.querySelector('.guide-arrow');
-            if (existingArrow) {
-                existingArrow.remove();
-            }
-        }
-        
-        // Update guide container content
+        // Update guide container content FIRST
         const isLastStep = stepIndex === guide.steps.length - 1;
         const progress = Math.round(((stepIndex + 1) / guide.steps.length) * 100);
-        
+
         guideContainer.innerHTML = `
             <div style="padding: 20px;">
                 <!-- Progress bar -->
@@ -716,13 +1046,52 @@ async function createInteractiveGuide(guide, startStep = 0) {
                 </div>
             </div>
         `;
+
+        // NOW position the guide container after content is set
+        let targetElement = null;
+        if (step.target && step.target !== 'body') {
+            targetElement = document.querySelector(step.target);
+            if (targetElement) {
+                currentTargetElement = targetElement;
+                currentPlacement = step.placement || 'right';
+
+                // Auto-expand elements if needed
+                await expandElementIfNeeded(targetElement);
+
+                // Wait for positioning to complete
+                await positionGuideContainer(targetElement, currentPlacement);
+
+                // Then add highlight
+                highlightElement(targetElement);
+            } else {
+                console.warn(`⚠️ Target element not found: ${step.target}`);
+                currentTargetElement = null;
+                // Use default positioning if target not found
+                await positionGuideContainer(null);
+            }
+        } else {
+            // Center the guide for body/general steps
+            currentTargetElement = null;
+            guideContainer.style.position = 'fixed';
+            guideContainer.style.top = '50%';
+            guideContainer.style.left = '50%';
+            guideContainer.style.transform = 'translate(-50%, -50%)';
+            guideContainer.style.right = 'auto';
+            guideContainer.style.bottom = 'auto';
+
+            // Remove arrow for centered guides
+            const existingArrow = guideContainer.querySelector('.guide-arrow');
+            if (existingArrow) {
+                existingArrow.remove();
+            }
+        }
     };
     
     const highlightElement = (element) => {
         const rect = element.getBoundingClientRect();
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-        
+
         // Create highlight box
         currentHighlight = document.createElement('div');
         currentHighlight.style.cssText = `
@@ -739,7 +1108,7 @@ async function createInteractiveGuide(guide, startStep = 0) {
             box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
             animation: guidePulse 2s infinite;
         `;
-        
+
         // Add pulsing animation
         if (!document.getElementById('guide-animations')) {
             const style = document.createElement('style');
@@ -753,11 +1122,8 @@ async function createInteractiveGuide(guide, startStep = 0) {
             `;
             document.head.appendChild(style);
         }
-        
+
         document.body.appendChild(currentHighlight);
-        
-        // Scroll element into view
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
     
     // Global functions for buttons
@@ -778,16 +1144,25 @@ async function createInteractiveGuide(guide, startStep = 0) {
         if (overlay) overlay.remove();
         if (guideContainer) guideContainer.remove();
         if (currentHighlight) currentHighlight.remove();
-        
+
         // Remove resize listener
         window.removeEventListener('resize', repositionGuide);
         window.removeEventListener('scroll', repositionGuide);
-        
+
         // Clean up global functions
         delete window.nextStep;
         delete window.previousStep;
         delete window.endGuide;
         delete window.repositionGuide;
+
+        // Close popup if this is in a popup window
+        if (isPopup) {
+            if (window.guideWindow) {
+                window.guideWindow.close();
+            } else {
+                window.close();
+            }
+        }
     };
     
     // Reposition guide when window resizes or scrolls
@@ -876,7 +1251,7 @@ async function createFallbackGuide(guideId) {
 function previewGuide(guideId) {
     // Store guide ID for later use
     window.currentGuideId = guideId;
-    
+
     // Fetch guide details
     fetch(`/help/api/guides/${guideId}/preview/`)
         .then(response => response.json())
@@ -903,11 +1278,11 @@ function previewGuide(guideId) {
                 </div>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
-                    Dieser Guide führt dich interaktiv durch die Anwendung. 
+                    Dieser Guide führt dich interaktiv durch die Anwendung.
                     Folge den Anweisungen und klicke auf die hervorgehobenen Elemente.
                 </div>
             `;
-            
+
             const modal = new bootstrap.Modal(document.getElementById('guidePreviewModal'));
             modal.show();
         })
@@ -917,5 +1292,148 @@ function previewGuide(guideId) {
             startGuide(guideId);
         });
 }
+
+// Final verification that everything is loaded
+console.log('═══════════════════════════════════════════════════════');
+console.log('🎉 INTERACTIVE GUIDES SCRIPT FULLY LOADED!');
+console.log('═══════════════════════════════════════════════════════');
+console.log('✅ window.startGuide available:', typeof window.startGuide === 'function');
+console.log('✅ Emergency checkpoint:', window.guideSystemCheckpoint);
+console.log('✅ Ready to handle guide button clicks');
+console.log('═══════════════════════════════════════════════════════');
+
+// Add a test function to verify from console
+window.testGuideSystem = function() {
+    console.log('=== GUIDE SYSTEM TEST ===');
+    console.log('window.startGuide exists:', typeof window.startGuide);
+    console.log('Emergency checkpoint:', window.guideSystemCheckpoint);
+    console.log('Attempting to call with test ID 1...');
+    if (typeof window.startGuide === 'function') {
+        console.log('Function exists, calling it...');
+        // Don't actually call it in test, just verify it exists
+        console.log('✅ Function is callable. Use window.startGuide(ID) to test with a real guide ID');
+    } else {
+        console.log('❌ Function does not exist!');
+        console.log('Available window properties:', Object.keys(window).filter(k => k.includes('guide') || k.includes('Guide')));
+    }
+    console.log('=========================');
+};
+
+console.log('💡 TIP: Run window.testGuideSystem() in console to test the guide system');
+console.log('💡 TIP: Run window.startGuide(1) to test starting guide with ID 1');
+console.log('💡 TIP: If button still shows error, check browser console for JavaScript errors');
+
+// Immediately verify the function is accessible
+if (typeof window.startGuide === 'function') {
+    console.log('✅✅✅ SUCCESS: window.startGuide is ready to use! ✅✅✅');
+} else {
+    console.error('❌❌❌ ERROR: window.startGuide was NOT defined! ❌❌❌');
+    console.error('This indicates a JavaScript error occurred during script execution.');
+    console.error('Please check for syntax errors above this message.');
+}
+
+// Procurement Tutorial Launcher
+window.startProcurementTutorial = async function() {
+    console.log('🎓 Starting Procurement Tutorial...');
+
+    try {
+        // Get user's active session
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+
+        // Fetch active sessions
+        const sessionsResponse = await fetch('/api/sessions/', {
+            headers: {
+                'X-CSRFToken': csrfToken,
+            }
+        });
+
+        if (!sessionsResponse.ok) {
+            throw new Error('Konnte Sitzungsinformationen nicht laden');
+        }
+
+        const sessionsData = await sessionsResponse.json();
+
+        if (!sessionsData.success || !sessionsData.sessions || sessionsData.sessions.length === 0) {
+            alert('Sie haben keine aktive Simulation.\n\nBitte erstellen Sie zunächst eine Sitzung unter "Neue Simulation".');
+            return;
+        }
+
+        // Use first session
+        const sessionId = sessionsData.sessions[0].id;
+        const procurementUrl = `/procurement/${sessionId}/?tutorial=true`;
+
+        console.log('🎯 Opening procurement page with tutorial mode:', procurementUrl);
+
+        // Open in new window
+        const windowFeatures = 'width=1400,height=900,scrollbars=yes,resizable=yes,toolbar=no,location=no,menubar=no,status=yes';
+        const tutorialWindow = window.open(procurementUrl, 'ProcurementTutorial', windowFeatures);
+
+        if (!tutorialWindow) {
+            alert('Pop-up wurde blockiert.\n\nBitte erlauben Sie Pop-ups für diese Seite und versuchen Sie es erneut.');
+            return;
+        }
+
+        tutorialWindow.focus();
+        console.log('✅ Tutorial window opened successfully');
+
+    } catch (error) {
+        console.error('❌ Error starting procurement tutorial:', error);
+        alert('Fehler beim Starten des Tutorials:\n\n' + error.message);
+    }
+};
+
+console.log('✅ window.startProcurementTutorial defined');
+
+// Production Tutorial Launcher
+window.startProductionTutorial = async function() {
+    console.log('🎓 Starting Production Tutorial...');
+
+    try {
+        // Get user's active session
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+
+        // Fetch active sessions
+        const sessionsResponse = await fetch('/api/sessions/', {
+            headers: {
+                'X-CSRFToken': csrfToken,
+            }
+        });
+
+        if (!sessionsResponse.ok) {
+            throw new Error('Konnte Sitzungsinformationen nicht laden');
+        }
+
+        const sessionsData = await sessionsResponse.json();
+
+        if (!sessionsData.success || !sessionsData.sessions || sessionsData.sessions.length === 0) {
+            alert('Sie haben keine aktive Simulation.\n\nBitte erstellen Sie zunächst eine Sitzung unter "Neue Simulation".');
+            return;
+        }
+
+        // Use first session
+        const sessionId = sessionsData.sessions[0].id;
+        const productionUrl = `/production/${sessionId}/?tutorial=true`;
+
+        console.log('🎯 Opening production page with tutorial mode:', productionUrl);
+
+        // Open in new window
+        const windowFeatures = 'width=1400,height=900,scrollbars=yes,resizable=yes,toolbar=no,location=no,menubar=no,status=yes';
+        const tutorialWindow = window.open(productionUrl, 'ProductionTutorial', windowFeatures);
+
+        if (!tutorialWindow) {
+            alert('Pop-up wurde blockiert.\n\nBitte erlauben Sie Pop-ups für diese Seite und versuchen Sie es erneut.');
+            return;
+        }
+
+        tutorialWindow.focus();
+        console.log('✅ Tutorial window opened successfully');
+
+    } catch (error) {
+        console.error('❌ Error starting production tutorial:', error);
+        alert('Fehler beim Starten des Tutorials:\n\n' + error.message);
+    }
+};
+
+console.log('✅ window.startProductionTutorial defined');
 </script>
 {% endblock %}

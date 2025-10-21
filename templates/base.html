@@ -8,9 +8,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Help System CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/@shepherd.js/shepherd@12.0.0/dist/css/shepherd.css" rel="stylesheet">
-    <link href="https://unpkg.com/tippy.js@6.3.7/dist/tippy.css" rel="stylesheet">
     {% load static %}
     <link href="{% static 'help_system/css/help-system.css' %}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
@@ -208,11 +205,7 @@
                             <i class="fas fa-list"></i> Session-Übersicht
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'bikeshop:session_detail' session.id %}">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                    </li>
+                    <hr>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'procurement:procurement' session.id %}">
                             <i class="fas fa-shopping-cart"></i> Einkauf
@@ -229,6 +222,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'sales:sales' session.id %}">
+                            <i class="fas fa-shopping-bag"></i> Verkauf
+                        </a>
+                    </li>
+                    <hr>
+                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'finance:finance' session.id %}">
                             <i class="fas fa-credit-card"></i> Kredite
                         </a>
@@ -236,11 +235,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'finance:dashboard' session.id %}">
                             <i class="fas fa-chart-line"></i> Finanzberichte
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'sales:sales' session.id %}">
-                            <i class="fas fa-shopping-bag"></i> Verkauf
                         </a>
                     </li>
                     <li class="nav-item">
@@ -254,6 +248,11 @@
                         </a>
                     </li>
                     <hr>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'bikeshop:session_detail' session.id %}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'competitors:dashboard' session.id %}">
                             <i class="fas fa-users"></i> Konkurrenten
@@ -570,11 +569,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Help System JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/@shepherd.js/shepherd@12.0.0/dist/js/shepherd.min.js"></script>
-    <script src="https://unpkg.com/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-    <script src="https://unpkg.com/tippy.js@6.3.7/dist/tippy-bundle.umd.min.js"></script>
     <script src="{% static 'help_system/js/help-system.js' %}"></script>
     
     <script>

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load math_filters %}
+{% load static %}
 
 {% block title %}Einkauf - BikeShop Pro{% endblock %}
 
@@ -207,7 +208,7 @@
         <!-- Bestellübersicht -->
         <div class="row">
             <div class="col-12">
-                <div class="card border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                <div class="card border-0" id="order-summary-card" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -279,6 +280,71 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Load guide system core -->
+<script src="{% static 'help_system/js/guide-system-core.js' %}"></script>
+
+<!-- Load procurement tutorial system -->
+<script src="{% static 'help_system/js/procurement-tutorial.js' %}"></script>
+
+<!-- Check for pending guides -->
+<script>
+// Check if there's a pending guide to start
+document.addEventListener('DOMContentLoaded', function() {
+    const pendingGuideData = sessionStorage.getItem('pendingGuide');
+    if (pendingGuideData) {
+        try {
+            const { guideId, guideData, timestamp } = JSON.parse(pendingGuideData);
+
+            // Validate guide data structure
+            if (!guideData || !guideData.title || !guideData.steps || !Array.isArray(guideData.steps)) {
+                throw new Error('Ungültige Anleitungsdaten erhalten');
+            }
+
+            console.log('📋 Guide data validated:', {
+                title: guideData.title,
+                steps: guideData.steps.length,
+                timestamp: new Date(timestamp).toISOString()
+            });
+
+            // Check if the guide data is recent (within last 30 seconds)
+            const now = Date.now();
+            if (now - timestamp < 30000) {
+                console.log('🎯 Pending guide detected, starting in 1.5 seconds...');
+
+                // Remove from storage so it doesn't run again
+                sessionStorage.removeItem('pendingGuide');
+
+                // Wait for page to fully load, then start guide
+                setTimeout(() => {
+                    console.log('🎬 Starting guide:', guideData.title);
+
+                    // Detect if we're in a popup window
+                    const isInPopup = window.opener && !window.opener.closed;
+                    console.log('🪟 Is in popup:', isInPopup);
+
+                    // Start the guide (function loaded from guide-system-core.js)
+                    if (typeof createInteractiveGuide !== 'undefined') {
+                        createInteractiveGuide(guideData, 0, isInPopup);
+                    } else {
+                        console.error('❌ createInteractiveGuide function not found');
+                        alert('Fehler: Guide-System konnte nicht geladen werden. Bitte laden Sie die Seite neu.');
+                    }
+                }, 1500);
+            } else {
+                console.log('⏰ Guide data is too old, removing...');
+                sessionStorage.removeItem('pendingGuide');
+            }
+        } catch (error) {
+            console.error('❌ Error loading pending guide:', error);
+            sessionStorage.removeItem('pendingGuide');
+            alert('Fehler beim Laden der Anleitung: ' + error.message);
+        }
+    } else {
+        console.log('ℹ️ No pending guide found');
+    }
+});
+</script>
+
 <style>
 .supplier-card {
     transition: all 0.3s ease;

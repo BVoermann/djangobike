@@ -18,10 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from bikeshop import views as bikeshop_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('api/sessions/', bikeshop_views.api_sessions, name='api_sessions'),
     path('', include('bikeshop.urls')),
     path('procurement/', include('procurement.urls')),
     path('production/', include('production.urls')),

@@ -44,13 +44,16 @@ class HelpSystem {
     
     loadCSS() {
         // Load Shepherd.js CSS for guided tours
+        // Shepherd.js and Tippy.js disabled - using custom guide system
+        // (These were causing MIME type errors)
+        /*
         if (!document.querySelector('link[href*="shepherd"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = 'https://cdn.jsdelivr.net/npm/shepherd.js@11.2.0/dist/css/shepherd.css';
             document.head.appendChild(link);
         }
-        
+
         // Load Tippy.js CSS for tooltips
         if (!document.querySelector('link[href*="tippy"]')) {
             const link = document.createElement('link');
@@ -58,6 +61,7 @@ class HelpSystem {
             link.href = 'https://unpkg.com/tippy.js@6/dist/tippy.css';
             document.head.appendChild(link);
         }
+        */
         
         // Load our custom CSS
         const customCSS = `
@@ -217,6 +221,10 @@ class HelpSystem {
     }
     
     setupTooltips(tooltips) {
+        // Tippy.js disabled - tooltips not needed for custom guide system
+        console.log('Tooltips disabled to avoid library conflicts');
+        return;
+        /* DISABLED
         // Load Tippy.js if not already loaded
         if (typeof tippy === 'undefined') {
             this.loadScript('https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.min.js', () => {
@@ -225,6 +233,7 @@ class HelpSystem {
         } else {
             this.createTooltips(tooltips);
         }
+        */
     }
     
     createTooltips(tooltips) {

@@ -246,3 +246,25 @@ def download_default_parameters(request):
         response['Content-Length'] = len(zip_content)
         
         return response
+
+
+@login_required
+def api_sessions(request):
+    """API endpoint to get user's active sessions"""
+    sessions = GameSession.objects.filter(user=request.user, is_active=True)
+    
+    sessions_data = [
+        {
+            'id': str(session.id),
+            'name': session.name,
+            'current_month': session.current_month,
+            'current_year': session.current_year,
+            'balance': float(session.balance)
+        }
+        for session in sessions
+    ]
+    
+    return JsonResponse({
+        'success': True,
+        'sessions': sessions_data
+    })

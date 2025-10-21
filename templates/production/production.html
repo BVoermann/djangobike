@@ -240,6 +240,10 @@
 {% endblock %}
 
 {% block scripts %}
+{% load static %}
+<!-- Load production tutorial system -->
+<script src="{% static 'help_system/js/production-tutorial.js' %}"></script>
+
 <style>
 .worker-icon, .component-icon, .bike-icon {
     transition: all 0.3s ease;

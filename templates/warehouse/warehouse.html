@@ -307,6 +307,10 @@
 {% endblock %}
 
 {% block scripts %}
+{% load static %}
+<!-- Load warehouse tutorial system -->
+<script src="{% static 'help_system/js/warehouse-tutorial.js' %}"></script>
+
 <style>
 .warehouse-card {
     transition: all 0.3s ease;

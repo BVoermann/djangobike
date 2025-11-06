@@ -4,9 +4,10 @@ from django.http import JsonResponse
 from django.db import transaction
 from django.db.models import Count, Avg, Min, Sum
 from bikeshop.models import GameSession, BikePrice, BikeType
-from .models import Market, MarketDemand, SalesOrder
+from .models import Market, MarketDemand, SalesOrder, SalesDecision
 from production.models import ProducedBike
 from finance.models import Transaction
+from .market_simulator import MarketSimulator
 from collections import defaultdict
 import json
 from decimal import Decimal
@@ -78,7 +79,9 @@ def sales_view(request, session_id):
         try:
             with transaction.atomic():  # Ensure all operations succeed or fail together
                 sales_data = json.loads(request.body)
-                total_revenue = 0
+                total_expected_revenue = 0
+                total_quantity = 0
+                decisions_created = []
 
                 for item in sales_data:
                     market = get_object_or_404(Market, id=item['market_id'], session=session)
@@ -88,8 +91,8 @@ def sales_view(request, session_id):
                         bike_type_id = group_data['bike_type_id']
                         price_segment = group_data['price_segment']
                         quantity = int(group_data['quantity'])
-                        sale_price = group_data['price']
-                        transport_cost = group_data['transport_cost']
+                        sale_price = Decimal(str(group_data['price']))
+                        transport_cost = Decimal(str(group_data['transport_cost']))
 
                         # Get bike_type for validation
                         bike_type = get_object_or_404(BikeType, id=bike_type_id)
@@ -109,64 +112,67 @@ def sales_view(request, session_id):
                                 'error': f'Preis für {bike_type.name} ({dict(ProducedBike._meta.get_field("price_segment").choices)[price_segment]}) zu hoch. Maximum: {max_price}€'
                             })
 
-                        # Fetch the requested number of bikes
-                        bikes = ProducedBike.objects.filter(
+                        # Check if bikes are available
+                        available_bikes = ProducedBike.objects.filter(
                             session=session,
                             bike_type_id=bike_type_id,
                             price_segment=price_segment,
                             is_sold=False
-                        )[:quantity]
+                        ).count()
 
-                        if len(bikes) < quantity:
+                        if available_bikes < quantity:
                             return JsonResponse({
                                 'success': False,
-                                'error': f'Nicht genügend {bike_type.name} ({dict(ProducedBike._meta.get_field("price_segment").choices)[price_segment]}) verfügbar. Verfügbar: {len(bikes)}, Angefordert: {quantity}'
+                                'error': f'Nicht genügend {bike_type.name} ({dict(ProducedBike._meta.get_field("price_segment").choices)[price_segment]}) verfügbar. Verfügbar: {available_bikes}, Angefordert: {quantity}'
                             })
 
-                        # Sell each bike
-                        for bike in bikes:
-                            # Create sales order
-                            sales_order = SalesOrder.objects.create(
-                                session=session,
-                                market=market,
-                                bike=bike,
-                                sale_month=session.current_month,
-                                sale_year=session.current_year,
-                                sale_price=sale_price,
-                                transport_cost=transport_cost
-                            )
+                        # Create sales decision (NOT immediate sale)
+                        decision = SalesDecision.objects.create(
+                            session=session,
+                            market=market,
+                            bike_type=bike_type,
+                            price_segment=price_segment,
+                            quantity=quantity,
+                            desired_price=sale_price,
+                            transport_cost=transport_cost,
+                            decision_month=session.current_month,
+                            decision_year=session.current_year,
+                            is_processed=False
+                        )
 
-                            # Calculate net revenue (sale price minus transport cost)
-                            net_revenue = sale_price - transport_cost
-                            total_revenue += net_revenue
+                        # Calculate expected revenue (transport cost is per shipment, not per bike)
+                        expected_net_revenue = (sale_price * quantity) - transport_cost
+                        total_expected_revenue += expected_net_revenue
+                        total_quantity += quantity
 
-                            # Create financial transaction
-                            Transaction.objects.create(
-                                session=session,
-                                transaction_type='income',
-                                category='Verkäufe',
-                                amount=net_revenue,
-                                description=f'Verkauf {bike.bike_type.name} ({bike.get_price_segment_display()}) an {market.name}',
-                                month=session.current_month,
-                                year=session.current_year
-                            )
+                        decisions_created.append({
+                            'bike_type': bike_type.name,
+                            'segment': dict(ProducedBike._meta.get_field("price_segment").choices)[price_segment],
+                            'quantity': quantity,
+                            'market': market.name,
+                            'expected_revenue': float(expected_net_revenue)
+                        })
 
-                            # Mark bike as sold
-                            bike.is_sold = True
-                            bike.save()
-
-                # Update session balance
-                session.balance += total_revenue
-                session.save()
+                # Get simulator for preview summary
+                simulator = MarketSimulator(session)
+                preview_summary = simulator.get_pending_decisions_summary()
 
             return JsonResponse({
                 'success': True,
-                'message': f'Verkaufsaufträge erstellt! Umsatz: {total_revenue:.2f}€',
-                'revenue': float(total_revenue),
-                'new_balance': float(session.balance)
+                'message': f'Verkaufsentscheidungen gespeichert! Die Verkäufe werden beim nächsten Monatswechsel verarbeitet.',
+                'total_quantity': total_quantity,
+                'expected_revenue': float(total_expected_revenue),
+                'decisions': decisions_created,
+                'preview': {
+                    'total_pending_quantity': preview_summary['total_quantity'],
+                    'total_pending_revenue': float(preview_summary['total_expected_revenue']),
+                },
+                'info': 'Ihre Fahrräder werden beim nächsten Monatswechsel basierend auf Marktbedingungen verkauft.'
             })
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return JsonResponse({'success': False, 'error': str(e)})
 
     # Calculate total available bikes count
@@ -224,6 +230,13 @@ def sales_view(request, session_id):
     for market_name in sales_by_market:
         sales_by_market[market_name]['bikes'] = list(sales_by_market[market_name]['bikes'].values())
 
+    # Get pending sales decisions
+    simulator = MarketSimulator(session)
+    pending_decisions_summary = simulator.get_pending_decisions_summary()
+
+    # Get recent sales results (for feedback)
+    recent_sales_results = simulator.get_recent_sales_results(months_back=1)
+
     return render(request, 'sales/sales.html', {
         'session': session,
         'markets': markets,
@@ -231,5 +244,7 @@ def sales_view(request, session_id):
         'total_bikes_count': total_bikes_count,
         'current_month_sales': current_month_sales,
         'sales_stats': sales_stats,
-        'sales_by_market': dict(sales_by_market)
+        'sales_by_market': dict(sales_by_market),
+        'pending_decisions': pending_decisions_summary,
+        'recent_sales_results': recent_sales_results,
     })

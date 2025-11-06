@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Parameter bearbeiten - {{ game.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5">
+                        <i class="fas fa-sliders-h me-2"></i>Simulations-Parameter bearbeiten
+                    </h1>
+                    <p class="text-muted">Spiel: <strong>{{ game.name }}</strong></p>
+                </div>
+                <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Echtzeit-Parameter-Anpassung
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Hinweis:</strong> Änderungen an diesen Parametern wirken sich sofort auf das laufende Spiel aus.
+                        Alle Änderungen werden protokolliert.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <h6 class="mb-3">Markt-Parameter</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.market_demand_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.market_demand_multiplier.label }}
+                                </label>
+                                {{ form.market_demand_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.market_demand_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label d-block">Saisonale Effekte</label>
+                                <div class="form-check form-switch">
+                                    {{ form.seasonal_effects_enabled }}
+                                    <label class="form-check-label" for="{{ form.seasonal_effects_enabled.id_for_label }}">
+                                        {{ form.seasonal_effects_enabled.help_text }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Wirtschafts-Parameter</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.inflation_rate.id_for_label }}" class="form-label">
+                                    {{ form.inflation_rate.label }}
+                                </label>
+                                {{ form.inflation_rate }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.inflation_rate.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.interest_rate.id_for_label }}" class="form-label">
+                                    {{ form.interest_rate.label }}
+                                </label>
+                                {{ form.interest_rate }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.interest_rate.help_text }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Kosten-Multiplikatoren</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.component_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.component_cost_multiplier.label }}
+                                </label>
+                                {{ form.component_cost_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.component_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.worker_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.worker_cost_multiplier.label }}
+                                </label>
+                                {{ form.worker_cost_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.worker_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.transport_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.transport_cost_multiplier.label }}
+                                </label>
+                                {{ form.transport_cost_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.transport_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.warehouse_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.warehouse_cost_multiplier.label }}
+                                </label>
+                                {{ form.warehouse_cost_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.warehouse_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Konkurrenz-Parameter</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.competitor_aggressiveness.id_for_label }}" class="form-label">
+                                    {{ form.competitor_aggressiveness.label }}
+                                </label>
+                                {{ form.competitor_aggressiveness }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.competitor_aggressiveness.help_text }}
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Abbrechen
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-1"></i>Parameter speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-history me-1"></i>Letzte Änderung
+                    </h6>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted">Geändert von:</td>
+                            <td><strong>{{ parameters.last_modified_by|default:"-" }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Geändert am:</td>
+                            <td><strong>{{ parameters.last_modified_at|date:"d.m.Y H:i"|default:"-" }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            {% if parameters.modification_history %}
+            <div class="card bg-light mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-list me-1"></i>Änderungsverlauf
+                    </h6>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        {% for change in parameters.modification_history|slice:":10" %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <small class="text-muted d-block">{{ change.timestamp|slice:":19" }}</small>
+                            <small><strong>{{ change.user }}</strong></small>
+                            <small class="d-block">{{ change.field }}: {{ change.old_value }} → {{ change.new_value }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card bg-light mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-1"></i>Hinweise
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>Werte von 1.0 = 100% (Standard)</li>
+                        <li>0.5 = 50% der normalen Kosten/Nachfrage</li>
+                        <li>2.0 = 200% der normalen Kosten/Nachfrage</li>
+                        <li>Änderungen werden sofort wirksam</li>
+                        <li>Der Änderungsverlauf wird gespeichert</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

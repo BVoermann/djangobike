@@ -64,9 +64,18 @@ class ComponentStock(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='component_stocks')
     component = models.ForeignKey(Component, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
+    supplier = models.ForeignKey('bikeshop.Supplier', on_delete=models.SET_NULL, null=True, blank=True,
+                                 help_text="Supplier this component was purchased from (determines quality)")
 
     class Meta:
-        unique_together = ['session', 'warehouse', 'component']
+        unique_together = ['session', 'warehouse', 'component', 'supplier']
+
+    def get_quality(self):
+        """Get the quality of this component stock based on its supplier"""
+        if self.supplier:
+            return self.supplier.quality
+        # Fallback to component's default quality
+        return self.component.get_quality_for_session(self.session)
 
 
 class BikeStock(models.Model):

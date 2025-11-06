@@ -87,7 +87,8 @@ def production_view(request, session_id):
                                 component_requirements[component.id] += quantity
                 
                 # If upgrades are needed and user hasn't confirmed, ask for confirmation
-                confirm_upgrades = request.GET.get('confirm_upgrades', '').lower() == 'true'
+                # Check if any item has confirm_upgrades flag
+                confirm_upgrades = any(item.get('confirm_upgrades', False) for item in production_data)
                 if upgrades_needed and not confirm_upgrades:
                     return JsonResponse({
                         'success': False,
@@ -201,13 +202,19 @@ def production_view(request, session_id):
                                 target_warehouse = None
 
                                 for wh in warehouses:
+                                    # Refresh warehouse data to get current usage after previous additions
+                                    wh.refresh_from_db()
                                     if wh.remaining_capacity >= bike_space_needed:
                                         target_warehouse = wh
                                         break
 
-                                # If no single warehouse has enough space, use the one with most space
+                                # If no warehouse has enough space, transaction must fail
                                 if not target_warehouse:
-                                    target_warehouse = max(warehouses, key=lambda w: w.remaining_capacity)
+                                    # Rollback will happen automatically due to transaction.atomic()
+                                    return JsonResponse({
+                                        'success': False,
+                                        'error': f'Lagerkapazität erschöpft! Keine verfügbare Lagerkapazität für {bike_type.name} (benötigt: {bike_space_needed:.1f}m²). Bitte kaufen Sie ein zusätzliches Lager, bevor Sie mit der Produktion fortfahren.'
+                                    })
 
                                 # Add to warehouse inventory
                                 BikeStock.objects.create(

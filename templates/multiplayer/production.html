@@ -1,0 +1,615 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+{% load math_filters %}
+
+{% block title %}Produktion - BikeShop Pro - Multiplayer{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-cogs" style="background: var(--warning-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Produktion
+            </h1>
+            <p class="lead text-muted">Planen und optimieren Sie Ihre Fahrradproduktion</p>
+            <div class="badge bg-primary">
+                <i class="fas fa-gamepad"></i> {{ game.name }} - {{ player_session.company_name }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Produktions-Dashboard -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h2 class="fw-bold">
+                    {% for worker in workers %}
+                        {% if worker.get_worker_type_display == "Facharbeiter" %}{{ worker.count }}{% endif %}
+                    {% endfor %}
+                </h2>
+                <p class="mb-0 opacity-75">Facharbeiter verfügbar</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-hard-hat"></i>
+                </div>
+                <h2 class="fw-bold">
+                    {% for worker in workers %}
+                        {% if worker.get_worker_type_display == "Hilfsarbeiter" %}{{ worker.count }}{% endif %}
+                    {% endfor %}
+                </h2>
+                <p class="mb-0 opacity-75">Hilfsarbeiter verfügbar</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h2 class="fw-bold">{{ component_stocks|length }}</h2>
+                <p class="mb-0 opacity-75">Komponenten im Lager</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-bicycle"></i>
+                </div>
+                <h2 class="fw-bold" id="planned-bikes">0</h2>
+                <p class="mb-0 opacity-75">Geplante Fahrräder</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Produktionsplanung -->
+<form id="production-form">
+    {% csrf_token %}
+    <div class="card mb-4">
+        <div class="card-header border-0 pb-0">
+            <h4 class="mb-0 fw-bold">
+                <i class="fas fa-calendar-check me-2"></i>Produktionsplanung
+            </h4>
+            <p class="text-muted mb-0 mt-2">Planen Sie Ihre Produktion nach Fahrradtyp und Preissegment</p>
+        </div>
+        <div class="card-body">
+            {% if bike_types %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <tr>
+                            <th class="border-0 fw-bold">Fahrradtyp</th>
+                            <th class="border-0 fw-bold text-center">Benötigte Komponenten</th>
+                            <th class="border-0 fw-bold text-center">Facharbeiter</th>
+                            <th class="border-0 fw-bold text-center">Hilfsarbeiter</th>
+                            <th class="border-0 fw-bold text-center">Günstig</th>
+                            <th class="border-0 fw-bold text-center">Standard</th>
+                            <th class="border-0 fw-bold text-center">Premium</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bike_type in bike_types %}
+                        <tr class="border-bottom">
+                            <td class="py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bike-icon me-3" style="width: 40px; height: 40px; background: var(--warning-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                        <i class="fas fa-bicycle"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ bike_type.name }}</div>
+                                        <small class="text-muted">Fahrradtyp</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3" style="max-width: 300px;">
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for component_type, component_names in bike_type.get_required_components.items %}
+                                        <div class="requirement-item mb-1" style="font-size: 0.75rem;">
+                                            <strong class="text-muted">{{ component_type }}:</strong>
+                                            {% for name in component_names %}
+                                                <span class="badge bg-light text-dark me-1">{{ name }}</span>{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% empty %}
+                                        <small class="text-muted">Keine Anforderungen definiert</small>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success px-3 py-2">{{ bike_type.skilled_worker_hours }}h</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary px-3 py-2">{{ bike_type.unskilled_worker_hours }}h</span>
+                            </td>
+                            <td class="text-center">
+                                <input type="number"
+                                       class="form-control production-input text-center fw-bold"
+                                       min="0"
+                                       value="0"
+                                       data-bike-type="{{ bike_type.id }}"
+                                       data-segment="cheap"
+                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       placeholder="0">
+                            </td>
+                            <td class="text-center">
+                                <input type="number"
+                                       class="form-control production-input text-center fw-bold"
+                                       min="0"
+                                       value="0"
+                                       data-bike-type="{{ bike_type.id }}"
+                                       data-segment="standard"
+                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       placeholder="0">
+                            </td>
+                            <td class="text-center">
+                                <input type="number"
+                                       class="form-control production-input text-center fw-bold"
+                                       min="0"
+                                       value="0"
+                                       data-bike-type="{{ bike_type.id }}"
+                                       data-segment="premium"
+                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       placeholder="0">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Kapazitätsübersicht -->
+            <div class="row g-4 mt-4">
+                <div class="col-lg-8">
+                    <div class="card border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">
+                                <i class="fas fa-chart-bar me-2"></i>Kapazitätsauslastung
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-graduate text-success me-3 fs-4"></i>
+                                        <div>
+                                            <div class="fw-bold">Facharbeiter</div>
+                                            <div class="small text-muted">
+                                                <span id="total-skilled">0</span>h benötigt /
+                                                <span id="skilled-remaining">{{ skilled_remaining|floatformat:0 }}</span>h noch verfügbar diesen Monat
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user text-primary me-3 fs-4"></i>
+                                        <div>
+                                            <div class="fw-bold">Hilfsarbeiter</div>
+                                            <div class="small text-muted">
+                                                <span id="total-unskilled">0</span>h benötigt /
+                                                <span id="unskilled-remaining">{{ unskilled_remaining|floatformat:0 }}</span>h noch verfügbar diesen Monat
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card border-0" style="background: var(--success-gradient); color: white;">
+                        <div class="card-body text-center">
+                            <h3 class="fw-bold mb-2">
+                                <i class="fas fa-play-circle me-2"></i>Bereit?
+                            </h3>
+                            <p class="mb-4 opacity-75">Starten Sie die Produktion</p>
+                            <button type="submit" class="btn btn-light btn-lg w-100">
+                                <i class="fas fa-cogs me-2"></i>Produktion starten
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="empty-state" style="opacity: 0.7;">
+                        <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            <i class="fas fa-bicycle"></i>
+                        </div>
+                        <h3 class="fw-bold mb-3">Keine Fahrradtypen verfügbar</h3>
+                        <p class="text-muted mb-0">Konfigurieren Sie zuerst Ihre Fahrradtypen für die Produktion.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+
+<style>
+.worker-icon, .component-icon, .bike-icon {
+    transition: all 0.3s ease;
+}
+
+.worker-icon:hover, .component-icon:hover, .bike-icon:hover {
+    transform: scale(1.1);
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    transform: scale(1.01);
+}
+
+.production-input {
+    transition: all 0.3s ease;
+    border: 2px solid #e2e8f0;
+    font-weight: 600;
+}
+
+.production-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    transform: scale(1.05);
+}
+
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .production-input {
+        font-size: 0.9rem;
+    }
+}
+
+.production-input::-webkit-outer-spin-button,
+.production-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.production-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.capacity-warning {
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 20%, 40%, 60%, 80% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+}
+
+.capacity-exceeded {
+    color: #dc3545 !important;
+    font-weight: bold;
+}
+
+.capacity-ok {
+    color: #198754 !important;
+}
+
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productionInputs = document.querySelectorAll('.production-input');
+
+    productionInputs.forEach(input => {
+        input.addEventListener('input', updateTotals);
+    });
+
+    function updateTotals() {
+        let totalSkilled = 0;
+        let totalUnskilled = 0;
+        let totalBikes = 0;
+
+        productionInputs.forEach(input => {
+            const quantity = parseInt(input.value) || 0;
+            const skilled = parseFloat(input.dataset.skilled);
+            const unskilled = parseFloat(input.dataset.unskilled);
+
+            totalSkilled += quantity * skilled;
+            totalUnskilled += quantity * unskilled;
+            totalBikes += quantity;
+        });
+
+        document.getElementById('total-skilled').textContent = totalSkilled.toFixed(1);
+        document.getElementById('total-unskilled').textContent = totalUnskilled.toFixed(1);
+        document.getElementById('planned-bikes').textContent = totalBikes;
+
+        // Check capacity constraints and highlight if exceeded
+        const skilledCapacityElement = document.getElementById('total-skilled');
+        const unskilledCapacityElement = document.getElementById('total-unskilled');
+
+        // Get remaining available hours for this month
+        const maxSkilledHours = {{ skilled_remaining|default:0 }};
+        const maxUnskilledHours = {{ unskilled_remaining|default:0 }};
+
+        // Apply warning styles if capacity exceeded
+        if (totalSkilled > maxSkilledHours) {
+            skilledCapacityElement.classList.add('capacity-exceeded');
+            skilledCapacityElement.classList.remove('capacity-ok');
+        } else {
+            skilledCapacityElement.classList.add('capacity-ok');
+            skilledCapacityElement.classList.remove('capacity-exceeded');
+        }
+
+        if (totalUnskilled > maxUnskilledHours) {
+            unskilledCapacityElement.classList.add('capacity-exceeded');
+            unskilledCapacityElement.classList.remove('capacity-ok');
+        } else {
+            unskilledCapacityElement.classList.add('capacity-ok');
+            unskilledCapacityElement.classList.remove('capacity-exceeded');
+        }
+    }
+
+    document.getElementById('production-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const productionData = [];
+        const bikeTypes = new Set();
+
+        productionInputs.forEach(input => {
+            bikeTypes.add(input.dataset.bikeType);
+        });
+
+        bikeTypes.forEach(bikeTypeId => {
+            const typeInputs = document.querySelectorAll(`[data-bike-type="${bikeTypeId}"]`);
+            const data = { bike_type_id: bikeTypeId };
+
+            typeInputs.forEach(input => {
+                const segment = input.dataset.segment;
+                const quantity = parseInt(input.value) || 0;
+                data[`quantity_${segment}`] = quantity;
+            });
+
+            productionData.push(data);
+        });
+
+        // Check if any production is planned
+        const hasProduction = productionData.some(item =>
+            Object.values(item).some(val => typeof val === 'number' && val > 0)
+        );
+
+        if (!hasProduction) {
+            alert('Bitte planen Sie mindestens ein Fahrrad für die Produktion.');
+            return;
+        }
+
+        submitProductionData(productionData);
+    });
+
+    // Initialize totals on page load
+    updateTotals();
+
+    function submitProductionData(productionData, confirmUpgrades = false) {
+        // Add confirmation flag if upgrades were confirmed
+        if (confirmUpgrades) {
+            productionData.forEach(item => {
+                item.confirm_upgrades = true;
+            });
+        }
+
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(productionData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Produktion erfolgreich gestartet!');
+                location.reload();
+            } else if (data.upgrades_needed) {
+                showUpgradeConfirmationModal(data.upgrades, productionData);
+            } else {
+                alert('Fehler: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+        });
+    }
+
+    function showUpgradeConfirmationModal(upgrades, productionData) {
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="upgradeConfirmationModal" tabindex="-1" aria-labelledby="upgradeModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: var(--warning-gradient); color: white;">
+                            <h5 class="modal-title fw-bold" id="upgradeModalLabel">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Qualitäts-Upgrades erforderlich
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning d-flex align-items-center mb-4">
+                                <i class="fas fa-info-circle me-3 fs-4"></i>
+                                <div>
+                                    <strong>Achtung:</strong> Für die geplante Produktion werden höherwertige Komponenten verwendet als für das Preissegment erforderlich.
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold mb-3">Folgende Komponenten werden aufgewertet:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                        <tr>
+                                            <th class="border-0">Fahrradtyp</th>
+                                            <th class="border-0">Segment</th>
+                                            <th class="border-0">Komponente</th>
+                                            <th class="border-0">Komponentenqualität</th>
+                                            <th class="border-0">Ziel-Segment</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${upgrades.map(upgrade => `
+                                            <tr>
+                                                <td class="fw-bold">${upgrade.bike_type}</td>
+                                                <td>
+                                                    <span class="badge ${getSegmentBadgeClass(upgrade.segment)}">${getSegmentDisplayName(upgrade.segment)}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold">${upgrade.component_type}</div>
+                                                    <small class="text-muted">${upgrade.component_name}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getQualityBadgeClass(upgrade.component_quality)}">${upgrade.component_quality}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getSegmentBadgeClass(upgrade.segment)}">${upgrade.target_segment}</span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="alert alert-info mt-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-lightbulb me-3 fs-4"></i>
+                                    <div>
+                                        <strong>Hinweis:</strong> Die Verwendung höherwertiger Komponenten kann die Produktionskosten erhöhen,
+                                        aber die Fahrräder behalten die ursprünglich geplanten Verkaufspreise.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Abbrechen
+                            </button>
+                            <button type="button" class="btn btn-warning fw-bold" onclick="confirmUpgrades()">
+                                <i class="fas fa-check me-2"></i>Produktion mit Upgrades starten
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if present
+        const existingModal = document.getElementById('upgradeConfirmationModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Store production data for later use
+        window.pendingProductionData = productionData;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('upgradeConfirmationModal'));
+        modal.show();
+    }
+
+    function getSegmentBadgeClass(segment) {
+        switch(segment) {
+            case 'cheap': return 'bg-success';
+            case 'standard': return 'bg-primary';
+            case 'premium': return 'bg-warning text-dark';
+            default: return 'bg-secondary';
+        }
+    }
+
+    function getSegmentDisplayName(segment) {
+        switch(segment) {
+            case 'cheap': return 'Günstig';
+            case 'standard': return 'Standard';
+            case 'premium': return 'Premium';
+            default: return segment;
+        }
+    }
+
+    function getQualityBadgeClass(quality) {
+        switch(quality) {
+            case 'Basis': return 'bg-success';
+            case 'Standard': return 'bg-primary';
+            case 'Premium': return 'bg-warning text-dark';
+            default: return 'bg-secondary';
+        }
+    }
+
+    window.confirmUpgrades = function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('upgradeConfirmationModal'));
+        modal.hide();
+
+        // Submit with upgrade confirmation
+        submitProductionData(window.pendingProductionData, true);
+    };
+
+});
+</script>
+
+{% endblock %}

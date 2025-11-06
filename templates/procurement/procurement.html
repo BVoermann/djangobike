@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends request.base_template|default:'base.html' %}
 {% load math_filters %}
 {% load static %}
 
@@ -20,19 +20,19 @@
 
 <!-- Supplier Selection Dropdown -->
 {% if supplier_data %}
-<div class="row mb-4 dropdown-row">
+<div class="row mb-4 dropdown-row supplier-dropdown-row">
     <div class="col-12">
         <div class="card border-0 dropdown-container" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); overflow: visible;">
             <div class="card-body p-4" style="overflow: visible;">
                 <h5 class="fw-bold mb-3">
                     <i class="fas fa-filter me-2"></i>Lieferant auswählen
                 </h5>
-                <div class="dropdown" style="position: relative; z-index: 99999;">
-                    <button class="btn btn-primary btn-lg dropdown-toggle w-100 w-md-auto" type="button" id="supplierDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative; z-index: 9998;">
+                <div class="dropdown">
+                    <button class="btn btn-primary btn-lg dropdown-toggle w-100 w-md-auto" type="button" id="supplierDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-industry me-2"></i>
                         <span id="selected-supplier-name">Bitte Lieferant auswählen</span>
                     </button>
-                    <ul class="dropdown-menu w-100" aria-labelledby="supplierDropdown" style="min-width: 400px; position: absolute; z-index: 99999;">
+                    <ul class="dropdown-menu w-100" aria-labelledby="supplierDropdown" style="min-width: 400px;">
                         {% for supplier_id, data in supplier_data.items %}
                         <li>
                             <a class="dropdown-item supplier-option p-3" href="#" data-supplier-id="{{ supplier_id }}">
@@ -82,12 +82,12 @@
                 <h5 class="fw-bold mb-3">
                     <i class="fas fa-bicycle me-2"></i>Komponenten filtern nach Fahrradtyp
                 </h5>
-                <div class="dropdown" style="position: relative; z-index: 99998;">
-                    <button class="btn btn-success btn-lg dropdown-toggle w-100 w-md-auto" type="button" id="bikeTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="position: relative; z-index: 9997;">
+                <div class="dropdown">
+                    <button class="btn btn-success btn-lg dropdown-toggle w-100 w-md-auto" type="button" id="bikeTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-filter me-2"></i>
                         <span id="selected-bike-type-name">Alle Komponenten anzeigen</span>
                     </button>
-                    <ul class="dropdown-menu w-100" aria-labelledby="bikeTypeDropdown" style="min-width: 300px; position: absolute; z-index: 99998;">
+                    <ul class="dropdown-menu w-100" aria-labelledby="bikeTypeDropdown" style="min-width: 300px;">
                         <li>
                             <a class="dropdown-item bike-type-option p-3 active" href="#" data-bike-type-id="all">
                                 <div class="d-flex align-items-center">
@@ -123,7 +123,7 @@
 {% endif %}
 
 <!-- Einkaufs-Statistiken -->
-<div class="row g-4 mb-5">
+<div class="row g-4 mb-5" id="stats-row">
     <div class="col-lg-3 col-md-6">
         <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
             <div class="card-body text-center">
@@ -178,7 +178,7 @@
 <div id="supplier-details" style="display: none;">
     <form id="procurement-form">
         {% csrf_token %}
-        <div class="row mb-5">
+        <div class="row mb-5" id="supplier-cards-container">
             <div class="col-12">
                 <div class="card h-100 supplier-card">
                     <div class="card-header border-0 pb-0">
@@ -446,55 +446,40 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.7rem;
 }
 
-/* Fix dropdown z-index to appear above everything */
+/* Dropdown z-index fix - Enhanced for multiplayer mode */
+/* Cards with transform/backdrop-filter create stacking contexts that trap dropdowns */
+/* Using very high z-index to break free from card stacking contexts */
+.dropdown-row {
+    position: relative;
+    z-index: 9990 !important;
+    isolation: isolate;
+}
+
+/* Supplier dropdown should always be on top since it's selected first */
+.supplier-dropdown-row {
+    z-index: 10000 !important;
+}
+
+.dropdown-container {
+    position: relative;
+    z-index: 9995 !important;
+}
+
 .dropdown {
     position: relative;
-    z-index: 9999 !important;
+    z-index: 9996 !important;
 }
 
 .dropdown-menu {
-    position: absolute !important;
-    z-index: 99999 !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
-    border: none !important;
-    border-radius: 15px !important;
-    background: white !important;
-    transform: translateY(0) !important;
-    will-change: transform;
-}
-
-.dropdown-menu.show {
-    z-index: 99999 !important;
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    display: block !important;
-}
-
-/* Ensure dropdown button has proper z-index */
-.dropdown-toggle {
-    position: relative;
-    z-index: 9998 !important;
-}
-
-/* Reset card z-index to prevent interference */
-.card {
-    position: relative;
-    z-index: auto !important;
-}
-
-/* Ensure the dropdown container doesn't get clipped */
-.dropdown-container {
-    position: relative;
-    z-index: 9999;
-    overflow: visible !important;
-}
-
-/* Force the row containing dropdown to have higher z-index */
-.dropdown-row {
-    position: relative;
     z-index: 9999 !important;
-    overflow: visible !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
+    position: absolute !important;
+}
+
+/* Prevent stats cards from covering dropdown */
+#stats-row {
+    position: relative;
+    z-index: 1 !important;
 }
 
 @media (max-width: 768px) {
@@ -535,11 +520,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get supplier data from Django
     const supplierDataElement = document.getElementById('supplier-data');
     let supplierData = {};
-    
+
     // Get bike component mapping from Django
     const bikeComponentMappingElement = document.getElementById('bike-component-mapping');
     let bikeComponentMapping = {};
-    
+
     if (supplierDataElement) {
         try {
             supplierData = JSON.parse(supplierDataElement.textContent);

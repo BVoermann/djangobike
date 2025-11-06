@@ -1,7 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
+
+# Get the custom user model
+User = settings.AUTH_USER_MODEL
 
 
 class MultiplayerGame(models.Model):
@@ -38,6 +41,16 @@ class MultiplayerGame(models.Model):
     current_year = models.IntegerField(default=2024)
     max_months = models.IntegerField(default=60)  # 5 years default
     turn_deadline_hours = models.IntegerField(default=24)  # Hours to submit decisions
+    turn_duration_minutes = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Minimum wait time in minutes before next turn can be processed (0 = instant)"
+    )
+    last_turn_processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when the last turn was processed"
+    )
     
     # Game settings
     status = models.CharField(max_length=20, choices=GAME_STATUS_CHOICES, default='setup')
@@ -57,7 +70,15 @@ class MultiplayerGame(models.Model):
     enable_real_time_updates = models.BooleanField(default=True)
     enable_player_chat = models.BooleanField(default=True)
     enable_market_intelligence = models.BooleanField(default=False)  # Show competitor info
-    
+
+    # Admin-managed user assignment
+    assigned_users = models.ManyToManyField(
+        User,
+        related_name='assigned_multiplayer_games',
+        blank=True,
+        help_text='Users assigned to this game by Spielleitung'
+    )
+
     class Meta:
         ordering = ['-created_at']
         
@@ -77,6 +98,62 @@ class MultiplayerGame(models.Model):
         total_months = self.max_months
         current_progress = (self.current_year - 2024) * 12 + self.current_month - 1
         return min(100, (current_progress / total_months) * 100)
+
+    def can_process_next_turn(self):
+        """Check if enough time has passed to process the next turn."""
+        # If turn_duration_minutes is 0, can process immediately
+        if self.turn_duration_minutes == 0:
+            return True, None
+
+        # If this is the first turn, can process
+        if not self.last_turn_processed_at:
+            return True, None
+
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Calculate when the next turn can be processed
+        next_turn_time = self.last_turn_processed_at + timedelta(minutes=self.turn_duration_minutes)
+        now = timezone.now()
+
+        if now >= next_turn_time:
+            return True, None
+        else:
+            # Return False and the remaining time
+            remaining = next_turn_time - now
+            return False, remaining
+
+    def get_next_turn_countdown(self):
+        """Get human-readable countdown until next turn can be processed."""
+        can_process, remaining = self.can_process_next_turn()
+
+        if can_process:
+            return None
+
+        if remaining:
+            total_seconds = int(remaining.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+
+            if hours > 0:
+                return f"{hours}h {minutes}m {seconds}s"
+            elif minutes > 0:
+                return f"{minutes}m {seconds}s"
+            else:
+                return f"{seconds}s"
+
+        return None
+
+    @property
+    def is_single_human_player_game(self):
+        """Check if this is a game with only one human player."""
+        human_players = self.players.filter(
+            is_active=True,
+            is_bankrupt=False,
+            player_type='human'
+        ).count()
+        return human_players == 1
 
 
 class PlayerSession(models.Model):
@@ -192,10 +269,13 @@ class TurnState(models.Model):
     # Decision data (stored as JSON for flexibility)
     production_decisions = models.JSONField(default=dict)
     procurement_decisions = models.JSONField(default=dict)
-    sales_decisions = models.JSONField(default=dict)
+    sales_decisions = models.JSONField(default=list, help_text="List of sales decisions: [{market_id, bike_type_id, price_segment, quantity, desired_price, transport_cost}, ...]")
     hr_decisions = models.JSONField(default=dict)
     finance_decisions = models.JSONField(default=dict)
-    
+
+    # Sales results after market simulation
+    sales_results = models.JSONField(default=dict, help_text="Results of sales processing: {decisions: [...], total_sold: 0, total_revenue: 0, unsold: [...]}")
+
     # Performance data for this turn
     revenue_this_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     profit_this_turn = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -284,30 +364,130 @@ class MultiplayerGameInvitation(models.Model):
 
 class PlayerCommunication(models.Model):
     """Handles chat and communication between players."""
-    
+
     MESSAGE_TYPE_CHOICES = [
         ('chat', 'Chat Message'),
         ('trade_offer', 'Trade Offer'),
         ('alliance_request', 'Alliance Request'),
         ('system_notification', 'System Notification'),
     ]
-    
+
     multiplayer_game = models.ForeignKey(MultiplayerGame, on_delete=models.CASCADE)
     sender = models.ForeignKey(PlayerSession, on_delete=models.CASCADE, related_name='sent_messages')
     recipients = models.ManyToManyField(PlayerSession, related_name='received_messages', blank=True)
-    
+
     message_type = models.CharField(max_length=20, choices=MESSAGE_TYPE_CHOICES, default='chat')
     content = models.TextField()
     data = models.JSONField(default=dict)  # For structured data like trade offers
-    
+
     is_public = models.BooleanField(default=True)  # False for private messages
     is_read = models.BooleanField(default=False)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-created_at']
-        
+
     def __str__(self):
         recipient_info = "All" if self.is_public else f"{self.recipients.count()} players"
         return f"{self.sender.company_name} → {recipient_info}: {self.content[:30]}"
+
+
+class GameParameters(models.Model):
+    """Stores editable simulation parameters for a multiplayer game.
+
+    This allows Spielleitung to adjust game parameters in real-time during gameplay.
+    Parameters are stored as JSON for flexibility.
+    """
+
+    multiplayer_game = models.OneToOneField(
+        MultiplayerGame,
+        on_delete=models.CASCADE,
+        related_name='parameters'
+    )
+
+    # Market parameters
+    market_demand_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for overall market demand (0.5 = 50% demand, 2.0 = 200% demand)'
+    )
+    seasonal_effects_enabled = models.BooleanField(
+        default=True,
+        help_text='Enable seasonal demand fluctuations'
+    )
+
+    # Economic parameters
+    inflation_rate = models.FloatField(
+        default=0.02,
+        help_text='Annual inflation rate (0.02 = 2%)'
+    )
+    interest_rate = models.FloatField(
+        default=0.05,
+        help_text='Interest rate for loans (0.05 = 5%)'
+    )
+
+    # Cost multipliers
+    component_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for component costs'
+    )
+    worker_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for worker wages'
+    )
+    transport_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for transport costs'
+    )
+    warehouse_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for warehouse rental costs'
+    )
+
+    # Competition parameters
+    competitor_aggressiveness = models.FloatField(
+        default=1.0,
+        validators=[MinValueValidator(0.1), MaxValueValidator(2.0)],
+        help_text='How aggressive AI competitors are (0.1 = passive, 2.0 = very aggressive)'
+    )
+
+    # Advanced parameters (stored as JSON for flexibility)
+    custom_parameters = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Additional custom parameters in JSON format'
+    )
+
+    # Audit fields
+    last_modified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='modified_game_parameters'
+    )
+    last_modified_at = models.DateTimeField(auto_now=True)
+    modification_history = models.JSONField(
+        default=list,
+        help_text='History of parameter changes'
+    )
+
+    def __str__(self):
+        return f"Parameters for {self.multiplayer_game.name}"
+
+    def log_change(self, user, field_name, old_value, new_value):
+        """Log a parameter change to history"""
+        from django.utils import timezone
+
+        change_entry = {
+            'timestamp': timezone.now().isoformat(),
+            'user': user.username if user else 'System',
+            'field': field_name,
+            'old_value': str(old_value),
+            'new_value': str(new_value)
+        }
+
+        if not isinstance(self.modification_history, list):
+            self.modification_history = []
+
+        self.modification_history.append(change_entry)
+        self.save()

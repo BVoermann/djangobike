@@ -1,0 +1,1125 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+{% load math_filters %}
+{% load static %}
+
+{% block title %}Verkauf - BikeShop Pro - Multiplayer{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-chart-line" style="background: var(--success-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Verkauf
+            </h1>
+            <p class="lead text-muted">Verkaufen Sie Ihre Fahrräder an die besten Märkte</p>
+            <div class="badge bg-primary">
+                <i class="fas fa-gamepad"></i> {{ game.name }} - {{ player_session.company_name }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Verkaufs-Statistiken -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-bicycle"></i>
+                </div>
+                <h2 class="fw-bold">{{ total_bikes_count }}</h2>
+                <p class="mb-0 opacity-75">Fahrräder verfügbar</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h2 class="fw-bold">{{ markets|length }}</h2>
+                <p class="mb-0 opacity-75">Märkte verfügbar</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+                <h2 class="fw-bold" id="stats-revenue">0.00€</h2>
+                <p class="mb-0 opacity-75">Geplanter Umsatz</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-shipping-fast"></i>
+                </div>
+                <h2 class="fw-bold" id="stats-transport">0.00€</h2>
+                <p class="mb-0 opacity-75">Transportkosten</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Decisions Section -->
+{% if pending_decisions %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);">
+            <div class="card-header border-0 pb-0" style="background: transparent;">
+                <h4 class="fw-bold mb-1">
+                    <i class="fas fa-hourglass-half me-2 text-warning"></i>Ausstehende Verkaufsentscheidungen
+                </h4>
+                <p class="text-muted mb-0">Diese Entscheidungen werden verarbeitet, wenn die Runde fortschreitet</p>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Hinweis:</strong> Ihre Verkaufsentscheidungen wurden gespeichert und werden mit allen anderen Spielern gleichzeitig verarbeitet, wenn die Runde voranschreitet. Die tatsächlichen Verkaufszahlen hängen von der Marktnachfrage und dem Wettbewerb ab.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Markt</th>
+                                <th>Fahrrad</th>
+                                <th>Segment</th>
+                                <th>Menge</th>
+                                <th>Preis</th>
+                                <th>Transportkosten</th>
+                                <th>Erwarteter Umsatz</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for decision in pending_decisions %}
+                            <tr>
+                                <td><strong>{{ decision.market_name }}</strong></td>
+                                <td>{{ decision.bike_type_name }}</td>
+                                <td>
+                                    <span class="badge {% if decision.price_segment == 'cheap' %}bg-secondary{% elif decision.price_segment == 'standard' %}bg-primary{% else %}bg-warning{% endif %}">
+                                        {% if decision.price_segment == 'cheap' %}Günstig{% elif decision.price_segment == 'standard' %}Standard{% else %}Premium{% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ decision.quantity }}</td>
+                                <td>{{ decision.desired_price|floatformat:2 }}€</td>
+                                <td>{{ decision.transport_cost|floatformat:2 }}€</td>
+                                <td class="text-success fw-bold">
+                                    {% widthratio decision.quantity 1 decision.desired_price as gross_revenue %}
+                                    {% widthratio decision.quantity 1 decision.transport_cost as total_transport %}
+                                    {{ gross_revenue|sub:total_transport|floatformat:2 }}€
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Previous Turn Results Section -->
+{% if previous_results %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);">
+            <div class="card-header border-0 pb-0" style="background: transparent;">
+                <h4 class="fw-bold mb-1">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>Last Turn Sales Results
+                </h4>
+                <p class="text-muted mb-0">How your sales decisions performed</p>
+            </div>
+            <div class="card-body">
+                <!-- Summary Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0" style="background: {% if previous_results.success_rate >= 80 %}var(--success-gradient){% elif previous_results.success_rate >= 50 %}var(--warning-gradient){% else %}var(--danger-gradient){% endif %}; color: white;">
+                            <div class="card-body text-center">
+                                <h2 class="fw-bold mb-1">{{ previous_results.success_rate|floatformat:0 }}%</h2>
+                                <p class="mb-0 opacity-75">Success Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <h2 class="fw-bold mb-1">{{ previous_results.total_sold }}</h2>
+                                <p class="mb-0 opacity-75">Bikes Sold</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <h2 class="fw-bold mb-1">{{ previous_results.total_unsold|default:0 }}</h2>
+                                <p class="mb-0 opacity-75">Unsold (In Stock)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <h2 class="fw-bold mb-1">{{ previous_results.total_revenue|floatformat:0 }}€</h2>
+                                <p class="mb-0 opacity-75">Revenue</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Results Per Decision -->
+                {% if previous_results.decisions %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <tr>
+                                <th class="border-0">Market</th>
+                                <th class="border-0">Bike Type</th>
+                                <th class="border-0">Segment</th>
+                                <th class="border-0">Outcome</th>
+                                <th class="border-0">Market Insight</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for decision in previous_results.decisions %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                    {{ decision.market_name }}
+                                </td>
+                                <td>{{ decision.bike_type_name }}</td>
+                                <td>
+                                    <span class="badge {% if decision.price_segment == 'cheap' %}bg-success{% elif decision.price_segment == 'standard' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                        {{ decision.price_segment_display|default:decision.price_segment }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="mb-2">
+                                        <strong>{{ decision.quantity_sold }}/{{ decision.quantity_planned }}</strong> sold
+                                        <span class="badge bg-light text-dark ms-2">{{ decision.success_rate|floatformat:0 }}%</span>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 8px;">
+                                        <div class="progress-bar {% if decision.success_rate >= 80 %}bg-success{% elif decision.success_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                                             style="width: {{ decision.success_rate }}%"></div>
+                                    </div>
+                                    {% if decision.outcome_message %}
+                                    <small class="text-muted">{{ decision.outcome_message }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if decision.market_condition %}
+                                    <div class="mb-1">
+                                        <span class="badge bg-info">{{ decision.market_condition.condition }}</span>
+                                    </div>
+                                    <small class="text-muted">{{ decision.market_condition.description }}</small>
+                                    {% endif %}
+                                    {% if decision.competitive_position %}
+                                    <div class="mt-1">
+                                        <small class="text-muted"><i class="fas fa-balance-scale me-1"></i>{{ decision.competitive_position }}</small>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Sales History Section -->
+{% if current_month_sales %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0" style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);">
+            <div class="card-header border-0 pb-0" style="background: transparent;">
+                <h4 class="fw-bold mb-1">
+                    <i class="fas fa-check-circle me-2 text-success"></i>Verkäufe in diesem Monat
+                </h4>
+                <p class="text-muted mb-0">Monat {{ session.current_month }}/{{ session.current_year }}</p>
+            </div>
+            <div class="card-body">
+                <!-- Sales Statistics -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-2">
+                                    <i class="fas fa-bicycle"></i>
+                                </div>
+                                <h3 class="fw-bold mb-1">{{ sales_stats.total_bikes_sold|default:0 }}</h3>
+                                <p class="mb-0 opacity-75">Fahrräder verkauft</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-2">
+                                    <i class="fas fa-euro-sign"></i>
+                                </div>
+                                <h3 class="fw-bold mb-1">{{ sales_stats.total_revenue|default:0|floatformat:0 }}€</h3>
+                                <p class="mb-0 opacity-75">Gesamtumsatz</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-2">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                                <h3 class="fw-bold mb-1">{{ sales_stats.total_transport_costs|default:0|floatformat:0 }}€</h3>
+                                <p class="mb-0 opacity-75">Transportkosten</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-2">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <h3 class="fw-bold mb-1">{{ sales_stats.net_revenue|default:0|floatformat:0 }}€</h3>
+                                <p class="mb-0 opacity-75">Nettoertrag</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales by Market -->
+                {% if sales_by_market %}
+                <div class="row g-4">
+                    {% for market_name, market_sales in sales_by_market.items %}
+                    <div class="col-lg-6">
+                        <div class="card h-100">
+                            <div class="card-header border-0 pb-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="fw-bold mb-1">
+                                            <i class="fas fa-store me-2"></i>{{ market_name }}
+                                        </h5>
+                                        <small class="text-muted">{{ market_sales.count }} Fahrrad{% if market_sales.count != 1 %}er{% endif %} verkauft</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fs-5 fw-bold text-success">{{ market_sales.total|floatformat:2 }}€</div>
+                                        <small class="text-muted">Nettoertrag</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    {% for bike in market_sales.bikes %}
+                                    <div class="list-group-item px-0 border-0 py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-bold">{{ bike.bike_type }}</div>
+                                                <small class="text-muted">{{ bike.price_segment }} × {{ bike.count }}</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold">{{ bike.total_sale_price|floatformat:2 }}€</div>
+                                                <small class="text-muted">-{{ bike.total_transport_cost|floatformat:2 }}€ Transport</small>
+                                                <div class="text-success small fw-bold">+{{ bike.total_net_revenue|floatformat:2 }}€</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if bike_groups %}
+<!-- Verfügbare Fahrräder für den Verkauf -->
+<form id="sales-form">
+    {% csrf_token %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-0 pb-0">
+                    <h4 class="fw-bold mb-1">
+                        <i class="fas fa-bicycle me-2"></i>Verfügbare Fahrräder zum Verkauf
+                    </h4>
+                    <p class="text-muted mb-0">Wählen Sie für jedes Fahrrad den gewünschten Markt und Verkaufspreis</p>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                <tr>
+                                    <th class="border-0 fw-bold">Fahrrad</th>
+                                    <th class="border-0 fw-bold">Verfügbar</th>
+                                    <th class="border-0 fw-bold">Ø Produktionskosten</th>
+                                    <th class="border-0 fw-bold">Markt</th>
+                                    <th class="border-0 fw-bold">Transportkosten</th>
+                                    <th class="border-0 fw-bold">Verkaufspreis</th>
+                                    <th class="border-0 fw-bold">Anzahl</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for group in bike_groups %}
+                                <tr class="border-bottom bike-row"
+                                    data-bike-type-id="{{ group.bike_type__id }}"
+                                    data-price-segment="{{ group.price_segment }}">
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bike-icon me-3" style="width: 35px; height: 35px; background: {% if group.price_segment == 'cheap' %}var(--dark-gradient){% elif group.price_segment == 'standard' %}var(--primary-gradient){% else %}var(--warning-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                <i class="fas fa-bicycle"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ group.bike_type__name }}</div>
+                                                <span class="badge rounded-pill {% if group.price_segment == 'cheap' %}bg-secondary{% elif group.price_segment == 'standard' %}bg-primary{% else %}bg-warning{% endif %}">
+                                                    {% if group.price_segment == 'cheap' %}Günstig{% elif group.price_segment == 'standard' %}Standard{% else %}Premium{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge rounded-pill fs-6 px-3 py-2 {% if group.count > 10 %}bg-success{% elif group.count > 3 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ group.count }} Stück
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-danger">{{ group.avg_production_cost|floatformat:2 }}€</span>
+                                    </td>
+                                    <td>
+                                        <select class="form-select market-select"
+                                                data-bike-type-id="{{ group.bike_type__id }}"
+                                                data-price-segment="{{ group.price_segment }}">
+                                            <option value="">Markt auswählen...</option>
+                                            {% for market in markets %}
+                                            <option value="{{ market.id }}"
+                                                    data-transport-cost="{{ market.transport_cost_home }}"
+                                                    data-market-name="{{ market.name }}">
+                                                {{ market.name }} ({{ market.location }})
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-warning transport-cost-display"
+                                              data-bike-type-id="{{ group.bike_type__id }}"
+                                              data-price-segment="{{ group.price_segment }}">0.00€</span>
+                                    </td>
+                                    <td>
+                                        <div class="price-input-group">
+                                            <input type="number"
+                                                   class="form-control price-input fw-bold"
+                                                   step="0.01"
+                                                   min="{{ group.min_price }}"
+                                                   max="{{ group.max_price }}"
+                                                   data-bike-type-id="{{ group.bike_type__id }}"
+                                                   data-price-segment="{{ group.price_segment }}"
+                                                   data-min-price="{{ group.min_price }}"
+                                                   data-max-price="{{ group.max_price }}"
+                                                   placeholder="{{ group.suggested_price }}"
+                                                   title="Preisbereich: {{ group.min_price }}€ - {{ group.max_price }}€"
+                                                   disabled>
+                                            <small class="text-muted d-block mt-1">
+                                                {{ group.min_price }}€ - {{ group.max_price }}€
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="number"
+                                               class="form-control quantity-input fw-bold"
+                                               min="0"
+                                               max="{{ group.count }}"
+                                               data-bike-type-id="{{ group.bike_type__id }}"
+                                               data-price-segment="{{ group.price_segment }}"
+                                               data-max-quantity="{{ group.count }}"
+                                               placeholder="0"
+                                               disabled
+                                               style="width: 80px; text-align: center;">
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Markt-Übersicht -->
+    <div class="row g-4 mb-5">
+        {% for market in markets %}
+        <div class="col-lg-6">
+            <div class="card h-100 market-card">
+                <div class="card-header border-0 pb-0">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h4 class="fw-bold mb-1">
+                                <i class="fas fa-store me-2"></i>{{ market.name }}
+                            </h4>
+                            <div class="market-info">
+                                <span class="badge rounded-pill me-2" style="background: var(--primary-gradient); color: white;">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ market.location }}
+                                </span>
+                                <span class="badge rounded-pill" style="background: var(--warning-gradient); color: white;">
+                                    <i class="fas fa-truck me-1"></i>{{ market.transport_cost_home|floatformat:2 }}€ pro Fahrrad
+                                </span>
+                            </div>
+                        </div>
+                        <div class="market-total-display">
+                            <div class="text-end">
+                                <div class="fs-4 fw-bold text-success market-total" data-market="{{ market.id }}">0.00€</div>
+                                <small class="text-muted">
+                                    <span class="bikes-count" data-market="{{ market.id }}">0</span> Fahrräder
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="market-bikes-list" data-market="{{ market.id }}">
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p class="mb-0">Keine Fahrräder für diesen Markt ausgewählt</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Verkaufsübersicht -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="fw-bold mb-1">
+                                <i class="fas fa-cash-register me-2"></i>Verkaufsübersicht
+                            </h3>
+                            <p class="text-muted mb-0">Gesamtumsatz nach Abzug der Transportkosten</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="display-5 fw-bold text-success mb-2" id="grand-total">0.00€</div>
+                            <button type="submit" class="btn btn-warning btn-lg px-4">
+                                <i class="fas fa-clipboard-check me-2"></i>Verkaufsentscheidungen speichern
+                            </button>
+                            <small class="d-block text-muted mt-2">
+                                <i class="fas fa-info-circle me-1"></i>Wird verarbeitet, wenn die Runde fortschreitet
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% else %}
+<!-- Empty State -->
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="empty-state" style="opacity: 0.7;">
+                    <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <i class="fas fa-bicycle"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Keine Fahrräder verfügbar</h3>
+                    <p class="text-muted mb-4">Sie haben derzeit keine produzierten Fahrräder zum Verkauf.
+                    Starten Sie zunächst die Produktion, um Fahrräder herzustellen.</p>
+                    <a href="{% url 'multiplayer:production' game.id %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-cogs me-2"></i>Zur Produktion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if not markets %}
+<!-- Empty State für keine Märkte -->
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="empty-state" style="opacity: 0.7;">
+                    <div class="display-1 mb-4" style="background: var(--danger-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <i class="fas fa-store-slash"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Keine Märkte verfügbar</h3>
+                    <p class="text-muted mb-0">Derzeit sind keine Märkte für den Verkauf verfügbar. Versuchen Sie es später erneut.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.market-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.market-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.bike-icon {
+    transition: all 0.3s ease;
+}
+
+.bike-icon:hover {
+    transform: scale(1.1);
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    transform: scale(1.01);
+}
+
+.price-input {
+    transition: all 0.3s ease;
+    text-align: center;
+    font-weight: 600;
+    border: 2px solid #e2e8f0;
+}
+
+.price-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    transform: scale(1.05);
+}
+
+.sell-checkbox {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.sell-checkbox:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+    transform: scale(1.1);
+}
+
+.market-info .badge {
+    transition: all 0.3s ease;
+}
+
+.market-info .badge:hover {
+    transform: scale(1.05);
+}
+
+.market-total-display {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.profit-indicator {
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.profit-positive {
+    background: var(--success-gradient);
+    color: white;
+}
+
+.profit-negative {
+    background: var(--danger-gradient);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .market-info {
+        margin-top: 1rem;
+    }
+
+    .market-total-display {
+        margin-top: 1rem;
+    }
+
+    .price-input {
+        font-size: 0.9rem;
+    }
+}
+
+.price-input::-webkit-outer-spin-button,
+.price-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.price-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.price-input.needs-price {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.selected-row {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+}
+
+.price-too-low {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+.price-too-high {
+    border-color: #fd7e14 !important;
+    box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25) !important;
+    background-color: rgba(253, 126, 20, 0.05);
+}
+
+.price-valid {
+    border-color: #198754 !important;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25) !important;
+    background-color: rgba(25, 135, 84, 0.05);
+}
+</style>
+
+<script>
+function validatePriceRange(input) {
+    const price = parseFloat(input.value);
+    const minPrice = parseFloat(input.dataset.minPrice);
+    const maxPrice = parseFloat(input.dataset.maxPrice);
+
+    // Remove existing validation classes
+    input.classList.remove('price-too-low', 'price-too-high', 'price-valid');
+
+    if (isNaN(price) || price === 0) {
+        return; // No validation for empty/zero values
+    }
+
+    if (price < minPrice) {
+        input.classList.add('price-too-low');
+        input.title = `Preis zu niedrig! Minimum: ${minPrice}€`;
+    } else if (price > maxPrice) {
+        input.classList.add('price-too-high');
+        input.title = `Preis zu hoch! Maximum: ${maxPrice}€`;
+    } else {
+        input.classList.add('price-valid');
+        input.title = `Preis im gültigen Bereich (${minPrice}€ - ${maxPrice}€)`;
+    }
+}
+
+function getGroupKey(bikeTypeId, priceSegment) {
+    return `${bikeTypeId}_${priceSegment}`;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const priceInputs = document.querySelectorAll('.price-input');
+    const quantityInputs = document.querySelectorAll('.quantity-input');
+    const marketSelects = document.querySelectorAll('.market-select');
+
+    // Handle market selection
+    marketSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const bikeTypeId = this.dataset.bikeTypeId;
+            const priceSegment = this.dataset.priceSegment;
+            const selectedOption = this.options[this.selectedIndex];
+            const transportCost = selectedOption.dataset.transportCost || 0;
+            const priceInput = document.querySelector(`.price-input[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+            const quantityInput = document.querySelector(`.quantity-input[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+            const transportDisplay = document.querySelector(`.transport-cost-display[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+
+            // Update transport cost display
+            transportDisplay.textContent = parseFloat(transportCost).toFixed(2) + '€';
+
+            // Enable/disable inputs based on market selection
+            if (this.value) {
+                priceInput.disabled = false;
+                quantityInput.disabled = false;
+                priceInput.dataset.transportCost = transportCost;
+                priceInput.dataset.marketId = this.value;
+                quantityInput.dataset.transportCost = transportCost;
+                quantityInput.dataset.marketId = this.value;
+            } else {
+                priceInput.disabled = true;
+                quantityInput.disabled = true;
+                priceInput.value = '';
+                quantityInput.value = '';
+                transportDisplay.textContent = '0.00€';
+            }
+
+            updateTotals();
+            updateMarketSummaries();
+        });
+    });
+
+    priceInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            validatePriceRange(this);
+            updateTotals();
+            updateMarketSummaries();
+        });
+    });
+
+    quantityInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const maxQuantity = parseInt(this.dataset.maxQuantity);
+            const value = parseInt(this.value) || 0;
+
+            // Validate quantity
+            if (value > maxQuantity) {
+                this.value = maxQuantity;
+            } else if (value < 0) {
+                this.value = 0;
+            }
+
+            updateTotals();
+            updateMarketSummaries();
+        });
+    });
+
+    function updateTotals() {
+        let grandTotal = 0;
+        let totalRevenue = 0;
+        let totalTransportCosts = 0;
+
+        // Calculate totals for each bike group with quantity
+        quantityInputs.forEach(quantityInput => {
+            const quantity = parseInt(quantityInput.value) || 0;
+
+            if (quantity > 0) {
+                const bikeTypeId = quantityInput.dataset.bikeTypeId;
+                const priceSegment = quantityInput.dataset.priceSegment;
+                const priceInput = document.querySelector(`.price-input[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+                const price = parseFloat(priceInput.value) || 0;
+                const transportCost = parseFloat(quantityInput.dataset.transportCost) || 0;
+
+                if (price > 0) {
+                    const revenue = price * quantity;
+                    const transport = transportCost;  // Transport cost is per shipment, not per bike
+
+                    totalRevenue += revenue;
+                    totalTransportCosts += transport;
+                    grandTotal += revenue - transport;
+                }
+            }
+        });
+
+        // Update statistics
+        document.getElementById('grand-total').textContent = grandTotal.toFixed(2) + '€';
+        document.getElementById('stats-revenue').textContent = totalRevenue.toFixed(2) + '€';
+        document.getElementById('stats-transport').textContent = totalTransportCosts.toFixed(2) + '€';
+    }
+
+    function updateMarketSummaries() {
+        // Clear all market summaries
+        document.querySelectorAll('.market-bikes-list').forEach(list => {
+            list.innerHTML = `
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                    <p class="mb-0">Keine Fahrräder für diesen Markt ausgewählt</p>
+                </div>
+            `;
+        });
+
+        // Reset market totals and counts
+        document.querySelectorAll('.market-total').forEach(el => {
+            el.textContent = '0.00€';
+        });
+
+        document.querySelectorAll('.bikes-count').forEach(el => {
+            el.textContent = '0';
+        });
+
+        // Group bikes by market
+        const marketBikes = {};
+
+        quantityInputs.forEach(quantityInput => {
+            const quantity = parseInt(quantityInput.value) || 0;
+
+            if (quantity > 0) {
+                const bikeTypeId = quantityInput.dataset.bikeTypeId;
+                const priceSegment = quantityInput.dataset.priceSegment;
+                const marketSelect = document.querySelector(`.market-select[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+                const priceInput = document.querySelector(`.price-input[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+                const bikeRow = document.querySelector(`.bike-row[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+
+                if (marketSelect && marketSelect.value) {
+                    const marketId = marketSelect.value;
+                    const price = parseFloat(priceInput.value) || 0;
+                    const transportCost = parseFloat(quantityInput.dataset.transportCost) || 0;
+
+                    if (!marketBikes[marketId]) {
+                        marketBikes[marketId] = [];
+                    }
+
+                    // Get bike info from the row
+                    const bikeName = bikeRow.querySelector('.fw-bold').textContent;
+                    const bikeSegment = bikeRow.querySelector('.badge').textContent.trim();
+                    const productionCost = parseFloat(bikeRow.querySelector('.text-danger').textContent.replace('€', ''));
+
+                    marketBikes[marketId].push({
+                        name: bikeName,
+                        segment: bikeSegment,
+                        quantity: quantity,
+                        price: price,
+                        transportCost: transportCost,
+                        productionCost: productionCost,
+                        profit: (price - productionCost) * quantity - transportCost  // Transport is per shipment
+                    });
+                }
+            }
+        });
+
+        // Update market displays
+        Object.keys(marketBikes).forEach(marketId => {
+            const bikes = marketBikes[marketId];
+            const marketList = document.querySelector(`[data-market="${marketId}"].market-bikes-list`);
+            const marketTotal = document.querySelector(`[data-market="${marketId}"].market-total`);
+            const bikesCount = document.querySelector(`[data-market="${marketId}"].bikes-count`);
+
+            let totalRevenue = 0;
+            let totalBikesCount = 0;
+            let html = '';
+
+            bikes.forEach(bike => {
+                const revenue = bike.price * bike.quantity;
+                totalRevenue += revenue;
+                totalBikesCount += bike.quantity;
+                const netProfit = bike.profit;
+
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(0,0,0,0.02);">
+                        <div>
+                            <div class="fw-bold">${bike.name}</div>
+                            <small class="text-muted">${bike.segment} × ${bike.quantity}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold">${revenue.toFixed(2)}€</div>
+                            <small class="${netProfit >= 0 ? 'text-success' : 'text-danger'}">
+                                ${netProfit >= 0 ? '+' : ''}${netProfit.toFixed(2)}€ Gewinn
+                            </small>
+                        </div>
+                    </div>
+                `;
+            });
+
+            marketList.innerHTML = html;
+            marketTotal.textContent = totalRevenue.toFixed(2) + '€';
+            bikesCount.textContent = totalBikesCount;
+        });
+    }
+
+    // Add profit calculation for individual items
+    priceInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const price = parseFloat(this.value) || 0;
+            const row = this.closest('tr');
+            const costElement = row.querySelector('.text-danger');
+            const productionCost = parseFloat(costElement.textContent.replace('€', ''));
+
+            // Remove existing profit indicators
+            const existingIndicator = row.querySelector('.profit-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+
+            if (price > 0) {
+                const transportCost = parseFloat(this.dataset.transportCost) || 0;
+                const profit = price - productionCost - transportCost;
+                const profitElement = document.createElement('div');
+                profitElement.className = `profit-indicator ${profit > 0 ? 'profit-positive' : 'profit-negative'}`;
+                profitElement.innerHTML = `${profit > 0 ? '+' : ''}${profit.toFixed(2)}€`;
+                this.parentElement.appendChild(profitElement);
+            }
+        });
+    });
+
+    document.getElementById('sales-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const salesData = [];
+        const marketData = {};
+
+        // Group sales by market
+        quantityInputs.forEach(quantityInput => {
+            const quantity = parseInt(quantityInput.value) || 0;
+
+            if (quantity > 0) {
+                const bikeTypeId = quantityInput.dataset.bikeTypeId;
+                const priceSegment = quantityInput.dataset.priceSegment;
+                const marketSelect = document.querySelector(`.market-select[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+                const priceInput = document.querySelector(`.price-input[data-bike-type-id="${bikeTypeId}"][data-price-segment="${priceSegment}"]`);
+
+                if (marketSelect && marketSelect.value) {
+                    const marketId = marketSelect.value;
+                    const price = parseFloat(priceInput.value) || 0;
+                    const transportCost = parseFloat(quantityInput.dataset.transportCost) || 0;
+
+                    if (price > 0) {
+                        if (!marketData[marketId]) {
+                            marketData[marketId] = [];
+                        }
+
+                        marketData[marketId].push({
+                            bike_type_id: bikeTypeId,
+                            price_segment: priceSegment,
+                            quantity: quantity,
+                            price: price,
+                            transport_cost: transportCost
+                        });
+                    }
+                }
+            }
+        });
+
+        // Convert to salesData format
+        Object.keys(marketData).forEach(marketId => {
+            salesData.push({
+                market_id: marketId,
+                bike_groups: marketData[marketId]
+            });
+        });
+
+        // Check for invalid prices before proceeding
+        const invalidPriceInputs = document.querySelectorAll('.price-too-low, .price-too-high');
+        if (invalidPriceInputs.length > 0) {
+            invalidPriceInputs.forEach(input => {
+                input.classList.add('needs-price');
+                setTimeout(() => input.classList.remove('needs-price'), 2000);
+            });
+            alert('Bitte korrigieren Sie die ungültigen Preise (rot/orange markierte Felder).');
+            return;
+        }
+
+        if (salesData.length === 0) {
+            alert('Bitte wählen Sie mindestens ein Fahrrad zum Verkauf aus, wählen Sie einen Markt und geben Sie einen Preis und eine Menge ein.');
+            return;
+        }
+
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(salesData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.turn_processed) {
+                    // Single player game - turn was auto-processed
+                    alert(`${data.message}\n\nYour turn has been automatically processed!\nCheck the results below.`);
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        location.reload();
+                    }
+                } else if (data.deferred) {
+                    // Multi-player game - decisions stored, not executed yet
+                    alert(`Verkaufsentscheidungen gespeichert!\n\n${data.total_quantity} Fahrräder zur Vermarktung vorgemerkt\nErwarteter Umsatz: ${data.expected_revenue.toFixed(2)}€\n\nHinweis: ${data.info}`);
+                    location.reload();
+                } else {
+                    // Fallback
+                    alert(data.message || 'Verkaufsaufträge erfolgreich erstellt!');
+                    location.reload();
+                }
+            } else {
+                alert('Fehler: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+        });
+    });
+
+    // Initialize totals and summaries on page load
+    updateTotals();
+    updateMarketSummaries();
+});
+</script>
+{% endblock %}

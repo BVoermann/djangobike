@@ -11,8 +11,93 @@ from simulation.engine import SimulationEngine
 from bikeshop.models import GameSession
 from competitors.models import AICompetitor
 import json
+import random
 
 logger = logging.getLogger(__name__)
+
+
+def generate_outcome_message(quantity_sold, quantity_planned, price_segment, market, unsold_reason):
+    """Generate narrative feedback about sales outcome without revealing mechanics."""
+    success_rate = (quantity_sold / quantity_planned * 100) if quantity_planned > 0 else 0
+
+    if success_rate == 100:
+        messages = [
+            "Excellent! All your bikes found buyers.",
+            "Perfect timing! Complete sell-out achieved.",
+            "Outstanding performance! Every bike was sold."
+        ]
+        return random.choice(messages)
+
+    elif success_rate >= 80:
+        return f"Strong sales! {quantity_sold} out of {quantity_planned} bikes sold. The market was receptive to your offering."
+
+    elif success_rate >= 50:
+        remaining = quantity_planned - quantity_sold
+        return f"Moderate success. {quantity_sold} bikes sold, {remaining} remain in inventory. Consider adjusting your strategy."
+
+    elif success_rate >= 20:
+        remaining = quantity_planned - quantity_sold
+        if unsold_reason and 'price' in unsold_reason.lower():
+            return f"Limited sales. {quantity_sold} of {quantity_planned} sold. Your pricing may not have matched market expectations."
+        elif unsold_reason and 'oversaturated' in unsold_reason.lower():
+            return f"Competitive market. {quantity_sold} of {quantity_planned} sold. Many competitors were targeting the same customers."
+        else:
+            return f"Challenging conditions. Only {quantity_sold} of {quantity_planned} bikes sold. Market demand was lower than anticipated."
+
+    else:
+        if quantity_sold == 0:
+            return "No sales completed. Your bikes didn't find buyers this turn. Consider revising your market approach."
+        else:
+            return f"Very limited success. Only {quantity_sold} of {quantity_planned} bikes sold. Significant inventory remains."
+
+
+def generate_market_condition_description(market, bike_type, supply_demand_ratio):
+    """Describe market conditions narratively."""
+    # Don't reveal exact numbers, use qualitative descriptions
+
+    if supply_demand_ratio < 0.5:
+        condition = "High demand, low competition"
+        description = "The market had strong appetite for bikes with limited competition."
+    elif supply_demand_ratio < 0.8:
+        condition = "Healthy market"
+        description = "Good market conditions with balanced supply and demand."
+    elif supply_demand_ratio < 1.2:
+        condition = "Competitive market"
+        description = "Many sellers competed for available customers."
+    else:
+        condition = "Oversaturated market"
+        description = "The market was flooded with offerings, limiting individual success."
+
+    # Add location-specific color if relevant
+    if hasattr(market, 'green_city_factor') and hasattr(bike_type, 'name'):
+        if market.green_city_factor > 1.2 and 'e-bike' in bike_type.name.lower():
+            description += " This city's eco-conscious population favored e-bikes."
+        elif hasattr(market, 'mountain_bike_factor') and market.mountain_bike_factor > 1.2 and 'mountain' in bike_type.name.lower():
+            description += " The mountainous terrain increased demand for mountain bikes."
+
+    return {
+        'condition': condition,
+        'description': description
+    }
+
+
+def generate_competitive_position(player_price, average_market_price, player_quality=None):
+    """Describe how player's offering compared to competition."""
+    if average_market_price == 0:
+        return "You were the only seller in this market segment."
+
+    price_ratio = player_price / average_market_price if average_market_price > 0 else 1.0
+
+    if price_ratio < 0.85:
+        return "Your competitive pricing gave you an advantage in the market."
+    elif price_ratio < 0.95:
+        return "Your pricing was slightly below market average, helping sales."
+    elif price_ratio < 1.05:
+        return "Your pricing aligned with market expectations."
+    elif price_ratio < 1.15:
+        return "Your pricing was slightly higher than competitors, which may have affected sales."
+    else:
+        return "Your premium pricing positioned you at the higher end of the market."
 
 
 class MultiplayerSimulationEngine:
@@ -227,29 +312,230 @@ class MultiplayerSimulationEngine:
         return execution_results
     
     def _process_market_competition(self):
-        """Process market competition dynamics between all players."""
+        """Process market competition using MarketSimulator for deferred sales.
+
+        This integrates the singleplayer MarketSimulator to handle multiplayer
+        sales decisions stored in TurnState objects.
+        """
         try:
+            from sales.market_simulator import MarketSimulator
+            from sales.models import Market, SalesDecision
+            from production.models import ProducedBike
+            from finance.models import Transaction
+            from bikeshop.models import BikeType
+            from decimal import Decimal
+
             active_players = self.game.players.filter(is_active=True, is_bankrupt=False)
-            
-            # Process competitive sales for each market
-            from simulation.competitive_sales_engine import CompetitiveSalesEngine
-            
+
+            # Group all sales decisions by market and segment
+            market_segment_decisions = {}
+
+            # Collect all player sales decisions from TurnState
             for player in active_players:
                 game_session = self._get_or_create_game_session(player)
-                
-                # Create competitive sales engine with multiplayer context
-                competitive_engine = CompetitiveSalesEngine(game_session)
-                
-                # Process competitive sales considering all players
-                competitive_engine.process_competitive_sales()
-                
-                # Update market share calculations
-                self._update_market_shares()
-            
-            logger.info("Market competition processing completed")
-            
+
+                turn_state = TurnState.objects.filter(
+                    multiplayer_game=self.game,
+                    player_session=player,
+                    month=self.game.current_month,
+                    year=self.game.current_year
+                ).first()
+
+                if not turn_state or not turn_state.sales_decisions:
+                    logger.info(f"No sales decisions for player {player.company_name}")
+                    continue
+
+                # Process each decision
+                for decision_data in turn_state.sales_decisions:
+                    market_id = decision_data['market_id']
+                    bike_type_id = decision_data['bike_type_id']
+                    price_segment = decision_data['price_segment']
+
+                    # Create key for grouping
+                    key = (market_id, bike_type_id, price_segment)
+
+                    if key not in market_segment_decisions:
+                        market_segment_decisions[key] = []
+
+                    # Create temporary SalesDecision object (not saved to DB)
+                    # MarketSimulator expects SalesDecision objects
+                    market = Market.objects.get(id=market_id, session=game_session)
+                    bike_type = BikeType.objects.get(id=bike_type_id, session=game_session)
+
+                    temp_decision = SalesDecision(
+                        session=game_session,
+                        market=market,
+                        bike_type=bike_type,
+                        price_segment=price_segment,
+                        quantity=decision_data['quantity'],
+                        desired_price=Decimal(str(decision_data['desired_price'])),
+                        transport_cost=Decimal(str(decision_data['transport_cost'])),
+                        decision_month=self.game.current_month,
+                        decision_year=self.game.current_year,
+                        is_processed=False
+                    )
+                    # Store reference to player and turn_state for later processing
+                    temp_decision._player_session = player
+                    temp_decision._turn_state = turn_state
+
+                    market_segment_decisions[key].append(temp_decision)
+
+            # Process each market segment using MarketSimulator
+            for (market_id, bike_type_id, price_segment), decisions in market_segment_decisions.items():
+                if not decisions:
+                    continue
+
+                # Get market and bike_type
+                first_decision = decisions[0]
+                market = first_decision.market
+                bike_type = first_decision.bike_type
+                game_session = first_decision.session
+
+                logger.info(f"Processing market segment: {market.name} - {bike_type.name} ({price_segment}) with {len(decisions)} players")
+
+                # Create MarketSimulator instance
+                simulator = MarketSimulator(game_session)
+
+                # Use MarketSimulator's internal method to process this specific segment
+                simulator._process_market_segment(
+                    market=market,
+                    bike_type=bike_type,
+                    price_segment=price_segment,
+                    player_decisions=decisions,
+                    month=self.game.current_month,
+                    year=self.game.current_year
+                )
+
+                # Calculate supply/demand ratio and average prices for this segment
+                total_quantity_offered = sum(d.quantity for d in decisions)
+                total_quantity_sold_segment = sum(getattr(d, 'quantity_sold', 0) for d in decisions)
+                supply_demand_ratio = total_quantity_offered / total_quantity_sold_segment if total_quantity_sold_segment > 0 else 2.0
+
+                # Calculate average market price for competitive position
+                total_price_sum = sum(float(d.desired_price) for d in decisions)
+                average_market_price = total_price_sum / len(decisions) if decisions else 0
+
+                # Store results in each player's TurnState with narrative feedback
+                for decision in decisions:
+                    player = decision._player_session
+                    turn_state = decision._turn_state
+
+                    # Get actual sold count
+                    quantity_sold = decision.quantity_sold if hasattr(decision, 'quantity_sold') else 0
+                    actual_revenue = decision.actual_revenue if hasattr(decision, 'actual_revenue') else 0
+                    unsold_reason = decision.unsold_reason if hasattr(decision, 'unsold_reason') else ''
+
+                    # Initialize sales_results if needed
+                    if not turn_state.sales_results or not isinstance(turn_state.sales_results, dict):
+                        turn_state.sales_results = {
+                            'total_sold': 0,
+                            'total_revenue': 0,
+                            'total_unsold': 0,
+                            'success_rate': 0,
+                            'decisions': []
+                        }
+
+                    # Get price segment display name
+                    segment_display_map = {
+                        'cheap': 'Cheap',
+                        'standard': 'Standard',
+                        'premium': 'Premium'
+                    }
+                    price_segment_display = segment_display_map.get(price_segment, price_segment.title())
+
+                    # Add decision result with narrative feedback
+                    decision_result = {
+                        'market_name': market.name,
+                        'bike_type_name': bike_type.name,
+                        'price_segment': price_segment,
+                        'price_segment_display': price_segment_display,
+                        'quantity_planned': decision.quantity,
+                        'quantity_sold': quantity_sold,
+                        'quantity_unsold': decision.quantity - quantity_sold,
+                        'desired_price': float(decision.desired_price),
+                        'actual_revenue': float(actual_revenue),
+                        'unsold_reason': unsold_reason,
+                        'success_rate': (quantity_sold / decision.quantity * 100) if decision.quantity > 0 else 0,
+
+                        # NARRATIVE FEEDBACK
+                        'outcome_message': generate_outcome_message(
+                            quantity_sold,
+                            decision.quantity,
+                            price_segment,
+                            market,
+                            unsold_reason
+                        ),
+                        'market_condition': generate_market_condition_description(
+                            market,
+                            bike_type,
+                            supply_demand_ratio
+                        ),
+                        'competitive_position': generate_competitive_position(
+                            float(decision.desired_price),
+                            average_market_price
+                        )
+                    }
+
+                    turn_state.sales_results['decisions'].append(decision_result)
+                    turn_state.sales_results['total_sold'] += quantity_sold
+                    turn_state.sales_results['total_revenue'] += float(actual_revenue)
+                    turn_state.sales_results['total_unsold'] += (decision.quantity - quantity_sold)
+
+                    # Update TurnState performance metrics
+                    turn_state.bikes_sold_this_turn += quantity_sold
+                    turn_state.revenue_this_turn += Decimal(str(actual_revenue))
+
+                # Calculate overall success rate for each player after processing all segments
+                for decision in decisions:
+                    player = decision._player_session
+                    turn_state = decision._turn_state
+
+                    # Calculate overall success rate
+                    total_attempted = sum(d['quantity_planned'] for d in turn_state.sales_results['decisions'])
+                    total_sold = turn_state.sales_results['total_sold']
+                    turn_state.sales_results['success_rate'] = (total_sold / total_attempted * 100) if total_attempted > 0 else 0
+
+                    turn_state.save()
+
+                    # Update PlayerSession metrics
+                    player.bikes_sold += getattr(decision, 'quantity_sold', 0)
+                    player.total_revenue += Decimal(str(getattr(decision, 'actual_revenue', 0)))
+                    player.save()
+
+                    # Create GameEvent for significant outcomes
+                    if unsold_reason and unsold_reason != '':
+                        GameEvent.objects.create(
+                            multiplayer_game=self.game,
+                            event_type='market_event',
+                            message=f"{player.company_name}: {quantity_sold}/{decision.quantity} {bike_type.name} verkauft in {market.name}",
+                            data={
+                                'player_id': str(player.id),
+                                'market': market.name,
+                                'bike_type': bike_type.name,
+                                'quantity_sold': quantity_sold,
+                                'quantity_planned': decision.quantity,
+                                'reason': unsold_reason
+                            },
+                            visible_to_all=False
+                        )
+
+                        # Make visible only to this player
+                        event = GameEvent.objects.filter(
+                            multiplayer_game=self.game,
+                            data__player_id=str(player.id)
+                        ).order_by('-timestamp').first()
+                        if event:
+                            event.visible_to.add(player)
+
+            # Update market share calculations
+            self._update_market_shares()
+
+            logger.info("Market competition processing completed using MarketSimulator")
+
         except Exception as e:
             logger.error(f"Error processing market competition: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
     
     def _check_bankruptcy_conditions(self):
         """Check bankruptcy conditions for all players."""
@@ -269,13 +555,16 @@ class MultiplayerSimulationEngine:
     
     def _advance_game_turn(self):
         """Advance the game to the next turn."""
+        # Record when this turn was processed
+        self.game.last_turn_processed_at = timezone.now()
+
         # Advance month
         if self.game.current_month == 12:
             self.game.current_month = 1
             self.game.current_year += 1
         else:
             self.game.current_month += 1
-        
+
         self.game.save()
         
         # Create turn advancement event
@@ -534,11 +823,25 @@ class MultiplayerTurnManager:
     
     def process_turn_if_ready(self):
         """Process turn if ready conditions are met."""
+        # First check if enough time has passed since last turn
+        can_process, remaining_time = self.game.can_process_next_turn()
+
+        if not can_process:
+            countdown = self.game.get_next_turn_countdown()
+            return {
+                'processed': False,
+                'reason': 'Waiting for turn duration to elapse',
+                'waiting_for_time': True,
+                'remaining_time': countdown,
+                'message': f'Next turn can be processed in {countdown}'
+            }
+
+        # Then check if all players have submitted
         status = self.check_turn_ready_status()
-        
+
         if status['ready_to_process']:
             return self.simulation_engine.process_multiplayer_turn()
-        
+
         return {
             'processed': False,
             'reason': 'Turn not ready for processing',

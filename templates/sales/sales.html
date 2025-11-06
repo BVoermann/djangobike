@@ -1,5 +1,6 @@
-{% extends 'base.html' %}
+{% extends request.base_template|default:'base.html' %}
 {% load math_filters %}
+{% load static %}
 
 {% block title %}Verkauf - BikeShop Pro{% endblock %}
 
@@ -64,6 +65,173 @@
         </div>
     </div>
 </div>
+
+<!-- Pending Sales Decisions Section -->
+{% if pending_decisions.total_quantity > 0 %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0" style="background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);">
+            <div class="card-header border-0 pb-0" style="background: transparent;">
+                <h4 class="fw-bold mb-1">
+                    <i class="fas fa-clock me-2 text-warning"></i>Ausstehende Verkaufsentscheidungen
+                </h4>
+                <p class="text-muted mb-0">Diese Fahrräder werden beim nächsten Monatswechsel auf dem Markt verkauft</p>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-6">
+                        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-2">
+                                    <i class="fas fa-bicycle"></i>
+                                </div>
+                                <h3 class="fw-bold mb-1">{{ pending_decisions.total_quantity }}</h3>
+                                <p class="mb-0 opacity-75">Fahrräder zum Verkauf geplant</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+                            <div class="card-body text-center">
+                                <div class="display-6 mb-2">
+                                    <i class="fas fa-euro-sign"></i>
+                                </div>
+                                <h3 class="fw-bold mb-1">{{ pending_decisions.total_expected_revenue|floatformat:0 }}€</h3>
+                                <p class="mb-0 opacity-75">Erwarteter Umsatz (wenn alle verkauft werden)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending by Market -->
+                {% if pending_decisions.by_market %}
+                <div class="row g-4">
+                    {% for market_name, market_data in pending_decisions.by_market.items %}
+                    <div class="col-lg-6">
+                        <div class="card h-100">
+                            <div class="card-header border-0 pb-0">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="fw-bold mb-1">
+                                            <i class="fas fa-store me-2"></i>{{ market_name }}
+                                        </h5>
+                                        <small class="text-muted">{{ market_data.quantity }} Fahrrad{% if market_data.quantity != 1 %}er{% endif %} geplant</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fs-5 fw-bold text-warning">{{ market_data.expected_revenue|floatformat:2 }}€</div>
+                                        <small class="text-muted">Erwartet</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group list-group-flush">
+                                    {% for bike in market_data.bikes %}
+                                    <div class="list-group-item px-0 border-0 py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-bold">{{ bike.bike_type }}</div>
+                                                <small class="text-muted">{{ bike.segment }} × {{ bike.quantity }} @ {{ bike.price|floatformat:2 }}€</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold text-warning">{{ bike.expected_revenue|floatformat:2 }}€</div>
+                                                <small class="text-muted">Erwartet</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Sales Results Feedback -->
+{% if recent_sales_results %}
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+            <div class="card-header border-0 pb-0" style="background: transparent;">
+                <h4 class="fw-bold mb-1">
+                    <i class="fas fa-chart-line me-2 text-info"></i>Verkaufsergebnisse der letzten Periode
+                </h4>
+                <p class="text-muted mb-0">Ergebnisse Ihrer Verkaufsentscheidungen nach Marktsimulation</p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <tr>
+                                <th class="border-0 fw-bold">Fahrrad</th>
+                                <th class="border-0 fw-bold">Markt</th>
+                                <th class="border-0 fw-bold">Geplant</th>
+                                <th class="border-0 fw-bold">Verkauft</th>
+                                <th class="border-0 fw-bold">Erfolgsrate</th>
+                                <th class="border-0 fw-bold">Preis</th>
+                                <th class="border-0 fw-bold">Umsatz</th>
+                                <th class="border-0 fw-bold">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in recent_sales_results %}
+                            <tr class="border-bottom">
+                                <td class="py-3">
+                                    <div class="fw-bold">{{ result.bike_type }}</div>
+                                    <span class="badge rounded-pill bg-secondary">{{ result.segment }}</span>
+                                </td>
+                                <td>{{ result.market }}</td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill bg-info">{{ result.quantity_planned }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill {% if result.quantity_sold == result.quantity_planned %}bg-success{% elif result.quantity_sold > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ result.quantity_sold }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if result.success_rate >= 80 %}
+                                        <span class="badge rounded-pill bg-success">{{ result.success_rate|floatformat:0 }}%</span>
+                                    {% elif result.success_rate >= 50 %}
+                                        <span class="badge rounded-pill bg-warning">{{ result.success_rate|floatformat:0 }}%</span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-danger">{{ result.success_rate|floatformat:0 }}%</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold">{{ result.desired_price|floatformat:2 }}€</td>
+                                <td class="fw-bold text-success">{{ result.actual_revenue|floatformat:2 }}€</td>
+                                <td>
+                                    {% if result.unsold_reason %}
+                                        <small class="text-muted">
+                                            {% if 'oversaturated' in result.unsold_reason %}
+                                                <i class="fas fa-exclamation-triangle text-warning"></i> Markt übersättigt
+                                            {% elif 'price_too_high' in result.unsold_reason %}
+                                                <i class="fas fa-arrow-down text-danger"></i> Preis zu hoch
+                                            {% else %}
+                                                {{ result.unsold_reason }}
+                                            {% endif %}
+                                        </small>
+                                    {% else %}
+                                        <small class="text-success">
+                                            <i class="fas fa-check-circle"></i> Vollständig verkauft
+                                        </small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Sales History Section -->
 {% if current_month_sales %}
@@ -304,7 +472,7 @@
                                     <i class="fas fa-map-marker-alt me-1"></i>{{ market.location }}
                                 </span>
                                 <span class="badge rounded-pill" style="background: var(--warning-gradient); color: white;">
-                                    <i class="fas fa-truck me-1"></i>{{ market.transport_cost_home|floatformat:2 }}€ pro Fahrrad
+                                    <i class="fas fa-truck me-1"></i>{{ market.transport_cost_home|floatformat:2 }}€ pro Lieferung
                                 </span>
                             </div>
                         </div>
@@ -345,9 +513,12 @@
                         </div>
                         <div class="text-end">
                             <div class="display-5 fw-bold text-success mb-2" id="grand-total">0.00€</div>
-                            <button type="submit" class="btn btn-success btn-lg px-4">
-                                <i class="fas fa-rocket me-2"></i>Verkaufsaufträge erstellen
+                            <button type="submit" class="btn btn-warning btn-lg px-4">
+                                <i class="fas fa-calendar-check me-2"></i>Verkaufsentscheidungen speichern
                             </button>
+                            <small class="d-block text-muted mt-2">
+                                <i class="fas fa-info-circle"></i> Verkauf erfolgt beim nächsten Monatswechsel
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -701,7 +872,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (price > 0) {
                     const revenue = price * quantity;
-                    const transport = transportCost * quantity;
+                    const transport = transportCost;  // Transport cost is per shipment, not per bike
 
                     totalRevenue += revenue;
                     totalTransportCosts += transport;
@@ -913,7 +1084,21 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert(`Verkaufsaufträge erfolgreich erstellt! 🎉\n\nUmsatz: ${data.revenue.toFixed(2)}€\nNeuer Kontostand: ${data.new_balance.toFixed(2)}€`);
+                let message = `Verkaufsentscheidungen erfolgreich gespeichert! 📋\n\n`;
+                message += `Anzahl Fahrräder: ${data.total_quantity}\n`;
+                message += `Erwarteter Umsatz: ${data.expected_revenue.toFixed(2)}€\n\n`;
+                message += `ℹ️ ${data.info}\n\n`;
+
+                if (data.decisions && data.decisions.length > 0) {
+                    message += `Details:\n`;
+                    data.decisions.forEach(decision => {
+                        message += `• ${decision.quantity}x ${decision.bike_type} (${decision.segment}) → ${decision.market}\n`;
+                    });
+                }
+
+                message += `\nGesamt ausstehend: ${data.preview.total_pending_quantity} Fahrräder für ${data.preview.total_pending_revenue.toFixed(2)}€`;
+
+                alert(message);
                 location.reload();
             } else {
                 alert('Fehler: ' + data.error);
@@ -928,6 +1113,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize totals and summaries on page load
     updateTotals();
     updateMarketSummaries();
+
+    // Auto-start tutorial if ?tutorial=true is in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tutorial') === 'true') {
+        console.log('🎓 Tutorial mode detected, auto-starting sales tutorial in 2 seconds...');
+        setTimeout(() => {
+            // Load and start the sales tutorial
+            const tutorialScript = document.createElement('script');
+            tutorialScript.src = "{% static 'help_system/js/sales-tutorial.js' %}";
+            tutorialScript.onload = () => {
+                console.log('✅ Sales tutorial script loaded successfully');
+            };
+            tutorialScript.onerror = () => {
+                console.error('❌ Failed to load sales tutorial script');
+                alert('Fehler beim Laden des Tutorials. Bitte versuchen Sie es erneut.');
+            };
+            document.head.appendChild(tutorialScript);
+        }, 2000);
+    }
 });
 </script>
 {% endblock %} 

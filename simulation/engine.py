@@ -5,6 +5,7 @@ from production.models import ProductionPlan, ProductionOrder, ProducedBike
 from warehouse.models import Warehouse, ComponentStock
 from finance.models import Credit, Transaction, MonthlyReport
 from sales.models import SalesOrder, Market
+from sales.market_simulator import MarketSimulator
 from competitors.ai_engine import CompetitorAIEngine
 from competitors.models import MarketCompetition, CompetitorSale
 from .competitive_sales_engine import CompetitiveSalesEngine
@@ -13,6 +14,9 @@ from random_events.event_engine import RandomEventsEngine
 from finance.financial_engine import FinancialReportingEngine
 from decimal import Decimal
 import random
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class SimulationEngine:
@@ -22,6 +26,7 @@ class SimulationEngine:
         self.session = session
         self.competitor_engine = CompetitorAIEngine(session)
         self.competitive_sales_engine = CompetitiveSalesEngine(session)
+        self.market_simulator = MarketSimulator(session)
         self.business_strategy_engine = BusinessStrategyEngine(session)
         self.random_events_engine = RandomEventsEngine(session)
         self.financial_engine = FinancialReportingEngine(session)
@@ -326,7 +331,17 @@ class SimulationEngine:
 
     def _process_competitive_sales(self):
         """Process sales using competitive market system"""
-        # Use the new competitive sales engine
+        logger.info(f"Processing competitive sales for month {self.session.current_month}/{self.session.current_year}")
+
+        # First, process player's pending sales decisions
+        logger.info("Processing player sales decisions with market simulator...")
+        self.market_simulator.process_pending_sales_decisions(
+            self.session.current_month,
+            self.session.current_year
+        )
+
+        # Then, use the existing competitive sales engine for any remaining competitive dynamics
+        logger.info("Processing competitive sales with existing engine...")
         self.competitive_sales_engine.process_competitive_sales(
             self.session.current_month,
             self.session.current_year

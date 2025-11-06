@@ -22,7 +22,7 @@ from bikeshop import views as bikeshop_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/', include('authentication.urls')),
     path('api/sessions/', bikeshop_views.api_sessions, name='api_sessions'),
     path('', include('bikeshop.urls')),
     path('procurement/', include('procurement.urls')),

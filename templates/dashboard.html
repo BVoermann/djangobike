@@ -4,6 +4,23 @@
 
 {% block content %}
 <div class="container-fluid">
+    <!-- User Info Bar -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted">Angemeldet als: <strong>{{ user.username }}</strong></span>
+                    {% if user.company_name %}
+                        <span class="text-muted ms-2">| {{ user.company_name }}</span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-sign-out-alt me-1"></i>Abmelden
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Hero Section -->
     <div class="row mb-5">
         <div class="col-12">
@@ -16,6 +33,53 @@
         </div>
     </div>
 
+    <!-- Assigned Multiplayer Games Section -->
+    {% if assigned_multiplayer_games %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Ihre zugewiesenen Multiplayer-Spiele
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for game in assigned_multiplayer_games %}
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title fw-bold">{{ game.name }}</h6>
+                                    <p class="card-text small text-muted">{{ game.description|truncatewords:15 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if game.status == 'active' %}
+                                            <span class="badge bg-success">{{ game.get_status_display }}</span>
+                                        {% elif game.status == 'setup' %}
+                                            <span class="badge bg-secondary">{{ game.get_status_display }}</span>
+                                        {% elif game.status == 'waiting' %}
+                                            <span class="badge bg-warning">{{ game.get_status_display }}</span>
+                                        {% elif game.status == 'paused' %}
+                                            <span class="badge bg-info">{{ game.get_status_display }}</span>
+                                        {% elif game.status == 'completed' %}
+                                            <span class="badge bg-dark">{{ game.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ game.get_status_display }}</span>
+                                        {% endif %}
+                                        <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-play me-1"></i>Spielen
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if not sessions %}
     <!-- Empty State -->
     <div class="row justify-content-center">
@@ -27,24 +91,54 @@
                         <h3 class="fw-bold">Ready to Start?</h3>
                         <p class="text-muted lead">Create your first business simulation and start building your bike empire!</p>
                     </div>
-                    <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-plus me-2"></i>Create Your First Session
+                    <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-plus me-2"></i>Neues Einzelspieler-Spiel
+                    </a>
+                    <a href="{% url 'multiplayer:lobby' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-users me-2"></i>Multiplayer-Lobby
                     </a>
                 </div>
             </div>
         </div>
     </div>
     {% else %}
+    <!-- Quick Actions Bar -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="fw-bold mb-2">
+                                <i class="fas fa-gamepad me-2"></i>Einzelspieler
+                            </h5>
+                            <p class="text-muted small mb-3">Spielen Sie alleine gegen KI-Konkurrenten</p>
+                            <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Neue Einzelspieler-Sitzung
+                            </a>
+                        </div>
+                        <div class="col-md-6 border-start">
+                            <h5 class="fw-bold mb-2">
+                                <i class="fas fa-users me-2"></i>Multiplayer
+                            </h5>
+                            <p class="text-muted small mb-3">Treten Sie gegen andere Spieler an</p>
+                            <a href="{% url 'multiplayer:lobby' %}" class="btn btn-success">
+                                <i class="fas fa-trophy me-2"></i>Zur Multiplayer-Lobby
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Sessions Grid -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h2 class="fw-bold mb-0">
-                    <i class="fas fa-gamepad me-2"></i>Your Business Sessions
+                    <i class="fas fa-gamepad me-2"></i>Ihre Einzelspieler-Sitzungen
                 </h2>
-                <a href="{% url 'bikeshop:upload_parameters' %}" class="btn btn-success">
-                    <i class="fas fa-plus me-2"></i>New Session
-                </a>
             </div>
         </div>
     </div>

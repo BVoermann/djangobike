@@ -7,8 +7,9 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from bikeshop.models import GameSession
 from .models import (
-    HelpCategory, TutorialVideo, InteractiveGuide, TooltipHelp, 
-    ContextualHelp, UserHelpProgress, GuideProgress, HelpFeedback, HelpAnalytics
+    HelpCategory, TutorialVideo, InteractiveGuide, TooltipHelp,
+    ContextualHelp, UserHelpProgress, GuideProgress, HelpFeedback, HelpAnalytics,
+    DIFFICULTY_LEVELS
 )
 import json
 import re
@@ -119,7 +120,7 @@ def video_library(request):
         'current_category': category_filter,
         'current_difficulty': difficulty_filter,
         'search_query': search_query,
-        'difficulty_choices': TutorialVideo.DIFFICULTY_LEVELS,
+        'difficulty_choices': DIFFICULTY_LEVELS,
     }
     
     return render(request, 'help_system/video_library.html', context)

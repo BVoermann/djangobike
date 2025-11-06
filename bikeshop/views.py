@@ -15,9 +15,20 @@ import tempfile
 @login_required
 def dashboard(request):
     """Hauptdashboard"""
+    # If user is admin, redirect to admin dashboard
+    if hasattr(request.user, 'is_spielleitung') and request.user.is_spielleitung():
+        return redirect('authentication:admin_dashboard')
+
     sessions = GameSession.objects.filter(user=request.user, is_active=True)
+
+    # Get assigned multiplayer games for regular users
+    assigned_multiplayer_games = []
+    if hasattr(request.user, 'assigned_multiplayer_games'):
+        assigned_multiplayer_games = request.user.assigned_multiplayer_games.all()
+
     return render(request, 'dashboard.html', {
-        'sessions': sessions
+        'sessions': sessions,
+        'assigned_multiplayer_games': assigned_multiplayer_games,
     })
 
 

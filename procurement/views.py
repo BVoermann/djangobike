@@ -205,19 +205,26 @@ def procurement_view(request, session_id):
                         target_warehouse = None
 
                         for wh in warehouses:
+                            # Refresh warehouse data to get current usage after previous additions
+                            wh.refresh_from_db()
                             if wh.remaining_capacity >= required_space:
                                 target_warehouse = wh
                                 break
 
-                        # If no single warehouse has enough space, use the one with most space
+                        # If no warehouse has enough space, transaction must fail
                         if not target_warehouse:
-                            target_warehouse = max(warehouses, key=lambda w: w.remaining_capacity)
+                            # Rollback will happen automatically due to transaction.atomic()
+                            return JsonResponse({
+                                'success': False,
+                                'error': f'Lagerkapazität erschöpft! Keine verfügbare Lagerkapazität für {price_obj.component.name} (benötigt: {required_space:.1f}m²). Bitte kaufen Sie ein zusätzliches Lager, bevor Sie diese Bestellung aufgeben.'
+                            })
 
-                        # Add to warehouse inventory
+                        # Add to warehouse inventory (track supplier for quality!)
                         component_stock, created = ComponentStock.objects.get_or_create(
                             session=session,
                             warehouse=target_warehouse,
                             component=price_obj.component,
+                            supplier=supplier,  # Track which supplier this came from
                             defaults={'quantity': 0}
                         )
                         component_stock.quantity += quantity

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Benutzer verwalten - Spielleitung{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5">
+                        <i class="fas fa-users-cog me-2"></i>Benutzer verwalten
+                    </h1>
+                    <p class="text-muted">Übersicht aller registrierten Benutzer</p>
+                </div>
+                <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Alle Benutzer</h5>
+                </div>
+                <div class="card-body">
+                    {% if users %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Benutzername</th>
+                                        <th>E-Mail</th>
+                                        <th>Rolle</th>
+                                        <th>Firmenname</th>
+                                        <th>Zugewiesene Spiele</th>
+                                        <th>Registriert</th>
+                                        <th>Letzter Login</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-user-circle me-2"></i>
+                                                <strong>{{ user.username }}</strong>
+                                            </td>
+                                            <td>{{ user.email }}</td>
+                                            <td>
+                                                {% if user.role == 'admin' %}
+                                                    <span class="badge bg-danger">Spielleitung</span>
+                                                {% else %}
+                                                    <span class="badge bg-primary">Spieler</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ user.company_name|default:"-" }}</td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    {{ user.assigned_multiplayer_games.count }} Spiele
+                                                </span>
+                                            </td>
+                                            <td>{{ user.date_joined|date:"d.m.Y H:i" }}</td>
+                                            <td>
+                                                {% if user.last_login %}
+                                                    {{ user.last_login|date:"d.m.Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">Noch nie</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Keine Benutzer gefunden</h5>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                    <h3>{{ users.count }}</h3>
+                    <p class="text-muted mb-0">Benutzer gesamt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-crown fa-2x text-danger mb-2"></i>
+                    <h3>{{ admin_count }}</h3>
+                    <p class="text-muted mb-0">Administratoren</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <i class="fas fa-user fa-2x text-success mb-2"></i>
+                    <h3>{{ player_count }}</h3>
+                    <p class="text-muted mb-0">Spieler</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -32,7 +32,7 @@
         .sidebar {
             min-height: 100vh;
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            /* backdrop-filter: blur(10px); Removed - creates stacking context that blocks dropdowns */
             border-right: 1px solid rgba(0, 0, 0, 0.1);
             box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
         }
@@ -82,8 +82,8 @@
             border-radius: 20px;
             box-shadow: var(--card-shadow);
             transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            /* backdrop-filter: blur(10px); Removed - creates stacking context that blocks dropdowns */
         }
         
         .card:hover {
@@ -171,8 +171,58 @@
                             <i class="fas fa-tachometer-alt"></i> Main Dashboard
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'bikeshop:dashboard' %}">
+                            <i class="fas fa-user"></i> Single Player Games
+                        </a>
+                    </li>
+
+                    {% if game and is_player %}
+                    <!-- Active Multiplayer Game Section -->
                     <hr class="my-2">
-                    <!-- Multiplayer Section -->
+                    <li class="nav-item">
+                        <small class="text-muted px-3">
+                            <i class="fas fa-gamepad"></i> {{ game.name }}
+                        </small>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'multiplayer:game_detail' game.id %}">
+                            <i class="fas fa-info-circle"></i> Game Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'multiplayer:procurement' game.id %}">
+                            <i class="fas fa-shopping-cart"></i> Einkauf
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'multiplayer:production' game.id %}">
+                            <i class="fas fa-cogs"></i> Produktion
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'multiplayer:warehouse' game.id %}">
+                            <i class="fas fa-warehouse"></i> Lager
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'multiplayer:sales' game.id %}">
+                            <i class="fas fa-chart-line"></i> Verkauf
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'multiplayer:finance' game.id %}">
+                            <i class="fas fa-euro-sign"></i> Finanzen
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'multiplayer:leaderboard' game.id %}">
+                            <i class="fas fa-trophy"></i> Rangliste
+                        </a>
+                    </li>
+                    {% else %}
+                    <!-- Multiplayer Lobby Section -->
+                    <hr class="my-2">
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'lobby' %}active{% endif %}" href="{% url 'multiplayer:lobby' %}">
                             <i class="fas fa-gamepad"></i> Multiplayer Lobby
@@ -183,48 +233,8 @@
                             <i class="fas fa-plus"></i> Create Game
                         </a>
                     </li>
-                    <hr class="my-2">
-                    <!-- Single Player Section -->
-                    {% if user.gamesession_set.exists %}
-                    {% with session=user.gamesession_set.first %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'bikeshop:session_detail' session.id %}">
-                            <i class="fas fa-user"></i> Single Player
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'procurement:procurement' session.id %}">
-                            <i class="fas fa-shopping-cart"></i> Einkauf
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'production:production' session.id %}">
-                            <i class="fas fa-cogs"></i> Produktion
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'warehouse:warehouse' session.id %}">
-                            <i class="fas fa-warehouse"></i> Lager
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'finance:finance' session.id %}">
-                            <i class="fas fa-euro-sign"></i> Finanzen
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'sales:sales' session.id %}">
-                            <i class="fas fa-chart-line"></i> Verkauf
-                        </a>
-                    </li>
-                    {% endwith %}
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'bikeshop:create_session' %}">
-                            <i class="fas fa-plus-circle"></i> Create Single Player
-                        </a>
-                    </li>
                     {% endif %}
+
                     <hr class="my-2">
                     <!-- Help & Support -->
                     <li class="nav-item">
@@ -233,11 +243,33 @@
                         </a>
                     </li>
                 </ul>
-                <div class="mt-auto">
-                    <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+
+                {% if game and is_player and game.status == 'active' %}
+                <!-- Submit Turn Button -->
+                <div class="mt-auto pt-3">
+                    {% if player_session %}
+                    <div class="mb-2 px-3">
+                        <small class="text-muted">Balance:</small>
+                        <div class="fw-bold {% if player_session.balance < 0 %}text-danger{% else %}text-success{% endif %}">
+                            €{{ player_session.balance|floatformat:0 }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'multiplayer:submit_decisions' game.id %}" class="btn btn-success w-100 mb-2">
+                        <i class="fas fa-paper-plane"></i> Zug einreichen
+                    </a>
+                    <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-sign-out-alt"></i> Abmelden
                     </a>
                 </div>
+                {% else %}
+                <!-- Regular Logout Button -->
+                <div class="mt-auto pt-3">
+                    <a href="{% url 'authentication:logout' %}" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-sign-out-alt"></i> Abmelden
+                    </a>
+                </div>
+                {% endif %}
             </nav>
             <main class="col-md-10 content p-4">
                 {% if messages %}

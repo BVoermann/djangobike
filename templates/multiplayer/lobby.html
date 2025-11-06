@@ -38,6 +38,12 @@
                                     <strong>{{ pending_invitations.count }}</strong><br>
                                     <small>Invitations</small>
                                 </div>
+                                {% if assigned_games %}
+                                <div class="col">
+                                    <strong>{{ assigned_games.count }}</strong><br>
+                                    <small>Assigned</small>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -65,6 +71,59 @@
                         </div>
                     </div>
                     {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Assigned Games by Admin -->
+            {% if assigned_games %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="fas fa-chess-king"></i> Games Assigned by Spielleitung</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">These games have been assigned to you by the game administrator. Click "Join Game" to start playing.</p>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Game Name</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Players</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for game in assigned_games %}
+                                <tr>
+                                    <td><strong>{{ game.name }}</strong></td>
+                                    <td>{{ game.description|truncatewords:10 }}</td>
+                                    <td>
+                                        {% if game.status == 'active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif game.status == 'setup' %}
+                                            <span class="badge bg-secondary">Setup</span>
+                                        {% elif game.status == 'waiting' %}
+                                            <span class="badge bg-warning">Waiting</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ game.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ game.players.count }} / {{ game.max_players }}</td>
+                                    <td>
+                                        <a href="{% url 'multiplayer:join_game' game.id %}" class="btn btn-success btn-sm">
+                                            <i class="fas fa-sign-in-alt"></i> Join Game
+                                        </a>
+                                        <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -129,8 +188,16 @@
                                                     {% endfor %}
                                                 </td>
                                                 <td>
-                                                    <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-primary btn-sm">
-                                                        {% if game.status == 'active' %}Play{% else %}View{% endif %}
+                                                    <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-{% if game.status == 'active' %}success{% elif game.status == 'setup' %}warning{% else %}primary{% endif %} btn-sm">
+                                                        {% if game.status == 'active' %}
+                                                            <i class="fas fa-play"></i> Play
+                                                        {% elif game.status == 'setup' %}
+                                                            <i class="fas fa-clock"></i> Waiting
+                                                        {% elif game.status == 'waiting' %}
+                                                            <i class="fas fa-users"></i> Join
+                                                        {% else %}
+                                                            <i class="fas fa-eye"></i> View
+                                                        {% endif %}
                                                     </a>
                                                 </td>
                                             </tr>

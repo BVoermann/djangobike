@@ -1,56 +1,184 @@
 {% extends 'multiplayer/base_multiplayer.html' %}
 
-{% block title %}Submit Decisions - {{ game.name }}{% endblock %}
+{% block title %}Gameplay Dashboard - {{ game.name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
             <div class="mb-4">
-                <h1><i class="fas fa-clipboard-check"></i> Submit Monthly Decisions</h1>
-                <p class="text-muted">Game: {{ game.name }} - Month {{ game.current_month }}/{{ game.current_year }}</p>
+                <h1><i class="fas fa-gamepad"></i> Gameplay Dashboard</h1>
+                <p class="text-muted">{{ player_session.company_name }} - {{ game.name }} - Month {{ game.current_month }}/{{ game.current_year }}</p>
             </div>
 
-            <div class="card">
+            <!-- Turn Status Alert -->
+            {% if has_submitted %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> Your decisions have been submitted for this turn. Waiting for other players...
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Make your business decisions using the tabs below, then submit your turn when ready.
+            </div>
+            {% endif %}
+
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Balance</h6>
+                            <h4 class="{% if session.balance < 0 %}text-danger{% elif session.balance < 10000 %}text-warning{% else %}text-success{% endif %}">
+                                €{{ session.balance|floatformat:0 }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Components</h6>
+                            <h4>{{ dashboard_data.total_components|default:0 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Bikes in Stock</h6>
+                            <h4>{{ dashboard_data.total_bikes|default:0 }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Workers</h6>
+                            <h4>{{ dashboard_data.total_workers|default:0 }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h5>Monthly Business Decisions</h5>
+                    <h5><i class="fas fa-tasks"></i> Business Operations</h5>
                 </div>
                 <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Production Planning</h6>
-                                <!-- Production form fields would go here -->
-                                <div class="form-group">
-                                    <label>Production Budget (€)</label>
-                                    <input type="number" class="form-control" name="production_budget" step="100" min="0">
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <h6>Marketing & Sales</h6>
-                                <!-- Marketing form fields would go here -->
-                                <div class="form-group">
-                                    <label>Marketing Budget (€)</label>
-                                    <input type="number" class="form-control" name="marketing_budget" step="100" min="0">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group mt-4">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Submit Decisions
-                            </button>
-                            <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-secondary ml-2">
-                                <i class="fas fa-times"></i> Cancel
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{% url 'multiplayer:procurement' game.id %}" class="btn btn-outline-primary btn-lg w-100">
+                                <i class="fas fa-shopping-cart fa-2x mb-2"></i><br>
+                                <strong>Procurement</strong><br>
+                                <small>Buy components from suppliers</small>
                             </a>
                         </div>
-                    </form>
+                        <div class="col-md-4">
+                            <a href="{% url 'multiplayer:production' game.id %}" class="btn btn-outline-success btn-lg w-100">
+                                <i class="fas fa-cogs fa-2x mb-2"></i><br>
+                                <strong>Production</strong><br>
+                                <small>Manufacture bikes</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'multiplayer:warehouse' game.id %}" class="btn btn-outline-warning btn-lg w-100">
+                                <i class="fas fa-warehouse fa-2x mb-2"></i><br>
+                                <strong>Warehouse</strong><br>
+                                <small>Manage inventory</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'multiplayer:sales' game.id %}" class="btn btn-outline-info btn-lg w-100">
+                                <i class="fas fa-chart-line fa-2x mb-2"></i><br>
+                                <strong>Sales</strong><br>
+                                <small>Sell bikes to markets</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'multiplayer:finance' game.id %}" class="btn btn-outline-secondary btn-lg w-100">
+                                <i class="fas fa-euro-sign fa-2x mb-2"></i><br>
+                                <strong>Finance</strong><br>
+                                <small>View financial reports</small>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{% url 'multiplayer:leaderboard' game.id %}" class="btn btn-outline-danger btn-lg w-100">
+                                <i class="fas fa-trophy fa-2x mb-2"></i><br>
+                                <strong>Leaderboard</strong><br>
+                                <small>View rankings</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Turn Section -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-paper-plane"></i> Submit Your Turn</h5>
+                </div>
+                <div class="card-body">
+                    {% if has_submitted %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                            <h5>Turn Already Submitted</h5>
+                            <p class="text-muted">Your decisions for this month have been submitted. The turn will process when all players have submitted or the deadline passes.</p>
+                            <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Game
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <strong><i class="fas fa-exclamation-triangle"></i> Important:</strong>
+                            Once you submit your turn, you cannot make any more changes this month. Make sure you have:
+                            <ul class="mb-0 mt-2">
+                                <li>Ordered all necessary components</li>
+                                <li>Scheduled bike production</li>
+                                <li>Created sales orders for finished bikes</li>
+                                <li>Reviewed your financial position</li>
+                            </ul>
+                        </div>
+
+                        <form method="post" class="text-center">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="submit_turn">
+
+                            <p class="lead">Ready to submit your decisions for <strong>Month {{ game.current_month }}/{{ game.current_year }}</strong>?</p>
+
+                            <div class="my-4">
+                                <button type="submit" class="btn btn-success btn-lg px-5" onclick="return confirm('Are you sure you want to submit your turn? You cannot make changes after submission.')">
+                                    <i class="fas fa-paper-plane"></i> Submit Turn
+                                </button>
+                            </div>
+
+                            <a href="{% url 'multiplayer:game_detail' game.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-warning:hover,
+.btn-outline-info:hover,
+.btn-outline-secondary:hover,
+.btn-outline-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+</style>
 {% endblock %}

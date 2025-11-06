@@ -63,15 +63,118 @@
             </div>
             {% endif %}
 
-            {% if can_start %}
+            {% if game.status == 'setup' %}
+                {% if can_start %}
+                <div class="row mb-4">
+                    <div class="col-12 text-center">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> <strong>{{ players.count }} players</strong> have joined. You can start the game when ready!
+                        </div>
+                        <form method="post" action="{% url 'multiplayer:start_game' game.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('Start the game? This will add AI players to fill remaining slots and begin the competition.')">
+                                <i class="fas fa-play"></i> Start Game Now
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% elif is_player %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-hourglass-half"></i> <strong>Waiting for game to start</strong><br>
+                            <small>Only the game creator ({{ game.created_by.username }}) can start the game. {{ players.count }}/{{ game.max_players }} players have joined.</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- Turn Countdown Warning (if waiting for turn duration) -->
+            {% if turn_countdown and game.status == 'active' %}
             <div class="row mb-4">
-                <div class="col-12 text-center">
-                    <form method="post" action="{% url 'multiplayer:start_game' game.id %}" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('Start the game? This cannot be undone.')">
-                            <i class="fas fa-play"></i> Start Game
-                        </button>
-                    </form>
+                <div class="col-12">
+                    <div class="alert alert-warning" id="turn-countdown-alert">
+                        <h5><i class="fas fa-clock"></i> Waiting for Next Turn</h5>
+                        <p class="mb-2">All players have submitted their decisions, but the turn cannot be processed yet.</p>
+                        <p class="mb-0"><strong>Next turn in: <span id="countdown-display">{{ turn_countdown }}</span></strong></p>
+                        <small class="text-muted">Turn duration: {{ game.turn_duration_minutes }} minutes</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Gameplay Controls (if player and game active) -->
+            {% if is_player and game.status == 'active' %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="mb-3"><i class="fas fa-gamepad"></i> Spielen Sie jetzt!</h5>
+                            <p class="mb-3">Treffen Sie Ihre Geschäftsentscheidungen für diesen Monat:</p>
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:submit_decisions' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-tachometer-alt"></i><br>
+                                        <small>Dashboard</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:procurement' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-shopping-cart"></i><br>
+                                        <small>Einkauf</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:production' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-cogs"></i><br>
+                                        <small>Produktion</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:warehouse' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-warehouse"></i><br>
+                                        <small>Lager</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:sales' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-chart-line"></i><br>
+                                        <small>Verkauf</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:finance' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-euro-sign"></i><br>
+                                        <small>Finanzen</small>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:leaderboard' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-trophy"></i><br>
+                                        <small>Rangliste</small>
+                                    </a>
+                                </div>
+                                <div class="col-md-2">
+                                    <a href="{% url 'multiplayer:financial_dashboard' game.id %}" class="btn btn-light w-100">
+                                        <i class="fas fa-chart-bar"></i><br>
+                                        <small>Finanz-Dashboard</small>
+                                    </a>
+                                </div>
+                            </div>
+                            <hr class="my-3 bg-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small><i class="fas fa-info-circle"></i> Nutzen Sie alle Tabs um Ihre Entscheidungen zu treffen. Wenn Sie fertig sind, reichen Sie Ihren Zug ein.</small>
+                                </div>
+                                <a href="{% url 'multiplayer:submit_decisions' game.id %}" class="btn btn-warning">
+                                    <i class="fas fa-paper-plane"></i> Zug einreichen
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
@@ -326,4 +429,21 @@
     padding: 0.75rem 2rem;
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh page when turn countdown expires or regularly
+{% if turn_countdown %}
+// If there's a countdown, refresh more frequently
+setTimeout(function() {
+    location.reload();
+}, 5000); // Refresh every 5 seconds to update countdown
+{% elif game.status == 'active' %}
+// Regular refresh for active games
+setTimeout(function() {
+    location.reload();
+}, 30000); // Refresh every 30 seconds
+{% endif %}
+</script>
 {% endblock %}

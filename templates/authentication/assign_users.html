@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Benutzer zuweisen - {{ game.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5">
+                        <i class="fas fa-user-plus me-2"></i>Benutzer zuweisen
+                    </h1>
+                    <p class="text-muted">Spiel: <strong>{{ game.name }}</strong></p>
+                </div>
+                <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Spieler auswählen</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <p class="text-muted mb-3">
+                            Wählen Sie die Benutzer aus, die an diesem Spiel teilnehmen sollen.
+                        </p>
+
+                        {% if all_users %}
+                            <div class="list-group mb-3">
+                                {% for user in all_users %}
+                                <label class="list-group-item">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="users" value="{{ user.id }}"
+                                               {% if user.id in assigned_user_ids %}checked{% endif %}
+                                               id="user_{{ user.id }}">
+                                        <label class="form-check-label w-100" for="user_{{ user.id }}">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>{{ user.username }}</strong>
+                                                    {% if user.company_name %}
+                                                        <br><small class="text-muted">{{ user.company_name }}</small>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    {{ user.email }}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Keine Benutzer verfügbar. Erstellen Sie zuerst Benutzer-Accounts.
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Abbrechen
+                            </a>
+                            <button type="submit" class="btn btn-success" {% if not all_users %}disabled{% endif %}>
+                                <i class="fas fa-check me-1"></i>Zuweisungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-gamepad me-1"></i>Spielinformationen
+                    </h6>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted">Status:</td>
+                            <td><strong>{{ game.get_status_display }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Max. Spieler:</td>
+                            <td><strong>{{ game.max_players }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Aktuell zugewiesen:</td>
+                            <td><strong>{{ assigned_user_ids|length }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Schwierigkeit:</td>
+                            <td><strong>{{ game.get_difficulty_display }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card bg-light mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-robot me-1"></i>KI-Spieler hinzufügen
+                    </h6>
+                    <p class="small text-muted mb-3">
+                        Füllen Sie die verbleibenden Spielerplätze automatisch mit KI-Spielern auf.
+                    </p>
+                    {% if remaining_slots > 0 %}
+                        <a href="{% url 'authentication:fill_with_ai' game.id %}"
+                           class="btn btn-primary w-100"
+                           onclick="return confirm('Möchten Sie {{ remaining_slots }} KI-Spieler hinzufügen?');">
+                            <i class="fas fa-robot me-1"></i>
+                            Mit KI-Spielern auffüllen
+                            <span class="badge bg-light text-primary ms-2">
+                                +{{ remaining_slots }} KI
+                            </span>
+                        </a>
+                    {% else %}
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="fas fa-check-circle me-1"></i>Alle Plätze belegt
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card bg-light mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-1"></i>Hinweise
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>Zugewiesene Spieler sehen das Spiel in ihrem Dashboard</li>
+                        <li>Sie können die Zuweisung jederzeit ändern</li>
+                        <li>Spieler werden per E-Mail benachrichtigt (wenn konfiguriert)</li>
+                        <li>KI-Spieler werden automatisch mit verschiedenen Strategien erstellt</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

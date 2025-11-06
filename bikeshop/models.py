@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
 
@@ -7,7 +7,7 @@ import uuid
 class GameSession(models.Model):
     """Hauptsession für das Spiel"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     current_month = models.IntegerField(default=1)
     current_year = models.IntegerField(default=2024)
@@ -259,87 +259,110 @@ class BikeType(models.Model):
     
     def find_best_components_for_segment(self, session, price_segment):
         """Find the best available components for this bike type and segment.
-        
+
         Returns a dict with:
-        - 'components': dict mapping component_type_name -> Component instance
+        - 'components': dict mapping component_type_name -> ComponentStock instance
         - 'upgrades': list of upgrade info for components that are higher quality than needed
         - 'missing': list of component types that have no available components
         """
         from warehouse.models import ComponentStock
-        
+
         result = {
             'components': {},
             'upgrades': [],
             'missing': []
         }
-        
+
         required_components = self.get_required_components()
-        
+
+        # Define quality expectations for each segment
+        exact_quality_mapping = {
+            'cheap': 'basic',
+            'standard': 'standard',
+            'premium': 'premium'
+        }
+
+        # Define which qualities are compatible with each segment
+        quality_compatibility = {
+            'cheap': ['basic', 'standard', 'premium'],
+            'standard': ['standard', 'premium'],
+            'premium': ['premium']
+        }
+
         for component_type_name, compatible_names in required_components.items():
             # Find components that match the requirements
             component_type = ComponentType.objects.filter(
-                session=session, 
+                session=session,
                 name=component_type_name
             ).first()
-            
+
             if not component_type:
                 result['missing'].append(component_type_name)
                 continue
-            
+
             # Get all compatible components for this bike type
             compatible_components = Component.objects.filter(
                 session=session,
                 component_type=component_type,
                 name__in=compatible_names
             )
-            
-            # Filter by components that have stock
-            components_with_stock = []
-            for comp in compatible_components:
-                stock = ComponentStock.objects.filter(
-                    session=session,
-                    component=comp,
-                    quantity__gt=0
-                ).first()
-                if stock:
-                    components_with_stock.append(comp)
-            
-            if not components_with_stock:
+
+            # Get stocks for these components (with supplier info!)
+            stocks_with_component = ComponentStock.objects.filter(
+                session=session,
+                component__in=compatible_components,
+                quantity__gt=0
+            ).select_related('component', 'supplier')
+
+            if not stocks_with_component:
                 result['missing'].append(component_type_name)
                 continue
-            
+
             # Try to find exact quality match first
-            exact_matches = [
-                comp for comp in components_with_stock 
-                if comp.is_exact_quality_match(session, price_segment)
-            ]
-            
+            expected_quality = exact_quality_mapping.get(price_segment)
+            exact_matches = []
+            for stock in stocks_with_component:
+                stock_quality = stock.get_quality()
+                if stock_quality == expected_quality:
+                    exact_matches.append(stock)
+
             if exact_matches:
                 # Use the first exact match
-                chosen_component = exact_matches[0]
-                result['components'][component_type_name] = chosen_component
+                chosen_stock = exact_matches[0]
+                result['components'][component_type_name] = chosen_stock.component
             else:
                 # Try to find compatible components (quality upgrades)
-                compatible_upgrades = [
-                    comp for comp in components_with_stock 
-                    if comp.is_compatible_with_segment(session, price_segment)
-                ]
-                
-                if compatible_upgrades:
+                acceptable_qualities = quality_compatibility.get(price_segment, [])
+                compatible_stocks = []
+                for stock in stocks_with_component:
+                    stock_quality = stock.get_quality()
+                    if stock_quality in acceptable_qualities:
+                        compatible_stocks.append(stock)
+
+                if compatible_stocks:
                     # Use the first compatible component (which will be an upgrade)
-                    chosen_component = compatible_upgrades[0]
-                    result['components'][component_type_name] = chosen_component
-                    
-                    # Add upgrade information
-                    upgrade_info = chosen_component.get_quality_upgrade_info(session, price_segment)
-                    if upgrade_info and upgrade_info['is_upgrade']:
-                        upgrade_info['component_name'] = chosen_component.name
-                        upgrade_info['component_type'] = component_type_name
+                    chosen_stock = compatible_stocks[0]
+                    result['components'][component_type_name] = chosen_stock.component
+
+                    # Add upgrade information if it's actually an upgrade
+                    stock_quality = chosen_stock.get_quality()
+                    quality_levels = {'basic': 1, 'standard': 2, 'premium': 3}
+                    expected_level = quality_levels.get(expected_quality, 1)
+                    actual_level = quality_levels.get(stock_quality, 1)
+
+                    if actual_level > expected_level:
+                        upgrade_info = {
+                            'component_name': chosen_stock.component.name,
+                            'component_type': component_type_name,
+                            'component_quality': stock_quality,
+                            'target_segment': price_segment,
+                            'is_upgrade': True
+                        }
                         result['upgrades'].append(upgrade_info)
                 else:
                     # No compatible components available
                     result['missing'].append(component_type_name)
-        
+
         return result
 
 

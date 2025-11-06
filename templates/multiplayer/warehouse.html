@@ -1,0 +1,667 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+{% load math_filters %}
+
+{% block title %}Lager - BikeShop Pro - Multiplayer{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="text-center">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-warehouse" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                Lager
+            </h1>
+            <p class="lead text-muted">Übersicht über Ihre Lagerbestände und Kapazitäten</p>
+            <div class="badge bg-primary mb-3">
+                <i class="fas fa-gamepad"></i> {{ game.name }} - {{ player_session.company_name }}
+            </div>
+            <div class="mt-3">
+                <a href="{% url 'warehouse:purchase_warehouse' session.id %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus-circle me-2"></i>Neues Lager kaufen
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lager-Statistiken -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--primary-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-building"></i>
+                </div>
+                <h2 class="fw-bold">{{ warehouse_data|length }}</h2>
+                <p class="mb-0 opacity-75">Lagerhallen</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--success-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                </div>
+                <h2 class="fw-bold">{{ total_capacity|floatformat:0 }}</h2>
+                <p class="mb-0 opacity-75">Gesamtkapazität m²</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--warning-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h2 class="fw-bold" id="total-items">
+                    {% for data in warehouse_data %}
+                        {{ data.stocks|length }}{% if not forloop.last %} + {% endif %}
+                    {% endfor %}
+                </h2>
+                <p class="mb-0 opacity-75">Komponententypen</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card h-100 border-0" style="background: var(--danger-gradient); color: white;">
+            <div class="card-body text-center">
+                <div class="display-6 mb-3">
+                    <i class="fas fa-euro-sign"></i>
+                </div>
+                <h2 class="fw-bold">{{ total_rent|floatformat:0 }}€</h2>
+                <p class="mb-0 opacity-75">Monatliche Miete</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lager-Übersicht -->
+<div class="container-fluid px-4 py-4">
+    <div class="row g-4">
+        {% for data in warehouse_data %}
+        <div class="col-12">
+        <div class="card h-100 warehouse-card">
+            <div class="card-header border-0 pb-0">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h4 class="fw-bold mb-1">
+                            <i class="fas fa-warehouse me-2"></i>{{ data.warehouse.name }}
+                        </h4>
+                        <div class="warehouse-info">
+                            <span class="badge rounded-pill me-2" style="background: var(--primary-gradient); color: white;">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ data.warehouse.location }}
+                            </span>
+                            <span class="badge rounded-pill" style="background: var(--danger-gradient); color: white;">
+                                <i class="fas fa-euro-sign me-1"></i>{{ data.warehouse.rent_per_month|floatformat:0 }}€/Monat
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Kapazitätsanzeige -->
+                <div class="mb-4">
+                    {% with usage_percent=data.usage|floatformat:0|add:0|mul:100|div:data.warehouse.capacity_m2 %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold">Lagerkapazität</span>
+                        <span class="fw-bold {% if usage_percent > 90 %}text-danger{% elif usage_percent > 75 %}text-warning{% else %}text-success{% endif %}">
+                            {{ usage_percent|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <div class="progress mb-2" style="height: 12px; border-radius: 10px;">
+                        <div class="progress-bar {% if usage_percent > 90 %}bg-danger{% elif usage_percent > 75 %}bg-warning{% else %}bg-success{% endif %}"
+                             role="progressbar"
+                             style="width: {{ usage_percent }}%; border-radius: 10px;"
+                             data-bs-toggle="tooltip"
+                             title="{{ data.usage|floatformat:1 }}m² von {{ data.warehouse.capacity_m2 }}m² belegt">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span><i class="fas fa-cube me-1"></i>Belegt: {{ data.usage|floatformat:1 }}m²</span>
+                        <span><i class="fas fa-expand-arrows-alt me-1"></i>Verfügbar: {{ data.remaining|floatformat:1 }}m²</span>
+                    </div>
+                    {% endwith %}
+                </div>
+
+                <!-- Two-column layout for components and bicycles -->
+                <div class="row g-3">
+                    <!-- Left column: Components -->
+                    <div class="col-lg-6 col-md-12" style="background: rgba(0, 123, 255, 0.05); padding: 15px; border-radius: 8px;">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-cogs me-2"></i>Gelagerte Komponenten
+                        </h6>
+                        {% if data.stocks %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                    <tr>
+                                        <th class="border-0 fw-bold">Komponente</th>
+                                        <th class="border-0 fw-bold">Menge</th>
+                                        <th class="border-0 fw-bold">Platzbedarf</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stock in data.stocks %}
+                                    {% with space_used=stock.quantity|mul:stock.component.component_type.storage_space_per_unit %}
+                                    <tr class="border-bottom">
+                                        <td class="py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="component-icon me-3" style="width: 35px; height: 35px; background: var(--primary-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                    <i class="fas fa-puzzle-piece"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ stock.component.component_type.name }}</div>
+                                                    <small class="text-muted">{{ stock.component.name }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge rounded-pill fs-6 px-3 py-2 {% if stock.quantity > 100 %}bg-success{% elif stock.quantity > 20 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ stock.quantity }} Stück
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="space-indicator me-2" style="width: 20px; height: 20px; background: {% if space_used < 5 %}var(--success-gradient){% elif space_used < 15 %}var(--warning-gradient){% else %}var(--danger-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem;">
+                                                    <i class="fas fa-cube"></i>
+                                                </div>
+                                                <span class="fw-semibold">{{ space_used|floatformat:2 }}m²</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endwith %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <div class="empty-state" style="opacity: 0.7;">
+                                <i class="fas fa-box-open display-4 text-muted mb-3"></i>
+                                <h5 class="fw-bold mb-2">Lager ist leer</h5>
+                                <p class="text-muted mb-0">Dieses Lager enthält derzeit keine Komponenten.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Right column: Bicycles -->
+                    <div class="col-lg-6 col-md-12" style="background: rgba(40, 167, 69, 0.05); padding: 15px; border-radius: 8px;">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-bicycle me-2"></i>Gelagerte Fahrräder
+                        </h6>
+                        {% if data.bike_groups %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                    <tr>
+                                        <th class="border-0 fw-bold">Fahrrad</th>
+                                        <th class="border-0 fw-bold">Segment</th>
+                                        <th class="border-0 fw-bold">Anzahl</th>
+                                        <th class="border-0 fw-bold">Platz</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bike_group in data.bike_groups %}
+                                    {% with total_space=bike_group.count|mul:bike_group.bike__bike_type__storage_space_per_unit %}
+                                    <tr class="border-bottom">
+                                        <td class="py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bike-icon me-3" style="width: 35px; height: 35px; background: var(--success-gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                                    <i class="fas fa-bicycle"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">{{ bike_group.bike__bike_type__name }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if bike_group.bike__price_segment == 'cheap' %}
+                                                <span class="badge rounded-pill fs-6 px-2 py-1 bg-secondary">Günstig</span>
+                                            {% elif bike_group.bike__price_segment == 'standard' %}
+                                                <span class="badge rounded-pill fs-6 px-2 py-1 bg-primary">Standard</span>
+                                            {% elif bike_group.bike__price_segment == 'premium' %}
+                                                <span class="badge rounded-pill fs-6 px-2 py-1 bg-warning text-dark">Premium</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge rounded-pill fs-6 px-3 py-2 {% if bike_group.count > 10 %}bg-success{% elif bike_group.count > 3 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ bike_group.count }} Stück
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="space-indicator me-2" style="width: 20px; height: 20px; background: {% if total_space < 10 %}var(--success-gradient){% elif total_space < 30 %}var(--warning-gradient){% else %}var(--danger-gradient){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem;">
+                                                    <i class="fas fa-cube"></i>
+                                                </div>
+                                                <span class="fw-semibold">{{ total_space|floatformat:2 }}m²</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endwith %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <div class="empty-state" style="opacity: 0.7;">
+                                <i class="fas fa-bicycle display-4 text-muted mb-3"></i>
+                                <h5 class="fw-bold mb-2">Keine Fahrräder im Lager</h5>
+                                <p class="text-muted mb-0">Produzieren Sie Fahrräder, um sie hier zu sehen.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lager-Footer mit Aktionen -->
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center p-2 rounded" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);">
+                            <i class="fas fa-chart-pie text-info me-2"></i>
+                            <div>
+                                <small class="text-muted">Auslastung</small>
+                                <div class="fw-bold text-info">{{ data.usage|floatformat:0|add:0|mul:100|div:data.warehouse.capacity_m2|floatformat:1 }}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center p-2 rounded" style="background: linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 225, 64, 0.1) 100%);">
+                            <i class="fas fa-coins text-warning me-2"></i>
+                            <div>
+                                <small class="text-muted">Kosten</small>
+                                <div class="fw-bold text-warning">{{ data.warehouse.rent_per_month|floatformat:0 }}€/M</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if not warehouse_data %}
+<!-- Empty State für keine Lager -->
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <div class="empty-state" style="opacity: 0.7;">
+                    <div class="display-1 mb-4" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">Keine Lager verfügbar</h3>
+                    <p class="text-muted mb-4">Derzeit sind keine Lagerhallen konfiguriert. Kontaktieren Sie die Administration, um Lager hinzuzufügen.</p>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+
+<style>
+.warehouse-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.warehouse-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.component-icon, .space-indicator {
+    transition: all 0.3s ease;
+}
+
+.component-icon:hover, .space-indicator:hover {
+    transform: scale(1.1);
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.02) 0%, rgba(118, 75, 162, 0.02) 100%);
+    transform: scale(1.01);
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+.warehouse-info .badge {
+    transition: all 0.3s ease;
+}
+
+.warehouse-info .badge:hover {
+    transform: scale(1.05);
+}
+
+.empty-state {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 0.7;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.badge {
+    transition: all 0.3s ease;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+}
+
+.progress {
+    background-color: rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+.card-footer .row > div {
+    transition: all 0.3s ease;
+}
+
+.card-footer .row > div:hover {
+    transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .warehouse-info {
+        margin-top: 1rem;
+    }
+
+    .progress {
+        height: 8px !important;
+    }
+}
+
+.capacity-critical {
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0.7;
+    }
+}
+
+.tooltip-inner {
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-warning:hover,
+.btn-outline-danger:hover {
+    transform: translateY(-2px);
+}
+
+/* Storage visualization improvements */
+.space-indicator {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.progress-bar.bg-danger {
+    background: var(--danger-gradient) !important;
+}
+
+.progress-bar.bg-warning {
+    background: var(--warning-gradient) !important;
+}
+
+.progress-bar.bg-success {
+    background: var(--success-gradient) !important;
+}
+
+/* Enhance visual hierarchy */
+.warehouse-card .card-header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+/* Interactive elements */
+[data-bs-toggle="tooltip"] {
+    cursor: help;
+}
+
+.fw-bold.text-danger,
+.fw-bold.text-warning,
+.fw-bold.text-success {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Two-column layout enhancements */
+.row.g-3 > [class*="col-"] {
+    min-height: 200px;
+}
+
+.col-lg-6 {
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.col-lg-6:last-child {
+    border-right: none;
+}
+
+@media (max-width: 991.98px) {
+    .col-lg-6 {
+        border-right: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+    }
+
+    .col-lg-6:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+}
+
+/* Full-width warehouse layout enhancements */
+.warehouse-card .row.g-3 {
+    align-items: stretch;
+}
+
+.warehouse-card .col-lg-6 {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure proper spacing for full-width cards */
+.container-fluid.px-4.py-4 {
+    margin-top: 1rem;
+}
+
+/* Optimize two-column layout within full-width cards */
+@media (min-width: 992px) {
+    .warehouse-card .row.g-3 > .col-lg-6 {
+        min-height: 300px;
+    }
+}
+
+/* Full-width card styling improvements */
+.col-12 .warehouse-card {
+    max-width: none;
+    width: 100%;
+}
+
+.col-12 .warehouse-card .card-body {
+    padding: 2rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Add capacity warning animations for critically full warehouses
+    document.querySelectorAll('.progress-bar').forEach(function(bar) {
+        const width = parseFloat(bar.style.width);
+        if (width > 95) {
+            bar.classList.add('capacity-critical');
+        }
+    });
+
+    // Enhance progress bar interactivity
+    document.querySelectorAll('.progress').forEach(function(progress) {
+        progress.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.02)';
+        });
+
+        progress.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+
+    // Add click handlers for warehouse cards (potential future feature)
+    document.querySelectorAll('.warehouse-card').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            // Prevent default card interactions
+            if (e.target.closest('.badge') || e.target.closest('.progress')) {
+                return;
+            }
+
+            // Future: Could open detailed warehouse view
+            console.log('Warehouse card clicked - future feature placeholder');
+        });
+    });
+
+    // Animate statistics cards on scroll (if Intersection Observer is available)
+    if (typeof IntersectionObserver !== 'undefined') {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationDelay = (Math.random() * 0.5) + 's';
+                    entry.target.classList.add('animate-card');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all cards
+        document.querySelectorAll('.card').forEach(function(card) {
+            observer.observe(card);
+        });
+    }
+
+    // Calculate and display total storage statistics
+    let totalCapacity = 0;
+    let totalUsed = 0;
+    let totalCost = 0;
+
+    document.querySelectorAll('.warehouse-card').forEach(function(card) {
+        // Extract capacity data from progress bars
+        const progressBar = card.querySelector('.progress-bar');
+        if (progressBar && progressBar.title) {
+            // Parse capacity info from tooltip
+            const match = progressBar.title.match(/(\d+\.?\d*)m² von (\d+\.?\d*)m²/);
+            if (match) {
+                totalUsed += parseFloat(match[1]);
+                totalCapacity += parseFloat(match[2]);
+            }
+        }
+    });
+
+    // Update total statistics in console for debugging
+    if (totalCapacity > 0) {
+        const utilizationRate = (totalUsed / totalCapacity * 100).toFixed(1);
+        console.log(`Total warehouse utilization: ${utilizationRate}%`);
+        console.log(`Total used: ${totalUsed}m², Total capacity: ${totalCapacity}m²`);
+    }
+});
+
+// Add a CSS class for scroll animations
+const style = document.createElement('style');
+style.textContent = `
+    .animate-card {
+        animation: slideInUp 0.6s ease forwards;
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

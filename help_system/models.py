@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from bikeshop.models import GameSession
 
 
@@ -283,8 +283,8 @@ class ContextualHelp(models.Model):
 
 class UserHelpProgress(models.Model):
     """Track user progress through help content"""
-    
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='help_progress')
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='help_progress')
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE, null=True, blank=True)
     
     # Video progress
@@ -370,7 +370,7 @@ class HelpFeedback(models.Model):
         (5, '⭐⭐⭐⭐⭐ Sehr hilfreich'),
     ]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='help_feedback')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='help_feedback')
     content_type = models.CharField(max_length=20, choices=CONTENT_TYPES)
     content_id = models.IntegerField(help_text="ID of the help content")
     
@@ -418,7 +418,7 @@ class HelpAnalytics(models.Model):
         ('contextual', 'Contextual Help'),
     ]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='help_analytics')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='help_analytics')
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE, null=True, blank=True)
     
     # Event data

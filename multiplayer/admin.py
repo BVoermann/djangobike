@@ -10,12 +10,30 @@ class MultiplayerGameAdmin(admin.ModelAdmin):
     list_display = ('name', 'status', 'max_players', 'current_turn', 'created_by', 'created_at')
     list_filter = ('status', 'difficulty', 'created_at')
     search_fields = ('name', 'created_by__username')
-    readonly_fields = ('id', 'created_at', 'updated_at')
-    
+    readonly_fields = ('id', 'created_at', 'updated_at', 'last_turn_processed_at')
+    actions = ['delete_selected_games']
+
     def current_turn(self, obj):
         return f"{obj.current_year}/{obj.current_month:02d}"
     current_turn.short_description = 'Current Turn'
-    
+
+    def delete_selected_games(self, request, queryset):
+        """Delete selected multiplayer games and all associated data."""
+        count = queryset.count()
+        # Get the names of games being deleted for the message
+        game_names = list(queryset.values_list('name', flat=True))
+
+        # Django will automatically cascade delete related objects due to ForeignKey on_delete=CASCADE
+        # This includes PlayerSession, TurnState, GameEvent, etc.
+        queryset.delete()
+
+        self.message_user(
+            request,
+            f"Successfully deleted {count} game(s): {', '.join(game_names)}. "
+            f"All player sessions and related data have been removed."
+        )
+    delete_selected_games.short_description = "Delete selected games (and all player data)"
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('id', 'name', 'description', 'created_by', 'status')
@@ -24,7 +42,8 @@ class MultiplayerGameAdmin(admin.ModelAdmin):
             'fields': ('max_players', 'human_players_count', 'ai_players_count', 'difficulty')
         }),
         ('Timing', {
-            'fields': ('current_month', 'current_year', 'max_months', 'turn_deadline_hours')
+            'fields': ('current_month', 'current_year', 'max_months', 'turn_deadline_hours',
+                      'turn_duration_minutes', 'last_turn_processed_at')
         }),
         ('Financial Settings', {
             'fields': ('starting_balance', 'bankruptcy_threshold')

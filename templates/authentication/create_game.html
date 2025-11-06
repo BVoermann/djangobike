@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Neues Spiel erstellen - Spielleitung{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5">
+                        <i class="fas fa-plus-circle me-2"></i>Neues Multiplayer-Spiel erstellen
+                    </h1>
+                    <p class="text-muted">Konfigurieren Sie ein neues Spiel für Ihre Spieler</p>
+                </div>
+                <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Zurück
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Spielkonfiguration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">Spielname *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.difficulty.id_for_label }}" class="form-label">Schwierigkeit</label>
+                                {{ form.difficulty }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Beschreibung</label>
+                            {{ form.description }}
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Spieler-Einstellungen</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.max_players.id_for_label }}" class="form-label">Max. Spieler</label>
+                                {{ form.max_players }}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.starting_balance.id_for_label }}" class="form-label">Startkapital (€)</label>
+                                {{ form.starting_balance }}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.max_months.id_for_label }}" class="form-label">Max. Monate</label>
+                                {{ form.max_months }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.turn_deadline_hours.id_for_label }}" class="form-label">Zugfrist (Stunden)</label>
+                                {{ form.turn_deadline_hours }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                                {{ form.status }}
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Insolvenz-Regeln</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.allow_bankruptcy }}
+                                    <label class="form-check-label" for="{{ form.allow_bankruptcy.id_for_label }}">
+                                        Insolvenz erlauben
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.bankruptcy_threshold.id_for_label }}" class="form-label">Insolvenz-Schwelle (€)</label>
+                                {{ form.bankruptcy_threshold }}
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="mb-3">Spiel-Features</h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.enable_real_time_updates }}
+                                    <label class="form-check-label" for="{{ form.enable_real_time_updates.id_for_label }}">
+                                        Echtzeit-Updates
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.enable_player_chat }}
+                                    <label class="form-check-label" for="{{ form.enable_player_chat.id_for_label }}">
+                                        Spieler-Chat
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.enable_market_intelligence }}
+                                    <label class="form-check-label" for="{{ form.enable_market_intelligence.id_for_label }}">
+                                        Markt-Informationen
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Abbrechen
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check me-1"></i>Spiel erstellen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-info-circle me-1"></i>Hinweise
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>Nach der Erstellung können Sie Spieler zuweisen</li>
+                        <li>Parameter können während des Spiels angepasst werden</li>
+                        <li>Der Status "Setup" erlaubt Änderungen vor dem Start</li>
+                        <li>Setzen Sie das Spiel auf "Waiting", wenn es bereit ist</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

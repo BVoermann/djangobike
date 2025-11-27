@@ -1,0 +1,157 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}Upload Game Parameters - {{ game.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-upload"></i> Upload Game Parameters</h3>
+                    <p class="mb-0">{{ game.name }}</p>
+                </div>
+                <div class="card-body">
+                    {% if game.parameters_uploaded %}
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> Parameters Already Uploaded</h6>
+                        <p>Game parameters were uploaded on {{ game.parameters_uploaded_at|date:"F d, Y H:i" }}.</p>
+                        <p class="mb-0"><strong>File:</strong> {{ game.parameters_file.name }}</p>
+                    </div>
+                    <div class="alert alert-info">
+                        <p class="mb-0">You can upload a new ZIP file to replace the existing parameters. Players who have already joined will keep their current data.</p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Parameters Required</h6>
+                        <p class="mb-0">Please upload game parameters before starting the game. This ensures all players have the same bikes, parts, suppliers, and markets.</p>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <label for="parameter_file"><strong>Select ZIP File *</strong></label>
+                            <input type="file" class="form-control-file" id="parameter_file" name="parameter_file"
+                                   accept=".zip" required>
+                            <small class="form-text text-muted">
+                                Upload a ZIP file containing the following Excel files:
+                            </small>
+                        </div>
+
+                        <div class="card mt-3 mb-3">
+                            <div class="card-body">
+                                <h6><strong>Required Files in ZIP:</strong></h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <ul>
+                                            <li><code>lieferanten.xlsx</code> - Suppliers and prices</li>
+                                            <li><code>fahrraeder.xlsx</code> - Bike types</li>
+                                            <li><code>preise_verkauf.xlsx</code> - Selling prices</li>
+                                            <li><code>lager.xlsx</code> - Warehouse data</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <ul>
+                                            <li><code>maerkte.xlsx</code> - Market information</li>
+                                            <li><code>personal.xlsx</code> - Worker data</li>
+                                            <li><code>finanzen.xlsx</code> - Financial settings</li>
+                                            <li><code>konkurrenten.xlsx</code> - AI competitors</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle"></i> How it Works</h6>
+                            <ul class="mb-0">
+                                <li>Upload the ZIP file containing all required Excel files</li>
+                                <li>The system will validate the file structure</li>
+                                <li>When players join, their game will be initialized with these parameters</li>
+                                <li>All players will have access to the same bikes, parts, and markets</li>
+                            </ul>
+                        </div>
+
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-download"></i> Need Template Files?</h6>
+                            <p class="mb-2">Download the default parameter files to use as a template or starting point:</p>
+                            <a href="{% url 'bikeshop:download_default_parameters' %}" class="btn btn-success btn-sm">
+                                <i class="fas fa-file-download"></i> Download Default Parameters (ZIP)
+                            </a>
+                            <p class="mt-2 mb-0"><small>You can modify these Excel files and re-upload them with your custom settings.</small></p>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'multiplayer:game_detail' game_id=game.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Game
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-upload"></i> Upload Parameters
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.form-control-file {
+    border: 2px dashed #dee2e6;
+    padding: 20px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+}
+
+.form-control-file:hover {
+    border-color: #667eea;
+    background-color: #f0f0ff;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #63408a 100%);
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-left: 4px solid #28a745;
+}
+
+.alert-info {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-left: 4px solid #17a2b8;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #e83e8c;
+}
+</style>
+{% endblock %}

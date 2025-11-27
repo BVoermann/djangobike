@@ -99,24 +99,56 @@ def create_game(request):
         messages.error(request, 'Sie haben keine Berechtigung, auf diese Seite zuzugreifen.')
         return redirect('bikeshop:dashboard')
 
-    from multiplayer.models import MultiplayerGame, GameParameters
+    from multiplayer.models import MultiplayerGame, GameParameters, GameEvent
     from multiplayer.forms import MultiplayerGameForm
+    from bikeshop.utils import process_parameter_zip
+    from django.utils import timezone
 
     if request.method == 'POST':
-        form = MultiplayerGameForm(request.POST)
+        form = MultiplayerGameForm(request.POST, request.FILES)
         if form.is_valid():
-            game = form.save(commit=False)
-            game.created_by = request.user
-            game.save()
+            # Validate ZIP file
+            zip_file = request.FILES.get('parameters_file')
+            if not zip_file:
+                messages.error(request, 'Bitte wählen Sie eine ZIP-Datei mit Parametern aus.')
+                return render(request, 'authentication/create_game.html', {'form': form})
 
-            # Create default parameters for the game
-            GameParameters.objects.create(
-                multiplayer_game=game,
-                last_modified_by=request.user
-            )
+            # Validate file extension
+            if not zip_file.name.endswith('.zip'):
+                messages.error(request, 'Bitte laden Sie eine ZIP-Datei hoch.')
+                return render(request, 'authentication/create_game.html', {'form': form})
 
-            messages.success(request, f'Spiel "{game.name}" erfolgreich erstellt!')
-            return redirect('authentication:assign_users', game_id=game.id)
+            try:
+                # Process the ZIP file to validate it
+                parameters = process_parameter_zip(zip_file)
+
+                # Create the game
+                game = form.save(commit=False)
+                game.created_by = request.user
+                game.parameters_uploaded = True
+                game.parameters_uploaded_at = timezone.now()
+                game.save()
+
+                # Create default parameters for the game
+                GameParameters.objects.create(
+                    multiplayer_game=game,
+                    last_modified_by=request.user
+                )
+
+                # Create event for parameter upload
+                GameEvent.objects.create(
+                    multiplayer_game=game,
+                    event_type='system_message',
+                    message=f"Spiel erstellt und Parameter hochgeladen von {request.user.username}",
+                    data={'filename': zip_file.name}
+                )
+
+                messages.success(request, f'Spiel "{game.name}" erfolgreich erstellt und Parameter hochgeladen!')
+                return redirect('authentication:assign_users', game_id=game.id)
+
+            except Exception as e:
+                messages.error(request, f'Fehler beim Verarbeiten der Parameter-Datei: {str(e)}')
+                return render(request, 'authentication/create_game.html', {'form': form})
     else:
         form = MultiplayerGameForm()
 
@@ -133,7 +165,12 @@ def assign_users(request, game_id):
     from multiplayer.models import MultiplayerGame
     from authentication.models import CustomUser
 
-    game = get_object_or_404(MultiplayerGame, id=game_id)
+    try:
+        game = MultiplayerGame.objects.get(id=game_id)
+    except MultiplayerGame.DoesNotExist:
+        messages.error(request, 'Das Spiel existiert nicht mehr oder wurde gelöscht.')
+        return redirect('authentication:admin_dashboard')
+
     all_users = CustomUser.objects.filter(role='user').order_by('username')
     assigned_user_ids = list(game.assigned_users.values_list('id', flat=True))
 
@@ -169,7 +206,11 @@ def fill_with_ai(request, game_id):
     from multiplayer.models import MultiplayerGame, PlayerSession
     from authentication.models import CustomUser
 
-    game = get_object_or_404(MultiplayerGame, id=game_id)
+    try:
+        game = MultiplayerGame.objects.get(id=game_id)
+    except MultiplayerGame.DoesNotExist:
+        messages.error(request, 'Das Spiel existiert nicht mehr oder wurde gelöscht.')
+        return redirect('authentication:admin_dashboard')
 
     # Count current human players (assigned users)
     human_count = game.assigned_users.count()
@@ -260,7 +301,11 @@ def edit_parameters(request, game_id):
     from multiplayer.models import MultiplayerGame, GameParameters
     from multiplayer.forms import GameParametersForm
 
-    game = get_object_or_404(MultiplayerGame, id=game_id)
+    try:
+        game = MultiplayerGame.objects.get(id=game_id)
+    except MultiplayerGame.DoesNotExist:
+        messages.error(request, 'Das Spiel existiert nicht mehr oder wurde gelöscht.')
+        return redirect('authentication:admin_dashboard')
 
     # Get or create parameters
     parameters, created = GameParameters.objects.get_or_create(
@@ -307,7 +352,11 @@ def edit_game(request, game_id):
     from multiplayer.models import MultiplayerGame
     from multiplayer.forms import MultiplayerGameForm
 
-    game = get_object_or_404(MultiplayerGame, id=game_id)
+    try:
+        game = MultiplayerGame.objects.get(id=game_id)
+    except MultiplayerGame.DoesNotExist:
+        messages.error(request, 'Das Spiel existiert nicht mehr oder wurde gelöscht.')
+        return redirect('authentication:admin_dashboard')
 
     if request.method == 'POST':
         form = MultiplayerGameForm(request.POST, instance=game)

@@ -468,17 +468,29 @@ class SimulationEngine:
             year=self.session.current_year
         )
 
+    def _reset_worker_hours(self):
+        """Reset worker hours for the new month"""
+        workers = Worker.objects.filter(session=self.session)
+        for worker in workers:
+            worker.used_hours_this_month = Decimal('0')
+            worker.tracking_month = self.session.current_month
+            worker.tracking_year = self.session.current_year
+            worker.save()
+
     def _advance_month(self):
         """Geht zum nächsten Monat und speichert Monatsbericht"""
         # Store current month data before advancing
         self._create_monthly_report()
-        
+
         self.session.current_month += 1
         if self.session.current_month > 12:
             self.session.current_month = 1
             self.session.current_year += 1
 
         self.session.save()
+
+        # Reset worker hours for the new month
+        self._reset_worker_hours()
         
     def _create_monthly_report(self):
         """Erstellt umfassenden Monatsbericht"""

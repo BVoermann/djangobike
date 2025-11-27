@@ -40,7 +40,237 @@
                     <form method="post">
                         {% csrf_token %}
 
-                        <h6 class="mb-3">Markt-Parameter</h6>
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-tabs mb-4" id="parametersTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="supplier-tab" data-bs-toggle="tab" data-bs-target="#supplier" type="button" role="tab" aria-controls="supplier" aria-selected="true">
+                                    <i class="fas fa-truck me-1"></i> Lieferanten
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="bike-tab" data-bs-toggle="tab" data-bs-target="#bike" type="button" role="tab" aria-controls="bike" aria-selected="false">
+                                    <i class="fas fa-bicycle me-1"></i> Fahrräder
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="prices-tab" data-bs-toggle="tab" data-bs-target="#prices" type="button" role="tab" aria-controls="prices" aria-selected="false">
+                                    <i class="fas fa-tags me-1"></i> Preise
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="warehouse-tab" data-bs-toggle="tab" data-bs-target="#warehouse" type="button" role="tab" aria-controls="warehouse" aria-selected="false">
+                                    <i class="fas fa-warehouse me-1"></i> Lager
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="market-tab" data-bs-toggle="tab" data-bs-target="#market" type="button" role="tab" aria-controls="market" aria-selected="false">
+                                    <i class="fas fa-shopping-cart me-1"></i> Märkte
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="worker-tab" data-bs-toggle="tab" data-bs-target="#worker" type="button" role="tab" aria-controls="worker" aria-selected="false">
+                                    <i class="fas fa-users me-1"></i> Personal
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button" role="tab" aria-controls="finance" aria-selected="false">
+                                    <i class="fas fa-euro-sign me-1"></i> Finanzen
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="competitor-tab" data-bs-toggle="tab" data-bs-target="#competitor" type="button" role="tab" aria-controls="competitor" aria-selected="false">
+                                    <i class="fas fa-chart-line me-1"></i> Konkurrenz
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content" id="parametersTabContent">
+
+                            <!-- Supplier Parameters Tab -->
+                            <div class="tab-pane fade show active" id="supplier" role="tabpanel" aria-labelledby="supplier-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-truck me-2"></i>Lieferanten-Parameter
+                                    <small class="text-muted">(aus lieferanten.xlsx)</small>
+                                </h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.supplier_payment_terms_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.supplier_payment_terms_multiplier.label }}
+                                </label>
+                                {{ form.supplier_payment_terms_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.supplier_payment_terms_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.supplier_delivery_time_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.supplier_delivery_time_multiplier.label }}
+                                </label>
+                                {{ form.supplier_delivery_time_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.supplier_delivery_time_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.supplier_complaint_probability_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.supplier_complaint_probability_multiplier.label }}
+                                </label>
+                                {{ form.supplier_complaint_probability_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.supplier_complaint_probability_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.supplier_complaint_quantity_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.supplier_complaint_quantity_multiplier.label }}
+                                </label>
+                                {{ form.supplier_complaint_quantity_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.supplier_complaint_quantity_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.component_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.component_cost_multiplier.label }}
+                                </label>
+                                {{ form.component_cost_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.component_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                            </div>
+                            <!-- End Supplier Tab -->
+
+                            <!-- Bike Parameters Tab -->
+                            <div class="tab-pane fade" id="bike" role="tabpanel" aria-labelledby="bike-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-bicycle me-2"></i>Fahrrad-Parameter
+                                    <small class="text-muted">(aus fahrraeder.xlsx)</small>
+                                </h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.bike_skilled_worker_hours_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.bike_skilled_worker_hours_multiplier.label }}
+                                </label>
+                                {{ form.bike_skilled_worker_hours_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.bike_skilled_worker_hours_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.bike_unskilled_worker_hours_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.bike_unskilled_worker_hours_multiplier.label }}
+                                </label>
+                                {{ form.bike_unskilled_worker_hours_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.bike_unskilled_worker_hours_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.bike_storage_space_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.bike_storage_space_multiplier.label }}
+                                </label>
+                                {{ form.bike_storage_space_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.bike_storage_space_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                            </div>
+                            <!-- End Bike Tab -->
+
+                            <!-- Bike Price Parameters Tab -->
+                            <div class="tab-pane fade" id="prices" role="tabpanel" aria-labelledby="prices-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-tags me-2"></i>Verkaufspreis-Parameter
+                                    <small class="text-muted">(aus preise_verkauf.xlsx)</small>
+                                </h5>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.bike_price_cheap_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.bike_price_cheap_multiplier.label }}
+                                </label>
+                                {{ form.bike_price_cheap_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.bike_price_cheap_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.bike_price_standard_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.bike_price_standard_multiplier.label }}
+                                </label>
+                                {{ form.bike_price_standard_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.bike_price_standard_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.bike_price_premium_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.bike_price_premium_multiplier.label }}
+                                </label>
+                                {{ form.bike_price_premium_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.bike_price_premium_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                            </div>
+                            <!-- End Prices Tab -->
+
+                            <!-- Warehouse Parameters Tab -->
+                            <div class="tab-pane fade" id="warehouse" role="tabpanel" aria-labelledby="warehouse-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-warehouse me-2"></i>Lager-Parameter
+                                    <small class="text-muted">(aus lager.xlsx)</small>
+                                </h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.warehouse_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.warehouse_cost_multiplier.label }}
+                                </label>
+                                {{ form.warehouse_cost_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.warehouse_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.warehouse_capacity_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.warehouse_capacity_multiplier.label }}
+                                </label>
+                                {{ form.warehouse_capacity_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.warehouse_capacity_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.component_storage_space_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.component_storage_space_multiplier.label }}
+                                </label>
+                                {{ form.component_storage_space_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.component_storage_space_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                            </div>
+                            <!-- End Warehouse Tab -->
+
+                            <!-- Market Parameters Tab -->
+                            <div class="tab-pane fade" id="market" role="tabpanel" aria-labelledby="market-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-shopping-cart me-2"></i>Markt-Parameter
+                                    <small class="text-muted">(aus maerkte.xlsx)</small>
+                                </h5>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="{{ form.market_demand_multiplier.id_for_label }}" class="form-label">
@@ -52,6 +282,37 @@
                                 </small>
                             </div>
                             <div class="col-md-6">
+                                <label for="{{ form.market_distance_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.market_distance_multiplier.label }}
+                                </label>
+                                {{ form.market_distance_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.market_distance_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.market_price_sensitivity_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.market_price_sensitivity_multiplier.label }}
+                                </label>
+                                {{ form.market_price_sensitivity_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.market_price_sensitivity_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.transport_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.transport_cost_multiplier.label }}
+                                </label>
+                                {{ form.transport_cost_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.transport_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
                                 <label class="form-label d-block">Saisonale Effekte</label>
                                 <div class="form-check form-switch">
                                     {{ form.seasonal_effects_enabled }}
@@ -61,17 +322,63 @@
                                 </div>
                             </div>
                         </div>
+                            </div>
+                            <!-- End Market Tab -->
 
-                        <hr>
-                        <h6 class="mb-3">Wirtschafts-Parameter</h6>
+                            <!-- Worker Parameters Tab -->
+                            <div class="tab-pane fade" id="worker" role="tabpanel" aria-labelledby="worker-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-users me-2"></i>Personal-Parameter
+                                    <small class="text-muted">(aus personal.xlsx)</small>
+                                </h5>
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="{{ form.inflation_rate.id_for_label }}" class="form-label">
-                                    {{ form.inflation_rate.label }}
+                                <label for="{{ form.worker_cost_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.worker_cost_multiplier.label }}
                                 </label>
-                                {{ form.inflation_rate }}
+                                {{ form.worker_cost_multiplier }}
                                 <small class="form-text text-muted d-block">
-                                    {{ form.inflation_rate.help_text }}
+                                    {{ form.worker_cost_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.worker_hours_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.worker_hours_multiplier.label }}
+                                </label>
+                                {{ form.worker_hours_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.worker_hours_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.worker_productivity_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.worker_productivity_multiplier.label }}
+                                </label>
+                                {{ form.worker_productivity_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.worker_productivity_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                            </div>
+                            <!-- End Worker Tab -->
+
+                            <!-- Finance Parameters Tab -->
+                            <div class="tab-pane fade" id="finance" role="tabpanel" aria-labelledby="finance-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-euro-sign me-2"></i>Finanz-Parameter
+                                    <small class="text-muted">(aus finanzen.xlsx)</small>
+                                </h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.start_capital_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.start_capital_multiplier.label }}
+                                </label>
+                                {{ form.start_capital_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.start_capital_multiplier.help_text }}
                                 </small>
                             </div>
                             <div class="col-md-6">
@@ -84,53 +391,46 @@
                                 </small>
                             </div>
                         </div>
-
-                        <hr>
-                        <h6 class="mb-3">Kosten-Multiplikatoren</h6>
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="{{ form.component_cost_multiplier.id_for_label }}" class="form-label">
-                                    {{ form.component_cost_multiplier.label }}
+                                <label for="{{ form.loan_availability_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.loan_availability_multiplier.label }}
                                 </label>
-                                {{ form.component_cost_multiplier }}
+                                {{ form.loan_availability_multiplier }}
                                 <small class="form-text text-muted d-block">
-                                    {{ form.component_cost_multiplier.help_text }}
+                                    {{ form.loan_availability_multiplier.help_text }}
                                 </small>
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ form.worker_cost_multiplier.id_for_label }}" class="form-label">
-                                    {{ form.worker_cost_multiplier.label }}
+                                <label for="{{ form.other_costs_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.other_costs_multiplier.label }}
                                 </label>
-                                {{ form.worker_cost_multiplier }}
+                                {{ form.other_costs_multiplier }}
                                 <small class="form-text text-muted d-block">
-                                    {{ form.worker_cost_multiplier.help_text }}
+                                    {{ form.other_costs_multiplier.help_text }}
                                 </small>
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="{{ form.transport_cost_multiplier.id_for_label }}" class="form-label">
-                                    {{ form.transport_cost_multiplier.label }}
+                                <label for="{{ form.inflation_rate.id_for_label }}" class="form-label">
+                                    {{ form.inflation_rate.label }}
                                 </label>
-                                {{ form.transport_cost_multiplier }}
+                                {{ form.inflation_rate }}
                                 <small class="form-text text-muted d-block">
-                                    {{ form.transport_cost_multiplier.help_text }}
-                                </small>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.warehouse_cost_multiplier.id_for_label }}" class="form-label">
-                                    {{ form.warehouse_cost_multiplier.label }}
-                                </label>
-                                {{ form.warehouse_cost_multiplier }}
-                                <small class="form-text text-muted d-block">
-                                    {{ form.warehouse_cost_multiplier.help_text }}
+                                    {{ form.inflation_rate.help_text }}
                                 </small>
                             </div>
                         </div>
+                            </div>
+                            <!-- End Finance Tab -->
 
-                        <hr>
-                        <h6 class="mb-3">Konkurrenz-Parameter</h6>
+                            <!-- Competitor Parameters Tab -->
+                            <div class="tab-pane fade" id="competitor" role="tabpanel" aria-labelledby="competitor-tab">
+                                <h5 class="mb-3 text-primary">
+                                    <i class="fas fa-chart-line me-2"></i>Konkurrenz-Parameter
+                                    <small class="text-muted">(aus konkurrenten.xlsx)</small>
+                                </h5>
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="{{ form.competitor_aggressiveness.id_for_label }}" class="form-label">
@@ -141,8 +441,54 @@
                                     {{ form.competitor_aggressiveness.help_text }}
                                 </small>
                             </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.competitor_financial_resources_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.competitor_financial_resources_multiplier.label }}
+                                </label>
+                                {{ form.competitor_financial_resources_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.competitor_financial_resources_multiplier.help_text }}
+                                </small>
+                            </div>
                         </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.competitor_efficiency_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.competitor_efficiency_multiplier.label }}
+                                </label>
+                                {{ form.competitor_efficiency_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.competitor_efficiency_multiplier.help_text }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.competitor_market_presence_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.competitor_market_presence_multiplier.label }}
+                                </label>
+                                {{ form.competitor_market_presence_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.competitor_market_presence_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.competitor_marketing_budget_multiplier.id_for_label }}" class="form-label">
+                                    {{ form.competitor_marketing_budget_multiplier.label }}
+                                </label>
+                                {{ form.competitor_marketing_budget_multiplier }}
+                                <small class="form-text text-muted d-block">
+                                    {{ form.competitor_marketing_budget_multiplier.help_text }}
+                                </small>
+                            </div>
+                        </div>
+                            </div>
+                            <!-- End Competitor Tab -->
 
+                        </div>
+                        <!-- End Tab Content -->
+
+                        <!-- Form Buttons (outside tabs, but inside form) -->
                         <div class="d-flex justify-content-end gap-2 mt-4">
                             <a href="{% url 'authentication:admin_dashboard' %}" class="btn btn-secondary">
                                 <i class="fas fa-times me-1"></i>Abbrechen

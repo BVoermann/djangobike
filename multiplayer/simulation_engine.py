@@ -566,7 +566,10 @@ class MultiplayerSimulationEngine:
             self.game.current_month += 1
 
         self.game.save()
-        
+
+        # Reset worker hours for all players for the new month
+        self._reset_all_player_worker_hours()
+
         # Create turn advancement event
         GameEvent.objects.create(
             multiplayer_game=self.game,
@@ -578,7 +581,29 @@ class MultiplayerSimulationEngine:
                 'active_players': self.game.active_players_count
             }
         )
-    
+
+    def _reset_all_player_worker_hours(self):
+        """Reset worker hours for all active players for the new month."""
+        from bikeshop.models import Worker
+
+        active_players = self.game.players.filter(is_active=True, is_bankrupt=False)
+
+        for player in active_players:
+            try:
+                game_session = self._get_or_create_game_session(player)
+                workers = Worker.objects.filter(session=game_session)
+
+                for worker in workers:
+                    worker.used_hours_this_month = Decimal('0')
+                    worker.tracking_month = self.game.current_month
+                    worker.tracking_year = self.game.current_year
+                    worker.save()
+
+                logger.info(f"Reset worker hours for {player.company_name}")
+
+            except Exception as e:
+                logger.error(f"Error resetting worker hours for {player.company_name}: {str(e)}")
+
     def _generate_turn_summary(self, bankruptcy_results):
         """Generate comprehensive turn summary and events."""
         active_players = self.game.players.filter(is_active=True, is_bankrupt=False)

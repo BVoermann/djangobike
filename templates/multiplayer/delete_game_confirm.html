@@ -1,0 +1,170 @@
+{% extends 'multiplayer/base_multiplayer.html' %}
+
+{% block title %}Delete Game - {{ game.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Delete Game - Confirmation Required</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h4><i class="fas fa-trash-alt"></i> Warning: This action cannot be undone!</h4>
+                        <p class="mb-0">You are about to permanently delete this multiplayer game and ALL associated data.</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Game Details:</h5>
+                        <table class="table table-bordered">
+                            <tr>
+                                <th width="30%">Game Name:</th>
+                                <td><strong>{{ game.name }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    <span class="badge badge-{% if game.status == 'setup' %}primary{% elif game.status == 'waiting' %}warning{% elif game.status == 'active' %}success{% else %}secondary{% endif %}">
+                                        {{ game.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Created:</th>
+                                <td>{{ game.created_at|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Players:</th>
+                                <td>{{ player_count }} player{{ player_count|pluralize }}</td>
+                            </tr>
+                            {% if game.status == 'active' %}
+                            <tr>
+                                <th>Current Turn:</th>
+                                <td>{{ game.current_month }}/{{ game.current_year }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+
+                    {% if players %}
+                    <div class="mb-4">
+                        <h5>Affected Players:</h5>
+                        <div class="alert alert-warning">
+                            <p><strong>The following players will lose ALL their game data:</strong></p>
+                            <ul>
+                                {% for player in players %}
+                                <li>
+                                    <strong>{{ player.company_name }}</strong>
+                                    {% if player.user %}
+                                        ({{ player.user.username }})
+                                    {% else %}
+                                        (AI Player)
+                                    {% endif %}
+                                    {% if player.is_bankrupt %}
+                                        <span class="badge badge-danger">Bankrupt</span>
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> What will be deleted:</h6>
+                        <ul class="mb-0">
+                            <li>The multiplayer game record</li>
+                            <li>All player sessions ({{ player_count }} player{{ player_count|pluralize }})</li>
+                            <li>All individual player GameSessions (bikes, components, inventory, etc.)</li>
+                            <li>All turn states and decisions</li>
+                            <li>All game events and history</li>
+                            <li>All player communications and messages</li>
+                            <li>Uploaded parameter files</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" id="delete-form">
+                        {% csrf_token %}
+
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="confirm-delete" required>
+                                <label class="custom-control-label" for="confirm-delete">
+                                    <strong>I understand this action is permanent and cannot be undone</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <a href="{% url 'multiplayer:game_detail' game_id=game.id %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Cancel - Go Back
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg" id="delete-btn" disabled>
+                                <i class="fas fa-trash-alt"></i> Delete Game Permanently
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enable delete button only when checkbox is checked
+document.getElementById('confirm-delete').addEventListener('change', function() {
+    document.getElementById('delete-btn').disabled = !this.checked;
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    border: none;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #f85032 0%, #e73827 100%);
+    border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d63820 0%, #c52a1a 100%);
+}
+
+.btn-danger:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.alert {
+    border-left: 4px solid;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+}
+
+.alert-info {
+    border-left-color: #17a2b8;
+}
+
+.custom-control-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

@@ -55,17 +55,48 @@ class PlayerStateManager:
             logger.info(f"Updated existing GameSession for {player_session.company_name}")
             return game_session
 
-        # Initialize game parameters based on multiplayer game difficulty
-        self._initialize_suppliers(game_session)
-        self._initialize_components(game_session)
-        self._initialize_bike_types(game_session)
-        self._initialize_workers(game_session)
-        self._initialize_warehouses(game_session)
-        self._initialize_markets(game_session)
-        self._initialize_starting_inventory(game_session)
+        # Check if multiplayer game has uploaded parameters
+        if self.multiplayer_game.parameters_uploaded and self.multiplayer_game.parameters_file:
+            logger.info(f"Using uploaded parameters for {player_session.company_name}")
+            self._initialize_from_uploaded_parameters(game_session)
+        else:
+            # Initialize game parameters based on multiplayer game difficulty (default/fallback)
+            logger.info(f"Using default parameters for {player_session.company_name}")
+            self._initialize_suppliers(game_session)
+            self._initialize_components(game_session)
+            self._initialize_bike_types(game_session)
+            self._initialize_workers(game_session)
+            self._initialize_warehouses(game_session)
+            self._initialize_markets(game_session)
+            self._initialize_starting_inventory(game_session)
 
         logger.info(f"Game state initialized for {player_session.company_name}")
         return game_session
+
+    def _initialize_from_uploaded_parameters(self, session):
+        """Initialize game state from uploaded Excel parameters."""
+        try:
+            # Import the utility function from bikeshop
+            from bikeshop.utils import process_parameter_zip, initialize_session_data
+
+            # Process the ZIP file
+            parameters = process_parameter_zip(self.multiplayer_game.parameters_file)
+
+            # Initialize the session data using the same function as singleplayer
+            initialize_session_data(session, parameters)
+
+            logger.info(f"Successfully initialized session from uploaded parameters")
+        except Exception as e:
+            logger.error(f"Error initializing from uploaded parameters: {e}")
+            # Fall back to default initialization
+            logger.warning("Falling back to default initialization")
+            self._initialize_suppliers(session)
+            self._initialize_components(session)
+            self._initialize_bike_types(session)
+            self._initialize_workers(session)
+            self._initialize_warehouses(session)
+            self._initialize_markets(session)
+            self._initialize_starting_inventory(session)
 
     def _initialize_suppliers(self, session):
         """Create suppliers with varying quality and terms."""

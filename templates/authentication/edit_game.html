@@ -165,6 +165,31 @@
                 </div>
             </div>
 
+            <!-- Manual Turn Advancement (Only for active games) -->
+            {% if game.status == 'active' %}
+            <div class="card bg-warning text-dark mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-forward me-1"></i>Monat manuell vorantreiben
+                    </h6>
+                    <p class="small mb-3">
+                        Erzwinge den Übergang zum nächsten Monat, auch wenn nicht alle Spieler ihre Entscheidungen eingereicht haben.
+                    </p>
+                    <div class="alert alert-danger small mb-3">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Warnung:</strong> Diese Aktion kann nicht rückgängig gemacht werden und überspringt ausstehende Entscheidungen!
+                    </div>
+                    <button type="button"
+                            class="btn btn-danger w-100"
+                            id="forceAdvanceBtn"
+                            onclick="confirmForceAdvance()">
+                        <i class="fas fa-fast-forward me-1"></i>
+                        Zum nächsten Monat springen
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="card bg-light mt-3">
                 <div class="card-body">
                     <h6 class="card-title">
@@ -180,4 +205,62 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if game.status == 'active' %}
+<script>
+function confirmForceAdvance() {
+    // Show confirmation dialog
+    if (confirm('Sind Sie sicher, dass Sie den Monat manuell vorantreiben möchten?\n\nDies wird:\n• Den aktuellen Zug sofort verarbeiten\n• Ausstehende Entscheidungen mit Standardwerten ersetzen\n• Nicht rückgängig gemacht werden können\n\nMöchten Sie fortfahren?')) {
+        forceAdvanceTurn();
+    }
+}
+
+function forceAdvanceTurn() {
+    const btn = document.getElementById('forceAdvanceBtn');
+    const originalText = btn.innerHTML;
+
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Wird verarbeitet...';
+
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Send AJAX request
+    fetch('{% url "multiplayer:process_turn" game.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: 'force=true'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.processed) {
+            // Success - show message and reload
+            alert('✓ Monat erfolgreich vorangetrieben!\n\nDas Spiel ist jetzt im nächsten Monat.');
+            window.location.reload();
+        } else if (data.success && !data.processed) {
+            // Turn couldn't be processed for some reason
+            alert('⚠ Der Zug konnte nicht verarbeitet werden.\n\nGrund: ' + (data.result.reason || 'Unbekannt'));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        } else {
+            // Error
+            alert('✗ Fehler beim Vorantreiben des Monats:\n\n' + (data.error || 'Unbekannter Fehler'));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        alert('✗ Netzwerkfehler:\n\n' + error);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+</script>
+{% endif %}
 {% endblock %}

@@ -86,15 +86,15 @@
                                 <div class="form-group">
                                     <label for="turn_deadline"><strong>Turn Deadline (Hours)</strong></label>
                                     <select class="form-control" id="turn_deadline" name="turn_deadline">
+                                        <option value="0">0 - Instant (Advances when all players submit)</option>
                                         <option value="6">6 Hours</option>
                                         <option value="12">12 Hours</option>
                                         <option value="24" selected>24 Hours (1 Day)</option>
                                         <option value="48">48 Hours (2 Days)</option>
                                         <option value="72">72 Hours (3 Days)</option>
                                         <option value="168">1 Week</option>
-                                        <option value="0">No Deadline</option>
                                     </select>
-                                    <small class="form-text text-muted">Time limit for players to submit decisions</small>
+                                    <small class="form-text text-muted">Time limit for players to submit decisions. With instant mode (0), the game advances immediately when all players submit.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -139,6 +139,11 @@
                             <div id="game-preview">
                                 <p><strong>Game Summary:</strong> <span id="preview-text">6 players (2 human, 4 AI) • Medium difficulty • 24h turns • 5 years • €80,000 start</span></p>
                             </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Next Steps After Creation</h6>
+                            <p class="mb-0"><strong>Important:</strong> After creating the game, you MUST upload Excel parameter files before starting. These files define bikes, parts, suppliers, markets, and all game settings that will be used by all players.</p>
                         </div>
 
                         <!-- Submit Buttons -->

@@ -10,6 +10,8 @@ from datetime import timedelta
 from decimal import Decimal
 import json
 import uuid
+import tempfile
+import os
 
 from .models import (
     MultiplayerGame, PlayerSession, TurnState, GameEvent,
@@ -20,6 +22,19 @@ from .bankruptcy_manager import BankruptcyPreventionSystem
 from .ai_manager import MultiplayerAIManager
 from .player_state_manager import PlayerStateManager
 from django.contrib.auth.models import User
+from functools import wraps
+
+
+def handle_deleted_game(view_func):
+    """Decorator to handle deleted/non-existent multiplayer games gracefully."""
+    @wraps(view_func)
+    def wrapper(request, game_id, *args, **kwargs):
+        try:
+            return view_func(request, game_id, *args, **kwargs)
+        except MultiplayerGame.DoesNotExist:
+            messages.error(request, 'Das Spiel existiert nicht mehr oder wurde gelöscht.')
+            return redirect('bikeshop:dashboard')
+    return wrapper
 
 
 @login_required
@@ -118,9 +133,10 @@ def create_game(request):
                 message=f"Game '{name}' created by {request.user.username}",
                 data={'creator': request.user.username}
             )
-            
-            messages.success(request, f"Game '{name}' created successfully!")
-            return redirect('multiplayer:game_detail', game_id=game.id)
+
+            messages.success(request, f"Game '{name}' created successfully! Please upload game parameters to continue.")
+            # Redirect to parameter upload page to enforce the workflow
+            return redirect('multiplayer:upload_parameters', game_id=game.id)
             
         except ValueError as e:
             messages.error(request, f"Invalid input: {str(e)}")
@@ -131,6 +147,7 @@ def create_game(request):
 
 
 @login_required
+@handle_deleted_game
 def game_detail(request, game_id):
     """Detailed view of a multiplayer game."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -194,6 +211,9 @@ def game_detail(request, game_id):
         if not can_process_turn:
             turn_countdown = game.get_next_turn_countdown()
 
+    # Check if parameters are uploaded (required for joining and starting)
+    parameters_uploaded = game.parameters_uploaded and game.parameters_file
+
     context = {
         'game': game,
         'is_player': is_player,
@@ -206,24 +226,37 @@ def game_detail(request, game_id):
         'financial_health': financial_health,
         'turn_countdown': turn_countdown,
         'can_process_turn': can_process_turn,
-        'can_join': (not is_player and not game.is_full and game.status in ['setup', 'waiting']) or (is_assigned and not is_player),
+        'parameters_uploaded': parameters_uploaded,
+        'can_join': (
+            parameters_uploaded and  # Parameters must be uploaded before joining
+            (not is_player and not game.is_full and game.status in ['setup', 'waiting']) or
+            (is_assigned and not is_player)
+        ),
         'can_start': (
             game.created_by == request.user and
             game.status == 'setup' and
+            parameters_uploaded and  # Parameters must be uploaded before starting
             players.count() >= 1  # Allow starting with just 1 human player (AI will fill the rest)
-        )
+        ),
+        'is_creator': game.created_by == request.user
     }
 
     return render(request, 'multiplayer/game_detail.html', context)
 
 
 @login_required
+@handle_deleted_game
 def join_game(request, game_id):
     """Join an existing multiplayer game."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
 
     # Check if user is assigned to this game
     is_assigned = game.assigned_users.filter(id=request.user.id).exists()
+
+    # CRITICAL: Check if parameters have been uploaded (REQUIRED before joining)
+    if not game.parameters_uploaded or not game.parameters_file:
+        messages.error(request, "Cannot join this game yet. The game administrator must upload game parameters (Excel files) before players can join.")
+        return redirect('multiplayer:game_detail', game_id=game_id)
 
     # Check if user can join
     if not is_assigned and game.is_full:
@@ -281,19 +314,25 @@ def join_game(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def start_game(request, game_id):
     """Start a multiplayer game (add AI players and begin)."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
-    
+
     # Check permissions
     if game.created_by != request.user:
         messages.error(request, "Only the game creator can start the game.")
         return redirect('multiplayer:game_detail', game_id=game_id)
-    
+
     if game.status != 'setup':
         messages.error(request, "Game has already been started.")
         return redirect('multiplayer:game_detail', game_id=game_id)
-    
+
+    # Check if parameters have been uploaded (REQUIRED)
+    if not game.parameters_uploaded or not game.parameters_file:
+        messages.error(request, "You must upload game parameters before starting the game. Please upload the Excel parameter files.")
+        return redirect('multiplayer:game_detail', game_id=game_id)
+
     current_players = game.players.count()
     if current_players < 1:
         messages.error(request, "Need at least 1 player to start the game.")
@@ -360,6 +399,7 @@ def start_game(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def submit_decisions(request, game_id):
     """Submit player decisions for the current turn - shows full game interface."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -374,8 +414,8 @@ def submit_decisions(request, game_id):
         return redirect('multiplayer:game_detail', game_id=game_id)
 
     if game.status != 'active':
-        messages.error(request, "Game is not active.")
-        return redirect('multiplayer:game_detail', game_id=game_id)
+        messages.error(request, f"This game is currently {game.get_status_display()}. You cannot perform any actions right now.")
+        return redirect('multiplayer:lobby')
 
     if player_session.is_bankrupt:
         messages.error(request, "Bankrupt players cannot submit decisions.")
@@ -446,32 +486,73 @@ def submit_decisions(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 @require_http_methods(["POST"])
 def process_turn(request, game_id):
     """Manually process turn (for game admin/creator)."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
-    
-    if game.created_by != request.user:
+
+    # Check permissions - only game creator or staff can manually advance
+    if game.created_by != request.user and not request.user.is_staff:
         return JsonResponse({'error': 'Permission denied'}, status=403)
-    
+
     if game.status != 'active':
         return JsonResponse({'error': 'Game is not active'}, status=400)
-    
+
+    # Check if this is a forced advancement
+    force_advance = request.POST.get('force', 'false').lower() == 'true'
+
     try:
         turn_manager = MultiplayerTurnManager(game)
-        result = turn_manager.process_turn_if_ready()
-        
-        return JsonResponse({
-            'success': True,
-            'processed': result.get('processed', False),
-            'result': result
-        })
-        
+
+        if force_advance:
+            # Force process the turn regardless of submission status
+            from .simulation_engine import MultiplayerSimulationEngine
+            sim_engine = MultiplayerSimulationEngine(game)
+            result = sim_engine.process_multiplayer_turn()
+
+            # Check if processing was successful
+            if result.get('success', False):
+                # Log the forced advancement
+                from .models import GameEvent
+                GameEvent.objects.create(
+                    multiplayer_game=game,
+                    event_type='system_message',
+                    message=f"Administrator {request.user.username} hat den Zug manuell vorangetrieben",
+                    data={'forced': True, 'month': game.current_month, 'year': game.current_year}
+                )
+
+                return JsonResponse({
+                    'success': True,
+                    'processed': True,
+                    'forced': True,
+                    'result': result
+                })
+            else:
+                # Processing failed
+                return JsonResponse({
+                    'success': False,
+                    'processed': False,
+                    'error': result.get('error', 'Turn processing failed'),
+                    'result': result
+                })
+        else:
+            # Normal processing - only if ready
+            result = turn_manager.process_turn_if_ready()
+
+            return JsonResponse({
+                'success': True,
+                'processed': result.get('processed', False),
+                'forced': False,
+                'result': result
+            })
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
+@handle_deleted_game
 def game_events(request, game_id):
     """Get recent game events (AJAX endpoint)."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -519,10 +600,16 @@ def game_events(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def leaderboard(request, game_id):
     """Show game leaderboard and statistics."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
-    
+
+    # Allow viewing leaderboard for all game states except cancelled (players may want to see final standings)
+    if game.status == 'cancelled':
+        messages.error(request, "This game has been cancelled.")
+        return redirect('multiplayer:lobby')
+
     # Get all players ordered by various metrics
     players_by_balance = game.players.all().order_by('-balance')
     players_by_revenue = game.players.all().order_by('-total_revenue')
@@ -556,6 +643,7 @@ def leaderboard(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def financial_dashboard(request, game_id):
     """Show detailed financial dashboard for player."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -568,6 +656,11 @@ def financial_dashboard(request, game_id):
     except PlayerSession.DoesNotExist:
         messages.error(request, "You are not a player in this game.")
         return redirect('multiplayer:game_detail', game_id=game_id)
+
+    # Allow viewing dashboard for all game states except cancelled (informational view only)
+    if game.status == 'cancelled':
+        messages.error(request, "This game has been cancelled.")
+        return redirect('multiplayer:lobby')
 
     # Get financial health analysis
     bankruptcy_prevention = BankruptcyPreventionSystem(game)
@@ -590,6 +683,7 @@ def financial_dashboard(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def multiplayer_procurement(request, game_id):
     """Procurement view for multiplayer games - based on single player implementation."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -605,8 +699,8 @@ def multiplayer_procurement(request, game_id):
         return redirect('multiplayer:game_detail', game_id=game_id)
 
     if game.status != 'active':
-        messages.error(request, "Game is not active.")
-        return redirect('multiplayer:game_detail', game_id=game_id)
+        messages.error(request, f"This game is currently {game.get_status_display()}. You cannot perform any actions right now.")
+        return redirect('multiplayer:lobby')
 
     # Get player's game session
     state_manager = PlayerStateManager(game)
@@ -879,6 +973,7 @@ def multiplayer_procurement(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def multiplayer_production(request, game_id):
     """Production view for multiplayer games - based on single player implementation."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -894,8 +989,8 @@ def multiplayer_production(request, game_id):
         return redirect('multiplayer:game_detail', game_id=game_id)
 
     if game.status != 'active':
-        messages.error(request, "Game is not active.")
-        return redirect('multiplayer:game_detail', game_id=game_id)
+        messages.error(request, f"This game is currently {game.get_status_display()}. You cannot perform any actions right now.")
+        return redirect('multiplayer:lobby')
 
     # Get player's game session
     state_manager = PlayerStateManager(game)
@@ -1177,6 +1272,7 @@ def multiplayer_production(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def multiplayer_warehouse(request, game_id):
     """Warehouse view for multiplayer games - based on single player implementation."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -1192,8 +1288,8 @@ def multiplayer_warehouse(request, game_id):
         return redirect('multiplayer:game_detail', game_id=game_id)
 
     if game.status != 'active':
-        messages.error(request, "Game is not active.")
-        return redirect('multiplayer:game_detail', game_id=game_id)
+        messages.error(request, f"This game is currently {game.get_status_display()}. You cannot perform any actions right now.")
+        return redirect('multiplayer:lobby')
 
     # Get player's game session
     state_manager = PlayerStateManager(game)
@@ -1247,6 +1343,7 @@ def multiplayer_warehouse(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def multiplayer_sales(request, game_id):
     """Sales view for multiplayer games - DEFERRED SALES SYSTEM.
 
@@ -1266,8 +1363,8 @@ def multiplayer_sales(request, game_id):
         return redirect('multiplayer:game_detail', game_id=game_id)
 
     if game.status != 'active':
-        messages.error(request, "Game is not active.")
-        return redirect('multiplayer:game_detail', game_id=game_id)
+        messages.error(request, f"This game is currently {game.get_status_display()}. You cannot perform any actions right now.")
+        return redirect('multiplayer:lobby')
 
     # Get player's game session
     state_manager = PlayerStateManager(game)
@@ -1547,6 +1644,7 @@ def multiplayer_sales(request, game_id):
 
 
 @login_required
+@handle_deleted_game
 def multiplayer_finance(request, game_id):
     """Wrapper view for finance in multiplayer context."""
     game = get_object_or_404(MultiplayerGame, id=game_id)
@@ -1560,6 +1658,10 @@ def multiplayer_finance(request, game_id):
         messages.error(request, "You are not a player in this game.")
         return redirect('multiplayer:game_detail', game_id=game_id)
 
+    if game.status != 'active':
+        messages.error(request, f"This game is currently {game.get_status_display()}. You cannot perform any actions right now.")
+        return redirect('multiplayer:lobby')
+
     # Get player's game session
     state_manager = PlayerStateManager(game)
     game_session = state_manager.get_player_game_session(player_session)
@@ -1571,3 +1673,121 @@ def multiplayer_finance(request, game_id):
 
     from finance import views as finance_views
     return finance_views.finance_view(request, game_session.id)
+
+
+@login_required
+@handle_deleted_game
+def upload_parameters(request, game_id):
+    """Upload game parameters (Excel files) for a multiplayer game - admin only."""
+    game = get_object_or_404(MultiplayerGame, id=game_id)
+
+    # Check permissions - only game creator can upload parameters
+    if game.created_by != request.user:
+        messages.error(request, "Only the game creator can upload parameters.")
+        return redirect('multiplayer:game_detail', game_id=game_id)
+
+    # Can only upload parameters during setup phase
+    if game.status not in ['setup', 'waiting']:
+        messages.error(request, "Parameters can only be uploaded during game setup.")
+        return redirect('multiplayer:game_detail', game_id=game_id)
+
+    if request.method == 'POST':
+        if 'parameter_file' not in request.FILES:
+            messages.error(request, 'Please select a ZIP file to upload.')
+            return render(request, 'multiplayer/upload_parameters.html', {'game': game})
+
+        zip_file = request.FILES['parameter_file']
+
+        # Validate file extension
+        if not zip_file.name.endswith('.zip'):
+            messages.error(request, 'Please upload a ZIP file.')
+            return render(request, 'multiplayer/upload_parameters.html', {'game': game})
+
+        try:
+            # Import the parameter processing function from bikeshop utils
+            from bikeshop.utils import process_parameter_zip
+
+            # Process the ZIP file to validate it
+            parameters = process_parameter_zip(zip_file)
+
+            # Save the ZIP file to the game
+            game.parameters_file = zip_file
+            game.parameters_uploaded = True
+            game.parameters_uploaded_at = timezone.now()
+            game.save()
+
+            # Create event
+            GameEvent.objects.create(
+                multiplayer_game=game,
+                event_type='system_message',
+                message=f"Game parameters uploaded by {request.user.username}",
+                data={'filename': zip_file.name}
+            )
+
+            messages.success(request, 'Parameters uploaded successfully! Players who join will now have these parameters loaded.')
+            return redirect('multiplayer:game_detail', game_id=game_id)
+
+        except Exception as e:
+            messages.error(request, f'Error processing parameter file: {str(e)}')
+
+    return render(request, 'multiplayer/upload_parameters.html', {'game': game})
+
+
+@login_required
+@handle_deleted_game
+@require_http_methods(["POST"])
+def delete_game(request, game_id):
+    """Delete a multiplayer game - admin/creator only."""
+    game = get_object_or_404(MultiplayerGame, id=game_id)
+
+    # Check permissions - only game creator or staff can delete
+    if game.created_by != request.user and not request.user.is_staff:
+        messages.error(request, "Only the game creator or administrators can delete this game.")
+        return redirect('multiplayer:game_detail', game_id=game_id)
+
+    # Delete the game
+    try:
+        with transaction.atomic():
+            game_name = game.name
+
+            # Get all players to delete their individual GameSessions
+            players = PlayerSession.objects.filter(multiplayer_game=game)
+            player_count = players.count()
+
+            # Delete each player's GameSession (this will cascade to all their game data)
+            from bikeshop.models import GameSession
+            deleted_sessions = 0
+            for player in players:
+                if player.user:
+                    # Find and delete the player's GameSession
+                    try:
+                        # More flexible search - look for sessions that might be related
+                        game_sessions = GameSession.objects.filter(
+                            user=player.user,
+                            name__icontains=game.name
+                        )
+                        count = game_sessions.count()
+                        if count > 0:
+                            game_sessions.delete()
+                            deleted_sessions += count
+                    except Exception as session_error:
+                        # Log but continue - we still want to delete the multiplayer game
+                        print(f"Warning: Could not delete GameSession for {player.user.username}: {session_error}")
+
+            # Delete the multiplayer game (this will cascade to PlayerSession, TurnState, GameEvent, etc.)
+            game.delete()
+
+            messages.success(request, f'Game "{game_name}" and all associated data for {player_count} players has been permanently deleted.')
+
+            # Redirect staff users to dashboard, regular users to multiplayer lobby
+            if request.user.is_staff:
+                return redirect('bikeshop:dashboard')
+            else:
+                return redirect('multiplayer:lobby')
+
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"Error deleting game: {error_detail}")
+        messages.error(request, f'Error deleting game: {str(e)}')
+        return redirect('multiplayer:lobby')

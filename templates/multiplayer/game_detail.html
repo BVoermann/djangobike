@@ -8,8 +8,22 @@
         <div class="col-12">
             <!-- Game Header -->
             <div class="mb-4">
-                <h1>🎮 {{ game.name }}</h1>
-                <p class="text-muted mb-0">{{ game.description|default:"Multiplayer bike shop simulation" }}</p>
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h1>🎮 {{ game.name }}</h1>
+                        <p class="text-muted mb-0">{{ game.description|default:"Multiplayer bike shop simulation" }}</p>
+                    </div>
+                    {% if game.created_by == request.user or request.user.is_staff %}
+                    <div>
+                        <form method="post" action="{% url 'multiplayer:delete_game' game.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this game? This action cannot be undone.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt"></i> Delete Game
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Game Status Bar -->
@@ -61,14 +75,50 @@
                     </a>
                 </div>
             </div>
+            {% elif not is_player and game.status in 'setup,waiting' and not parameters_uploaded %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-lock"></i> <strong>Cannot join yet</strong><br>
+                        <small>The game administrator must upload game parameters before players can join.<br>
+                        Please wait for the administrator to complete the setup.</small>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Parameter Upload Button (for game creator during setup) -->
+            {% if game.created_by == request.user and game.status == 'setup' %}
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    {% if game.parameters_uploaded %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> <strong>✓ Step 1 Complete: Game parameters uploaded!</strong><br>
+                        <small>Uploaded on {{ game.parameters_uploaded_at|date:"F d, Y H:i" }}</small><br>
+                        <small class="text-muted">File: {{ game.parameters_file.name }}</small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> <strong>⚠ Step 1 Required: Upload game parameters</strong><br>
+                        <small>You MUST upload Excel parameter files before starting the game.<br>
+                        This defines bikes, parts, suppliers, markets, and all game settings for all players.</small>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'multiplayer:upload_parameters' game.id %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-upload"></i> {% if game.parameters_uploaded %}Update{% else %}Upload{% endif %} Parameters
+                    </a>
+                </div>
+            </div>
             {% endif %}
 
             {% if game.status == 'setup' %}
                 {% if can_start %}
                 <div class="row mb-4">
                     <div class="col-12 text-center">
+                        {% if game.parameters_uploaded %}
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> <strong>{{ players.count }} players</strong> have joined. You can start the game when ready!
+                            <i class="fas fa-info-circle"></i> <strong>✓ Step 2: Ready to start!</strong><br>
+                            {{ players.count }} player{{ players.count|pluralize }} ha{{ players.count|pluralize:"s,ve" }} joined. You can start the game when ready!
                         </div>
                         <form method="post" action="{% url 'multiplayer:start_game' game.id %}" style="display: inline;">
                             {% csrf_token %}
@@ -76,6 +126,15 @@
                                 <i class="fas fa-play"></i> Start Game Now
                             </button>
                         </form>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-lock"></i> <strong>Game cannot be started yet</strong><br>
+                            <small>Please upload game parameters first (Step 1 above)</small>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-lg" disabled>
+                            <i class="fas fa-lock"></i> Start Game (Parameters Required)
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
                 {% elif is_player %}
@@ -174,6 +233,39 @@
                                 </a>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Instant Mode Status Indicator -->
+            {% if is_player and game.status == 'active' and game.turn_deadline_hours == 0 and turn_status %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-success border-success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <i class="fas fa-bolt text-success me-2"></i>
+                                    <strong>Instant Mode Aktiv</strong>
+                                </h6>
+                                <p class="mb-0 small">
+                                    Das Spiel springt automatisch zum nächsten Monat, sobald alle Spieler ihren Zug eingereicht haben.
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                <div class="badge bg-success fs-6 px-3 py-2">
+                                    {{ turn_status.submitted_count }} / {{ turn_status.total_players }}
+                                </div>
+                                <div class="small text-muted mt-1">Spieler fertig</div>
+                            </div>
+                        </div>
+                        {% if turn_status.all_submitted %}
+                        <div class="alert alert-warning mt-2 mb-0 border-warning">
+                            <i class="fas fa-hourglass-half me-2"></i>
+                            <strong>Alle Spieler haben eingereicht!</strong> Der Zug wird jetzt verarbeitet...
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -371,7 +463,14 @@
                                 </div>
                                 <div class="col-md-3">
                                     <h6>Turn Deadline</h6>
-                                    <p>{{ game.turn_deadline_hours }} hours</p>
+                                    {% if game.turn_deadline_hours == 0 %}
+                                        <p class="text-success fw-bold">
+                                            <i class="fas fa-bolt me-1"></i>Instant Mode
+                                        </p>
+                                        <small class="text-muted">Auto-advances when all submit</small>
+                                    {% else %}
+                                        <p>{{ game.turn_deadline_hours }} hours</p>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-3">
                                     <h6>Bankruptcy Threshold</h6>

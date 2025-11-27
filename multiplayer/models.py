@@ -40,7 +40,11 @@ class MultiplayerGame(models.Model):
     current_month = models.IntegerField(default=1)
     current_year = models.IntegerField(default=2024)
     max_months = models.IntegerField(default=60)  # 5 years default
-    turn_deadline_hours = models.IntegerField(default=24)  # Hours to submit decisions
+    turn_deadline_hours = models.IntegerField(
+        default=24,
+        validators=[MinValueValidator(0)],
+        help_text="Hours to submit decisions. Set to 0 for instant turn advancement when all players submit."
+    )
     turn_duration_minutes = models.IntegerField(
         default=0,
         validators=[MinValueValidator(0)],
@@ -77,6 +81,23 @@ class MultiplayerGame(models.Model):
         related_name='assigned_multiplayer_games',
         blank=True,
         help_text='Users assigned to this game by Spielleitung'
+    )
+
+    # Game parameters (uploaded by admin)
+    parameters_uploaded = models.BooleanField(
+        default=False,
+        help_text='Whether game parameters have been uploaded and initialized'
+    )
+    parameters_file = models.FileField(
+        upload_to='multiplayer_parameters/',
+        null=True,
+        blank=True,
+        help_text='ZIP file containing game parameters (Excel files)'
+    )
+    parameters_uploaded_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When parameters were uploaded'
     )
 
     class Meta:
@@ -406,49 +427,149 @@ class GameParameters(models.Model):
         related_name='parameters'
     )
 
-    # Market parameters
+    # === SUPPLIER PARAMETERS (from lieferanten.xlsx) ===
+    supplier_payment_terms_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for supplier payment terms in days (1.0 = normal, 0.5 = half payment terms)'
+    )
+    supplier_delivery_time_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for supplier delivery time in days (1.0 = normal, 2.0 = double delivery time)'
+    )
+    supplier_complaint_probability_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for supplier complaint probability (1.0 = normal, 0.5 = fewer complaints)'
+    )
+    supplier_complaint_quantity_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for quantity of defective components (1.0 = normal)'
+    )
+    component_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for component costs from suppliers (1.0 = normal, 1.5 = 50% more expensive)'
+    )
+
+    # === BIKE PARAMETERS (from fahrraeder.xlsx) ===
+    bike_skilled_worker_hours_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for skilled worker hours needed per bike (1.0 = normal, 0.8 = 20% faster)'
+    )
+    bike_unskilled_worker_hours_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for unskilled worker hours needed per bike (1.0 = normal, 0.8 = 20% faster)'
+    )
+    bike_storage_space_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for bike storage space requirements (1.0 = normal, 0.8 = 20% more compact)'
+    )
+
+    # === BIKE PRICE PARAMETERS (from preise_verkauf.xlsx) ===
+    bike_price_cheap_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for cheap/budget bike segment base prices (1.0 = normal)'
+    )
+    bike_price_standard_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for standard bike segment base prices (1.0 = normal)'
+    )
+    bike_price_premium_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for premium bike segment base prices (1.0 = normal)'
+    )
+
+    # === WAREHOUSE PARAMETERS (from lager.xlsx) ===
+    warehouse_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for warehouse rental costs per month (1.0 = normal, 2.0 = double rent)'
+    )
+    warehouse_capacity_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for warehouse storage capacity (1.0 = normal, 1.5 = 50% more capacity)'
+    )
+    component_storage_space_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for component storage space requirements (1.0 = normal, 0.8 = 20% more compact)'
+    )
+
+    # === MARKET PARAMETERS (from maerkte.xlsx) ===
     market_demand_multiplier = models.FloatField(
         default=1.0,
         help_text='Multiplier for overall market demand (0.5 = 50% demand, 2.0 = 200% demand)'
+    )
+    market_distance_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for market distances (affects transport costs, 1.0 = normal)'
+    )
+    market_price_sensitivity_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for market price sensitivity (1.0 = normal, 1.5 = customers more price-sensitive)'
+    )
+    transport_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for transport costs to markets (1.0 = normal, 1.5 = 50% more expensive)'
     )
     seasonal_effects_enabled = models.BooleanField(
         default=True,
         help_text='Enable seasonal demand fluctuations'
     )
 
-    # Economic parameters
-    inflation_rate = models.FloatField(
-        default=0.02,
-        help_text='Annual inflation rate (0.02 = 2%)'
+    # === WORKER PARAMETERS (from personal.xlsx) ===
+    worker_cost_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for worker wages (hourly wage, 1.0 = normal, 1.2 = 20% higher wages)'
+    )
+    worker_hours_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for available worker hours per month (1.0 = normal, 1.2 = 20% more hours)'
+    )
+    worker_productivity_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for worker productivity (1.0 = normal, 1.2 = 20% more productive)'
+    )
+
+    # === FINANCE PARAMETERS (from finanzen.xlsx) ===
+    start_capital_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for starting capital (1.0 = normal, 1.5 = 50% more starting money)'
     )
     interest_rate = models.FloatField(
         default=0.05,
-        help_text='Interest rate for loans (0.05 = 5%)'
+        help_text='Interest rate for loans (0.05 = 5% annual interest)'
+    )
+    loan_availability_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for maximum loan amounts available (1.0 = normal)'
+    )
+    other_costs_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for miscellaneous/overhead costs (1.0 = normal, 1.2 = 20% higher costs)'
+    )
+    inflation_rate = models.FloatField(
+        default=0.02,
+        help_text='Annual inflation rate affecting costs and prices (0.02 = 2%)'
     )
 
-    # Cost multipliers
-    component_cost_multiplier = models.FloatField(
-        default=1.0,
-        help_text='Multiplier for component costs'
-    )
-    worker_cost_multiplier = models.FloatField(
-        default=1.0,
-        help_text='Multiplier for worker wages'
-    )
-    transport_cost_multiplier = models.FloatField(
-        default=1.0,
-        help_text='Multiplier for transport costs'
-    )
-    warehouse_cost_multiplier = models.FloatField(
-        default=1.0,
-        help_text='Multiplier for warehouse rental costs'
-    )
-
-    # Competition parameters
+    # === COMPETITOR PARAMETERS (from konkurrenten.xlsx) ===
     competitor_aggressiveness = models.FloatField(
         default=1.0,
         validators=[MinValueValidator(0.1), MaxValueValidator(2.0)],
         help_text='How aggressive AI competitors are (0.1 = passive, 2.0 = very aggressive)'
+    )
+    competitor_financial_resources_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for competitor starting capital (1.0 = normal, 0.5 = weaker competitors)'
+    )
+    competitor_efficiency_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for competitor efficiency (1.0 = normal, 1.2 = competitors 20% more efficient)'
+    )
+    competitor_market_presence_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for competitor market share (1.0 = normal, 0.8 = competitors have less market share)'
+    )
+    competitor_marketing_budget_multiplier = models.FloatField(
+        default=1.0,
+        help_text='Multiplier for competitor marketing budgets (1.0 = normal)'
     )
 
     # Advanced parameters (stored as JSON for flexibility)

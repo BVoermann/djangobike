@@ -10,6 +10,8 @@ urlpatterns = [
     path('game/<uuid:game_id>/', views.game_detail, name='game_detail'),
     path('game/<uuid:game_id>/join/', views.join_game, name='join_game'),
     path('game/<uuid:game_id>/start/', views.start_game, name='start_game'),
+    path('game/<uuid:game_id>/upload-parameters/', views.upload_parameters, name='upload_parameters'),
+    path('game/<uuid:game_id>/delete/', views.delete_game, name='delete_game'),
 
     # Gameplay
     path('game/<uuid:game_id>/submit/', views.submit_decisions, name='submit_decisions'),

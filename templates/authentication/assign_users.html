@@ -37,9 +37,30 @@
                         </p>
 
                         {% if all_users %}
-                            <div class="list-group mb-3">
+                            <!-- Search Bar -->
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="userSearch"
+                                           placeholder="Suche nach Benutzername, E-Mail oder Firmenname..."
+                                           autocomplete="off">
+                                    <button class="btn btn-outline-secondary" type="button" id="clearSearch" style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted" id="searchResults"></small>
+                            </div>
+
+                            <div class="list-group mb-3" id="userList">
                                 {% for user in all_users %}
-                                <label class="list-group-item">
+                                <label class="list-group-item user-item"
+                                       data-username="{{ user.username|lower }}"
+                                       data-email="{{ user.email|lower }}"
+                                       data-company="{{ user.company_name|lower|default:'' }}">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="users" value="{{ user.id }}"
                                                {% if user.id in assigned_user_ids %}checked{% endif %}
@@ -150,4 +171,89 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('userSearch');
+    const clearButton = document.getElementById('clearSearch');
+    const searchResults = document.getElementById('searchResults');
+    const userItems = document.querySelectorAll('.user-item');
+    const totalUsers = userItems.length;
+
+    // Search functionality
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        if (searchTerm === '') {
+            // Show all users
+            userItems.forEach(item => {
+                item.style.display = '';
+            });
+            clearButton.style.display = 'none';
+            searchResults.textContent = '';
+            return;
+        }
+
+        // Filter users
+        userItems.forEach(item => {
+            const username = item.dataset.username || '';
+            const email = item.dataset.email || '';
+            const company = item.dataset.company || '';
+
+            const matches = username.includes(searchTerm) ||
+                          email.includes(searchTerm) ||
+                          company.includes(searchTerm);
+
+            if (matches) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        // Update results text
+        if (visibleCount === 0) {
+            searchResults.textContent = 'Keine Benutzer gefunden';
+            searchResults.style.color = '#dc3545';
+        } else if (visibleCount === 1) {
+            searchResults.textContent = '1 Benutzer gefunden';
+            searchResults.style.color = '#6c757d';
+        } else {
+            searchResults.textContent = `${visibleCount} Benutzer gefunden`;
+            searchResults.style.color = '#6c757d';
+        }
+
+        clearButton.style.display = 'block';
+    }
+
+    // Clear search
+    function clearSearch() {
+        searchInput.value = '';
+        performSearch();
+        searchInput.focus();
+    }
+
+    // Event listeners
+    searchInput.addEventListener('input', performSearch);
+    searchInput.addEventListener('keyup', function(e) {
+        if (e.key === 'Escape') {
+            clearSearch();
+        }
+    });
+    clearButton.addEventListener('click', clearSearch);
+
+    // Focus search on Ctrl+F or Cmd+F
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+    });
+});
+</script>
 {% endblock %}

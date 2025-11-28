@@ -16,6 +16,16 @@ class GameSession(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
+    # Link to multiplayer game (null for singleplayer sessions)
+    multiplayer_game = models.ForeignKey(
+        'multiplayer.MultiplayerGame',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='game_sessions',
+        help_text='The multiplayer game this session belongs to (null for singleplayer)'
+    )
+
     def __str__(self):
         return f"{self.name} - Monat {self.current_month}/{self.current_year}"
 
@@ -169,19 +179,54 @@ class SupplierPrice(models.Model):
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE)
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     component = models.ForeignKey(Component, on_delete=models.CASCADE)
-    price = models.DecimalField(max_digits=8, decimal_places=2)
+    base_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Base price without multipliers")
 
     class Meta:
         unique_together = ['session', 'supplier', 'component']
+
+    @property
+    def price(self):
+        """Calculate price with component_cost_multiplier applied (Fix for Issue #2)"""
+        from multiplayer.parameter_utils import apply_component_cost_multiplier
+        return apply_component_cost_multiplier(self.base_price, self.session)
 
 
 class BikeType(models.Model):
     """Fahrradtyp"""
     session = models.ForeignKey(GameSession, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
-    skilled_worker_hours = models.FloatField()
-    unskilled_worker_hours = models.FloatField()
-    storage_space_per_unit = models.FloatField()
+
+    # Base values (without multipliers) - Fix for Issue #2
+    base_skilled_worker_hours = models.FloatField(default=0, help_text="Base skilled worker hours without multipliers")
+    base_unskilled_worker_hours = models.FloatField(default=0, help_text="Base unskilled worker hours without multipliers")
+    base_storage_space_per_unit = models.FloatField(default=0, help_text="Base storage space without multipliers")
+
+    # Calculated properties (for backward compatibility and display)
+    @property
+    def skilled_worker_hours(self):
+        """Return base hours (multiplier is now applied to worker capacity instead)
+
+        Note: The bike worker hours multiplier is now applied to worker capacity
+        (reducing effective available hours) rather than increasing hours per bike.
+        This provides clearer UX - if workers are 50% productive, capacity shows as halved.
+        """
+        return self.base_skilled_worker_hours
+
+    @property
+    def unskilled_worker_hours(self):
+        """Return base hours (multiplier is now applied to worker capacity instead)
+
+        Note: The bike worker hours multiplier is now applied to worker capacity
+        (reducing effective available hours) rather than increasing hours per bike.
+        This provides clearer UX - if workers are 50% productive, capacity shows as halved.
+        """
+        return self.base_unskilled_worker_hours
+
+    @property
+    def storage_space_per_unit(self):
+        """Calculate with multiplier applied"""
+        from multiplayer.parameter_utils import apply_bike_storage_space_multiplier
+        return apply_bike_storage_space_multiplier(self.base_storage_space_per_unit, self.session)
 
     # Benötigte Komponenten (Legacy - will be replaced by component requirements)
     wheel_set = models.ForeignKey(Component, on_delete=models.CASCADE, related_name='bikes_wheel', null=True, blank=True)
@@ -375,10 +420,16 @@ class BikePrice(models.Model):
         ('standard', 'Standard'),
         ('premium', 'Premium')
     ])
-    price = models.DecimalField(max_digits=8, decimal_places=2)
+    base_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Base price without multipliers")
 
     class Meta:
         unique_together = ['session', 'bike_type', 'price_segment']
+
+    @property
+    def price(self):
+        """Calculate price with segment-specific multiplier applied (Fix for Issue #2)"""
+        from multiplayer.parameter_utils import apply_bike_price_multiplier
+        return apply_bike_price_multiplier(self.base_price, self.price_segment, self.session)
 
 
 class Worker(models.Model):
@@ -405,8 +456,38 @@ class Worker(models.Model):
         return f"{worker_type_display} ({self.count} Arbeiter, {self.hourly_wage}€/h)"
 
     def get_total_monthly_capacity(self):
-        """Returns total hours available per month for all workers of this type"""
-        return self.count * self.monthly_hours
+        """Returns total hours available per month for all workers of this type
+
+        Takes into account:
+        1. worker_hours_multiplier: increases/decreases base available hours
+        2. bike worker hours multiplier: reduces effective capacity if workers are less productive
+           (e.g., if bikes need 2x hours to produce, effective capacity is halved)
+        """
+        from multiplayer.parameter_utils import (
+            apply_worker_hours_multiplier,
+            get_game_parameters
+        )
+
+        base_hours = self.count * self.monthly_hours
+        # Apply worker hours multiplier from game parameters
+        adjusted_hours = apply_worker_hours_multiplier(base_hours, self.session)
+
+        # Apply bike production efficiency multiplier
+        # If bikes need more hours to produce (multiplier > 1.0), workers have less effective capacity
+        params = get_game_parameters(self.session)
+        if params:
+            if self.worker_type == 'skilled':
+                efficiency_multiplier = float(params.bike_skilled_worker_hours_multiplier)
+            elif self.worker_type == 'unskilled':
+                efficiency_multiplier = float(params.bike_unskilled_worker_hours_multiplier)
+            else:
+                efficiency_multiplier = 1.0
+
+            # Divide by efficiency multiplier: if multiplier is 2.0 (bikes need 2x hours),
+            # effective capacity is halved (480h / 2.0 = 240h)
+            adjusted_hours = adjusted_hours / efficiency_multiplier
+
+        return adjusted_hours
 
     def get_remaining_hours(self, current_month, current_year):
         """Returns remaining available hours for the current month"""

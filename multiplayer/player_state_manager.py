@@ -34,6 +34,17 @@ class PlayerStateManager:
         """
         logger.info(f"Initializing game state for player: {player_session.company_name}")
 
+        from multiplayer.parameter_utils import get_game_parameters_for_multiplayer_game
+
+        # Apply starting balance multiplier
+        base_balance = self.multiplayer_game.starting_balance
+        params = get_game_parameters_for_multiplayer_game(self.multiplayer_game)
+        if params:
+            from decimal import Decimal
+            starting_balance = base_balance * Decimal(str(params.start_capital_multiplier))
+        else:
+            starting_balance = base_balance
+
         # Create or get GameSession for this player
         game_session, created = GameSession.objects.get_or_create(
             user=player_session.user,
@@ -41,8 +52,9 @@ class PlayerStateManager:
             defaults={
                 'current_month': self.multiplayer_game.current_month,
                 'current_year': self.multiplayer_game.current_year,
-                'balance': self.multiplayer_game.starting_balance,
-                'is_active': True
+                'balance': starting_balance,
+                'is_active': True,
+                'multiplayer_game': self.multiplayer_game  # Link to multiplayer game
             }
         )
 
@@ -51,6 +63,7 @@ class PlayerStateManager:
             game_session.current_month = self.multiplayer_game.current_month
             game_session.current_year = self.multiplayer_game.current_year
             game_session.balance = player_session.balance
+            game_session.multiplayer_game = self.multiplayer_game  # Ensure link is set
             game_session.save()
             logger.info(f"Updated existing GameSession for {player_session.company_name}")
             return game_session
@@ -100,59 +113,96 @@ class PlayerStateManager:
 
     def _initialize_suppliers(self, session):
         """Create suppliers with varying quality and terms."""
+        from multiplayer.parameter_utils import (
+            apply_supplier_payment_terms_multiplier,
+            apply_supplier_delivery_time_multiplier,
+            apply_supplier_complaint_probability_multiplier,
+            apply_supplier_complaint_quantity_multiplier
+        )
+
         suppliers_data = [
             {
                 'name': 'BikeComponents GmbH',
-                'payment_terms': 30,
-                'delivery_time': 14,
-                'complaint_probability': 2.5,
-                'complaint_quantity': 1.2,
+                'base_payment_terms': 30,
+                'base_delivery_time': 14,
+                'base_complaint_probability': 2.5,
+                'base_complaint_quantity': 1.2,
                 'quality': 'standard'
             },
             {
                 'name': 'Premium Parts AG',
-                'payment_terms': 45,
-                'delivery_time': 21,
-                'complaint_probability': 1.0,
-                'complaint_quantity': 0.8,
+                'base_payment_terms': 45,
+                'base_delivery_time': 21,
+                'base_complaint_probability': 1.0,
+                'base_complaint_quantity': 0.8,
                 'quality': 'premium'
             },
             {
                 'name': 'Budget Bike Supply',
-                'payment_terms': 14,
-                'delivery_time': 7,
-                'complaint_probability': 5.0,
-                'complaint_quantity': 2.5,
+                'base_payment_terms': 14,
+                'base_delivery_time': 7,
+                'base_complaint_probability': 5.0,
+                'base_complaint_quantity': 2.5,
                 'quality': 'basic'
             },
             {
                 'name': 'EuroCycle Distribution',
-                'payment_terms': 30,
-                'delivery_time': 10,
-                'complaint_probability': 2.0,
-                'complaint_quantity': 1.0,
+                'base_payment_terms': 30,
+                'base_delivery_time': 10,
+                'base_complaint_probability': 2.0,
+                'base_complaint_quantity': 1.0,
                 'quality': 'standard'
             }
         ]
 
         for supplier_data in suppliers_data:
-            Supplier.objects.create(session=session, **supplier_data)
+            # Apply supplier parameter multipliers
+            payment_terms = apply_supplier_payment_terms_multiplier(
+                supplier_data.pop('base_payment_terms'), session
+            )
+            delivery_time = apply_supplier_delivery_time_multiplier(
+                supplier_data.pop('base_delivery_time'), session
+            )
+            complaint_probability = apply_supplier_complaint_probability_multiplier(
+                supplier_data.pop('base_complaint_probability'), session
+            )
+            complaint_quantity = apply_supplier_complaint_quantity_multiplier(
+                supplier_data.pop('base_complaint_quantity'), session
+            )
+
+            Supplier.objects.create(
+                session=session,
+                payment_terms=payment_terms,
+                delivery_time=delivery_time,
+                complaint_probability=complaint_probability,
+                complaint_quantity=complaint_quantity,
+                **supplier_data
+            )
 
     def _initialize_components(self, session):
         """Create component types and components."""
+        from multiplayer.parameter_utils import apply_component_storage_space_multiplier
+
         # Component types
         component_types_data = [
-            {'name': 'Laufradsatz', 'storage_space_per_unit': 1.5},
-            {'name': 'Rahmen', 'storage_space_per_unit': 2.0},
-            {'name': 'Lenker', 'storage_space_per_unit': 0.5},
-            {'name': 'Sattel', 'storage_space_per_unit': 0.3},
-            {'name': 'Schaltung', 'storage_space_per_unit': 0.4},
-            {'name': 'Motor', 'storage_space_per_unit': 3.0}
+            {'name': 'Laufradsatz', 'base_storage_space_per_unit': 1.5},
+            {'name': 'Rahmen', 'base_storage_space_per_unit': 2.0},
+            {'name': 'Lenker', 'base_storage_space_per_unit': 0.5},
+            {'name': 'Sattel', 'base_storage_space_per_unit': 0.3},
+            {'name': 'Schaltung', 'base_storage_space_per_unit': 0.4},
+            {'name': 'Motor', 'base_storage_space_per_unit': 3.0}
         ]
 
         component_types = {}
         for ct_data in component_types_data:
-            ct = ComponentType.objects.create(session=session, **ct_data)
+            # Apply component storage space multiplier
+            base_space = ct_data['base_storage_space_per_unit']
+            storage_space = apply_component_storage_space_multiplier(base_space, session)
+            ct = ComponentType.objects.create(
+                session=session,
+                name=ct_data['name'],
+                storage_space_per_unit=storage_space
+            )
             component_types[ct.name] = ct
 
         # Components with prices from Excel data
@@ -202,14 +252,14 @@ class PlayerStateManager:
                 name=comp_data['name']
             )
 
-            # Create supplier prices for each quality tier
+            # Store base prices - multipliers applied via properties (Fix for Issue #2)
             for quality, supplier in supplier_map.items():
-                price = comp_data['prices'].get(quality, comp_data['prices']['standard'])
+                price_value = Decimal(str(comp_data['prices'].get(quality, comp_data['prices']['standard'])))
                 SupplierPrice.objects.create(
                     session=session,
                     supplier=supplier,
                     component=component,
-                    price=Decimal(str(price))
+                    base_price=price_value
                 )
 
     def _initialize_bike_types(self, session):
@@ -322,13 +372,14 @@ class PlayerStateManager:
             }
         ]
 
+        # Store base values directly - multipliers applied via properties (Fix for Issue #2)
         for bike_data in bike_types_data:
             bike_type = BikeType.objects.create(
                 session=session,
                 name=bike_data['name'],
-                skilled_worker_hours=bike_data['skilled_worker_hours'],
-                unskilled_worker_hours=bike_data['unskilled_worker_hours'],
-                storage_space_per_unit=bike_data['storage_space_per_unit'],
+                base_skilled_worker_hours=bike_data['skilled_worker_hours'],
+                base_unskilled_worker_hours=bike_data['unskilled_worker_hours'],
+                base_storage_space_per_unit=bike_data['storage_space_per_unit'],
                 required_wheel_set_names=bike_data['components']['wheel_set'],
                 required_frame_names=bike_data['components']['frame'],
                 required_handlebar_names=bike_data['components']['handlebar'],
@@ -337,38 +388,52 @@ class PlayerStateManager:
                 required_motor_names=bike_data['components']['motor']
             )
 
-            # Create prices
-            for segment, price in bike_data['prices'].items():
+            # Store base prices - multipliers applied via properties (Fix for Issue #2)
+            for segment, price_value in bike_data['prices'].items():
                 BikePrice.objects.create(
                     session=session,
                     bike_type=bike_type,
                     price_segment=segment,
-                    price=Decimal(str(price))
+                    base_price=Decimal(str(price_value))
                 )
 
     def _initialize_workers(self, session):
         """Create initial worker types."""
+        from multiplayer.parameter_utils import apply_worker_cost_multiplier
+
         workers_data = [
-            {'worker_type': 'skilled', 'hourly_wage': Decimal('25.00'), 'monthly_hours': 160, 'count': 2},
-            {'worker_type': 'unskilled', 'hourly_wage': Decimal('15.00'), 'monthly_hours': 160, 'count': 3}
+            {'worker_type': 'skilled', 'base_hourly_wage': Decimal('25.00'), 'monthly_hours': 160, 'count': 2},
+            {'worker_type': 'unskilled', 'base_hourly_wage': Decimal('15.00'), 'monthly_hours': 160, 'count': 3}
         ]
 
         for worker_data in workers_data:
+            # Apply worker cost multiplier from game parameters
+            base_wage = worker_data.pop('base_hourly_wage')
+            hourly_wage = apply_worker_cost_multiplier(base_wage, session)
+            worker_data['hourly_wage'] = hourly_wage
             Worker.objects.create(session=session, **worker_data)
 
     def _initialize_warehouses(self, session):
         """Create initial warehouse."""
+        from multiplayer.parameter_utils import (
+            apply_warehouse_capacity_multiplier,
+            apply_warehouse_cost_multiplier
+        )
+
         # Ensure warehouse types exist
         if WarehouseType.objects.count() == 0:
             self._create_default_warehouse_types()
 
-        # Create initial warehouse for player
+        # Create initial warehouse for player with multipliers applied
+        base_capacity = 200.0
+        base_rent = Decimal('2000.00')
+
         Warehouse.objects.create(
             session=session,
             name='Main Warehouse',
             location='Central',
-            capacity_m2=200.0,
-            rent_per_month=Decimal('2000.00')
+            capacity_m2=apply_warehouse_capacity_multiplier(base_capacity, session),
+            rent_per_month=apply_warehouse_cost_multiplier(base_rent, session)
         )
 
     def _create_default_warehouse_types(self):
@@ -385,31 +450,53 @@ class PlayerStateManager:
 
     def _initialize_markets(self, session):
         """Create markets with demand patterns."""
+        from multiplayer.parameter_utils import (
+            apply_transport_cost_multiplier,
+            apply_market_demand_multiplier
+        )
+
         markets_data = [
             {
                 'name': 'Domestic Market',
                 'location': 'Germany',
-                'transport_cost_home': Decimal('50.00'),
-                'transport_cost_foreign': Decimal('100.00'),
-                'monthly_volume_capacity': 200
+                'base_transport_cost_home': Decimal('50.00'),
+                'base_transport_cost_foreign': Decimal('100.00'),
+                'base_monthly_volume_capacity': 200
             },
             {
                 'name': 'EU Market',
                 'location': 'Europe',
-                'transport_cost_home': Decimal('150.00'),
-                'transport_cost_foreign': Decimal('200.00'),
-                'monthly_volume_capacity': 300
+                'base_transport_cost_home': Decimal('150.00'),
+                'base_transport_cost_foreign': Decimal('200.00'),
+                'base_monthly_volume_capacity': 300
             }
         ]
 
         bike_types = BikeType.objects.filter(session=session)
 
         for market_data in markets_data:
-            market = Market.objects.create(session=session, **market_data)
+            # Apply transport cost multipliers
+            transport_cost_home = apply_transport_cost_multiplier(
+                market_data.pop('base_transport_cost_home'), session
+            )
+            transport_cost_foreign = apply_transport_cost_multiplier(
+                market_data.pop('base_transport_cost_foreign'), session
+            )
+            base_capacity = market_data.pop('base_monthly_volume_capacity')
+            monthly_volume_capacity = int(apply_market_demand_multiplier(base_capacity, session))
 
-            # Create market demand for each bike type
+            market = Market.objects.create(
+                session=session,
+                transport_cost_home=transport_cost_home,
+                transport_cost_foreign=transport_cost_foreign,
+                monthly_volume_capacity=monthly_volume_capacity,
+                **market_data
+            )
+
+            # Create market demand for each bike type with demand multiplier applied
             for bike_type in bike_types:
-                demand_pct = 33.33  # Equal distribution
+                base_demand_pct = 33.33  # Equal distribution
+                demand_pct = apply_market_demand_multiplier(base_demand_pct, session)
                 MarketDemand.objects.create(
                     session=session,
                     market=market,
@@ -451,12 +538,18 @@ class PlayerStateManager:
 
         for type_name, comp_name, quantity in starting_components:
             try:
-                component_type = ComponentType.objects.get(session=session, name=type_name)
-                component = Component.objects.get(
+                # Use filter().first() instead of get() to handle duplicates gracefully
+                component_type = ComponentType.objects.filter(session=session, name=type_name).first()
+                if not component_type:
+                    raise ComponentType.DoesNotExist(f"ComponentType {type_name} not found")
+
+                component = Component.objects.filter(
                     session=session,
                     component_type=component_type,
                     name=comp_name
-                )
+                ).first()
+                if not component:
+                    raise Component.DoesNotExist(f"Component {comp_name} not found")
                 # Use get_or_create to avoid duplicates
                 ComponentStock.objects.get_or_create(
                     session=session,

@@ -248,3 +248,112 @@ def sales_view(request, session_id):
         'pending_decisions': pending_decisions_summary,
         'recent_sales_results': recent_sales_results,
     })
+
+
+@login_required
+@transaction.atomic
+def get_market_demand_estimates(request, session_id):
+    """
+    API endpoint to get market demand estimates with research precision.
+
+    Returns demand ranges based on player's market research investments.
+    """
+    session = get_object_or_404(GameSession, id=session_id, user=request.user)
+
+    from .demand_calculator import DemandCalculator
+
+    calculator = DemandCalculator(session)
+    estimates = calculator.get_all_market_estimates(session.current_month, session.current_year)
+
+    # Format for JSON response
+    response_data = []
+    for market_id, market_data in estimates.items():
+        market_info = {
+            'market_id': str(market_data['market'].id),
+            'market_name': market_data['market'].name,
+            'bike_types': []
+        }
+
+        for bike_type_id, bike_data in market_data['bike_types'].items():
+            market_info['bike_types'].append({
+                'bike_type_id': str(bike_data['bike_type'].id),
+                'bike_type_name': bike_data['bike_type'].name,
+                'estimated_min': bike_data['estimated_min'],
+                'estimated_max': bike_data['estimated_max'],
+                'research_level': bike_data['research_level'],
+                'precision_percentage': bike_data['precision_percentage'],
+            })
+
+        response_data.append(market_info)
+
+    return JsonResponse({
+        'success': True,
+        'estimates': response_data,
+        'current_month': session.current_month,
+        'current_year': session.current_year
+    })
+
+
+@login_required
+@transaction.atomic
+def purchase_market_research_view(request, session_id):
+    """
+    API endpoint to purchase market research.
+
+    POST params:
+        - market_id: UUID of the market
+        - bike_type_id: UUID of the bike type
+        - research_level: 'basic', 'advanced', or 'premium'
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
+    session = get_object_or_404(GameSession, id=session_id, user=request.user)
+
+    try:
+        data = json.loads(request.body)
+        market_id = data.get('market_id')
+        bike_type_id = data.get('bike_type_id')
+        research_level = data.get('research_level')
+
+        if not all([market_id, bike_type_id, research_level]):
+            return JsonResponse({
+                'success': False,
+                'error': 'Missing required parameters'
+            }, status=400)
+
+        # Get market and bike type
+        market = get_object_or_404(Market, id=market_id, session=session)
+        bike_type = get_object_or_404(BikeType, id=bike_type_id, session=session)
+
+        # Purchase research
+        from .demand_calculator import purchase_market_research
+        from .models_market_research import MarketResearch
+
+        research, cost = purchase_market_research(
+            session=session,
+            market=market,
+            bike_type=bike_type,
+            research_level=research_level,
+            current_month=session.current_month,
+            current_year=session.current_year
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'{research_level.title()} research purchased',
+            'cost': float(cost),
+            'new_balance': float(session.balance),
+            'estimated_min': research.estimated_min,
+            'estimated_max': research.estimated_max,
+            'expires_at': research.expires_at.isoformat(),
+            'research_costs': {
+                level: float(MarketResearch.get_research_cost(level))
+                for level in ['basic', 'advanced', 'premium']
+            }
+        })
+
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Server error: {str(e)}'}, status=500)

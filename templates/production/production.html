@@ -91,16 +91,14 @@
                     <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <tr>
                             <th class="border-0 fw-bold">Fahrradtyp</th>
-                            <th class="border-0 fw-bold text-center">Benötigte Komponenten</th>
-                            <th class="border-0 fw-bold text-center">Facharbeiter</th>
-                            <th class="border-0 fw-bold text-center">Hilfsarbeiter</th>
+                            <th class="border-0 fw-bold text-center">Arbeitsaufwand</th>
                             <th class="border-0 fw-bold text-center">Günstig</th>
                             <th class="border-0 fw-bold text-center">Standard</th>
                             <th class="border-0 fw-bold text-center">Premium</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for bike_type in bike_types %}
+                        {% for bike_detail in bike_types_with_details %}
                         <tr class="border-bottom">
                             <td class="py-3">
                                 <div class="d-flex align-items-center">
@@ -108,69 +106,341 @@
                                         <i class="fas fa-bicycle"></i>
                                     </div>
                                     <div>
-                                        <div class="fw-bold">{{ bike_type.name }}</div>
-                                        <small class="text-muted">Fahrradtyp</small>
+                                        <div class="fw-bold">{{ bike_detail.bike_type.name }}</div>
+                                        <small class="text-muted">
+                                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#componentsModal{{ bike_detail.bike_type.id }}">
+                                                <i class="fas fa-info-circle"></i> Komponenten anzeigen
+                                            </button>
+                                        </small>
                                     </div>
                                 </div>
                             </td>
-                            <td class="py-3" style="max-width: 300px;">
-                                <div class="d-flex flex-wrap gap-1">
-                                    {% for component_type, component_names in bike_type.get_required_components.items %}
-                                        <div class="requirement-item mb-1" style="font-size: 0.75rem;">
-                                            <strong class="text-muted">{{ component_type }}:</strong>
-                                            {% for name in component_names %}
-                                                <span class="badge bg-light text-dark me-1">{{ name }}</span>{% if not forloop.last %}, {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    {% empty %}
-                                        <small class="text-muted">Keine Anforderungen definiert</small>
-                                    {% endfor %}
+                            <td class="text-center">
+                                <div class="mb-1">
+                                    <i class="fas fa-user-graduate text-success me-1"></i>
+                                    <span class="badge bg-success">{{ bike_detail.bike_type.skilled_worker_hours }}h</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-hard-hat text-primary me-1"></i>
+                                    <span class="badge bg-primary">{{ bike_detail.bike_type.unskilled_worker_hours }}h</span>
                                 </div>
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-success px-3 py-2">{{ bike_type.skilled_worker_hours }}h</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-primary px-3 py-2">{{ bike_type.unskilled_worker_hours }}h</span>
-                            </td>
-                            <td class="text-center">
-                                <input type="number" 
-                                       class="form-control production-input text-center fw-bold" 
-                                       min="0" 
+                                <input type="number"
+                                       class="form-control production-input text-center fw-bold"
+                                       min="0"
                                        value="0"
-                                       data-bike-type="{{ bike_type.id }}"
+                                       data-bike-type="{{ bike_detail.bike_type.id }}"
                                        data-segment="cheap"
-                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
-                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       data-skilled="{{ bike_detail.bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_detail.bike_type.unskilled_worker_hours }}"
+                                       data-components='{{ bike_detail.components_by_segment.cheap.components|safe }}'
                                        placeholder="0">
+                                <div class="mt-1">
+                                    {% if bike_detail.components_by_segment.cheap.missing %}
+                                        <span class="badge bg-danger" title="Fehlende Komponenten">
+                                            <i class="fas fa-exclamation-triangle"></i> Unvollständig
+                                        </span>
+                                    {% elif bike_detail.components_by_segment.cheap.has_upgrades %}
+                                        <span class="badge bg-warning text-dark" title="Höherwertige Komponenten">
+                                            <i class="fas fa-arrow-up"></i> Upgrade
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success" title="Alle Komponenten verfügbar">
+                                            <i class="fas fa-check"></i> Bereit
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td class="text-center">
-                                <input type="number" 
-                                       class="form-control production-input text-center fw-bold" 
-                                       min="0" 
+                                <input type="number"
+                                       class="form-control production-input text-center fw-bold"
+                                       min="0"
                                        value="0"
-                                       data-bike-type="{{ bike_type.id }}"
+                                       data-bike-type="{{ bike_detail.bike_type.id }}"
                                        data-segment="standard"
-                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
-                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       data-skilled="{{ bike_detail.bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_detail.bike_type.unskilled_worker_hours }}"
+                                       data-components='{{ bike_detail.components_by_segment.standard.components|safe }}'
                                        placeholder="0">
+                                <div class="mt-1">
+                                    {% if bike_detail.components_by_segment.standard.missing %}
+                                        <span class="badge bg-danger" title="Fehlende Komponenten">
+                                            <i class="fas fa-exclamation-triangle"></i> Unvollständig
+                                        </span>
+                                    {% elif bike_detail.components_by_segment.standard.has_upgrades %}
+                                        <span class="badge bg-warning text-dark" title="Höherwertige Komponenten">
+                                            <i class="fas fa-arrow-up"></i> Upgrade
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success" title="Alle Komponenten verfügbar">
+                                            <i class="fas fa-check"></i> Bereit
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </td>
                             <td class="text-center">
-                                <input type="number" 
-                                       class="form-control production-input text-center fw-bold" 
-                                       min="0" 
+                                <input type="number"
+                                       class="form-control production-input text-center fw-bold"
+                                       min="0"
                                        value="0"
-                                       data-bike-type="{{ bike_type.id }}"
+                                       data-bike-type="{{ bike_detail.bike_type.id }}"
                                        data-segment="premium"
-                                       data-skilled="{{ bike_type.skilled_worker_hours }}"
-                                       data-unskilled="{{ bike_type.unskilled_worker_hours }}"
+                                       data-skilled="{{ bike_detail.bike_type.skilled_worker_hours }}"
+                                       data-unskilled="{{ bike_detail.bike_type.unskilled_worker_hours }}"
+                                       data-components='{{ bike_detail.components_by_segment.premium.components|safe }}'
                                        placeholder="0">
+                                <div class="mt-1">
+                                    {% if bike_detail.components_by_segment.premium.missing %}
+                                        <span class="badge bg-danger" title="Fehlende Komponenten">
+                                            <i class="fas fa-exclamation-triangle"></i> Unvollständig
+                                        </span>
+                                    {% elif bike_detail.components_by_segment.premium.has_upgrades %}
+                                        <span class="badge bg-warning text-dark" title="Höherwertige Komponenten">
+                                            <i class="fas fa-arrow-up"></i> Upgrade
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success" title="Alle Komponenten verfügbar">
+                                            <i class="fas fa-check"></i> Bereit
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+
+            <!-- Component Details Modals -->
+            {% for bike_detail in bike_types_with_details %}
+            <div class="modal fade" id="componentsModal{{ bike_detail.bike_type.id }}" tabindex="-1" aria-labelledby="componentsModalLabel{{ bike_detail.bike_type.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                            <h5 class="modal-title fw-bold" id="componentsModalLabel{{ bike_detail.bike_type.id }}">
+                                <i class="fas fa-bicycle me-2"></i>{{ bike_detail.bike_type.name }} - Benötigte Komponenten
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Hinweis:</strong> Die folgenden Komponenten werden für die Produktion dieses Fahrradtyps benötigt. Die Verfügbarkeit wird in Echtzeit aus Ihrem Lager angezeigt.
+                            </div>
+
+                            <!-- Tabs for different segments -->
+                            <ul class="nav nav-tabs mb-4" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="cheap-tab-{{ bike_detail.bike_type.id }}" data-bs-toggle="tab" data-bs-target="#cheap-{{ bike_detail.bike_type.id }}" type="button" role="tab">
+                                        <i class="fas fa-tag"></i> Günstig
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="standard-tab-{{ bike_detail.bike_type.id }}" data-bs-toggle="tab" data-bs-target="#standard-{{ bike_detail.bike_type.id }}" type="button" role="tab">
+                                        <i class="fas fa-certificate"></i> Standard
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="premium-tab-{{ bike_detail.bike_type.id }}" data-bs-toggle="tab" data-bs-target="#premium-{{ bike_detail.bike_type.id }}" type="button" role="tab">
+                                        <i class="fas fa-crown"></i> Premium
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content">
+                                <!-- Cheap Segment -->
+                                <div class="tab-pane fade show active" id="cheap-{{ bike_detail.bike_type.id }}" role="tabpanel">
+                                    {% if bike_detail.components_by_segment.cheap.missing %}
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Fehlende Komponenten:</strong> {{ bike_detail.components_by_segment.cheap.missing|join:", " }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                                <tr>
+                                                    <th class="border-0">Komponententyp</th>
+                                                    <th class="border-0">Komponente</th>
+                                                    <th class="border-0">Qualität</th>
+                                                    <th class="border-0 text-center">Lagerbestand</th>
+                                                    <th class="border-0 text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for comp in bike_detail.components_by_segment.cheap.components %}
+                                                <tr>
+                                                    <td class="fw-bold">{{ comp.type }}</td>
+                                                    <td>{{ comp.name }}</td>
+                                                    <td>
+                                                        <span class="badge {% if comp.quality_raw == 'basic' %}bg-success{% elif comp.quality_raw == 'standard' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                                            {{ comp.quality }}
+                                                        </span>
+                                                        {% if comp.is_upgrade %}
+                                                            <span class="badge bg-warning text-dark ms-1">
+                                                                <i class="fas fa-arrow-up"></i> Upgrade
+                                                            </span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge {% if comp.stock > 10 %}bg-success{% elif comp.stock > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %} px-3 py-2 component-stock" data-component-id="{{ comp.id }}" data-initial-stock="{{ comp.stock }}">
+                                                            {{ comp.stock }} Stück
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if comp.stock > 10 %}
+                                                            <i class="fas fa-check-circle text-success fs-5"></i>
+                                                        {% elif comp.stock > 0 %}
+                                                            <i class="fas fa-exclamation-circle text-warning fs-5"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-times-circle text-danger fs-5"></i>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Standard Segment -->
+                                <div class="tab-pane fade" id="standard-{{ bike_detail.bike_type.id }}" role="tabpanel">
+                                    {% if bike_detail.components_by_segment.standard.missing %}
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Fehlende Komponenten:</strong> {{ bike_detail.components_by_segment.standard.missing|join:", " }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                                <tr>
+                                                    <th class="border-0">Komponententyp</th>
+                                                    <th class="border-0">Komponente</th>
+                                                    <th class="border-0">Qualität</th>
+                                                    <th class="border-0 text-center">Lagerbestand</th>
+                                                    <th class="border-0 text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for comp in bike_detail.components_by_segment.standard.components %}
+                                                <tr>
+                                                    <td class="fw-bold">{{ comp.type }}</td>
+                                                    <td>{{ comp.name }}</td>
+                                                    <td>
+                                                        <span class="badge {% if comp.quality_raw == 'basic' %}bg-success{% elif comp.quality_raw == 'standard' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                                            {{ comp.quality }}
+                                                        </span>
+                                                        {% if comp.is_upgrade %}
+                                                            <span class="badge bg-warning text-dark ms-1">
+                                                                <i class="fas fa-arrow-up"></i> Upgrade
+                                                            </span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge {% if comp.stock > 10 %}bg-success{% elif comp.stock > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %} px-3 py-2 component-stock" data-component-id="{{ comp.id }}" data-initial-stock="{{ comp.stock }}">
+                                                            {{ comp.stock }} Stück
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if comp.stock > 10 %}
+                                                            <i class="fas fa-check-circle text-success fs-5"></i>
+                                                        {% elif comp.stock > 0 %}
+                                                            <i class="fas fa-exclamation-circle text-warning fs-5"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-times-circle text-danger fs-5"></i>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Premium Segment -->
+                                <div class="tab-pane fade" id="premium-{{ bike_detail.bike_type.id }}" role="tabpanel">
+                                    {% if bike_detail.components_by_segment.premium.missing %}
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Fehlende Komponenten:</strong> {{ bike_detail.components_by_segment.premium.missing|join:", " }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                                                <tr>
+                                                    <th class="border-0">Komponententyp</th>
+                                                    <th class="border-0">Komponente</th>
+                                                    <th class="border-0">Qualität</th>
+                                                    <th class="border-0 text-center">Lagerbestand</th>
+                                                    <th class="border-0 text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for comp in bike_detail.components_by_segment.premium.components %}
+                                                <tr>
+                                                    <td class="fw-bold">{{ comp.type }}</td>
+                                                    <td>{{ comp.name }}</td>
+                                                    <td>
+                                                        <span class="badge {% if comp.quality_raw == 'basic' %}bg-success{% elif comp.quality_raw == 'standard' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                                            {{ comp.quality }}
+                                                        </span>
+                                                        {% if comp.is_upgrade %}
+                                                            <span class="badge bg-warning text-dark ms-1">
+                                                                <i class="fas fa-arrow-up"></i> Upgrade
+                                                            </span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge {% if comp.stock > 10 %}bg-success{% elif comp.stock > 0 %}bg-warning text-dark{% else %}bg-danger{% endif %} px-3 py-2 component-stock" data-component-id="{{ comp.id }}" data-initial-stock="{{ comp.stock }}">
+                                                            {{ comp.stock }} Stück
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if comp.stock > 10 %}
+                                                            <i class="fas fa-check-circle text-success fs-5"></i>
+                                                        {% elif comp.stock > 0 %}
+                                                            <i class="fas fa-exclamation-circle text-warning fs-5"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-times-circle text-danger fs-5"></i>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-light mt-4">
+                                <div class="row text-center">
+                                    <div class="col-md-4">
+                                        <i class="fas fa-check-circle text-success fs-4"></i>
+                                        <div class="small mt-2"><strong>Ausreichend:</strong> >10 Stück</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="fas fa-exclamation-circle text-warning fs-4"></i>
+                                        <div class="small mt-2"><strong>Niedrig:</strong> 1-10 Stück</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="fas fa-times-circle text-danger fs-4"></i>
+                                        <div class="small mt-2"><strong>Leer:</strong> 0 Stück</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
 
             <!-- Kapazitätsübersicht -->
             <div class="row g-4 mt-4">

@@ -311,6 +311,222 @@ class MultiplayerSimulationEngine:
         
         return execution_results
     
+    def _process_multiplayer_market_segment(self, market, bike_type, price_segment, player_decisions, month, year):
+        """
+        Process sales for a multiplayer market segment where each player has their own session/bikes.
+
+        This is adapted from MarketSimulator but handles multiple players with separate GameSessions.
+        """
+        from sales.models import Market, SalesOrder
+        from production.models import ProducedBike
+        from finance.models import Transaction
+        import random
+
+        logger.info(f"Processing multiplayer market segment: {market.name} - {bike_type.name} ({price_segment})")
+
+        # Calculate market demand (use first player's session for market data)
+        first_session = player_decisions[0].session
+        base_demand = self._calculate_market_demand(market, bike_type, price_segment, month, first_session)
+        logger.info(f"Base demand: {base_demand} bikes")
+
+        # Collect all offers from all players
+        all_offers = []
+
+        for decision in player_decisions:
+            # Find available bikes from THIS player's session
+            available_bikes = ProducedBike.objects.filter(
+                session=decision.session,  # Use the decision's session, not a shared one
+                bike_type=bike_type,
+                price_segment=price_segment,
+                is_sold=False
+            )[:decision.quantity]
+
+            if len(available_bikes) < decision.quantity:
+                logger.warning(
+                    f"Player {decision._player_session.company_name}: Requested {decision.quantity} bikes but only {len(available_bikes)} available"
+                )
+
+            # Create offers for each bike
+            for bike in available_bikes:
+                # Apply aging penalty to effective price
+                age_penalty = bike.get_age_penalty_factor() if hasattr(bike, 'get_age_penalty_factor') else 1.0
+                effective_price = decision.desired_price * Decimal(str(age_penalty))
+
+                all_offers.append({
+                    'type': 'player',
+                    'decision': decision,
+                    'bike': bike,
+                    'price': effective_price,
+                    'transport_cost': decision.transport_cost,
+                    'quality_factor': self._get_quality_factor_for_segment(price_segment),
+                    'player_session': decision._player_session,
+                })
+
+        logger.info(f"Total offers: {len(all_offers)} from {len(player_decisions)} players")
+
+        # Sort offers by effective price (lower prices sell first)
+        # Add small random factor for realism (10% variance)
+        for offer in all_offers:
+            random_factor = random.uniform(0.95, 1.05)
+            offer['sort_price'] = float(offer['price']) * random_factor / offer['quality_factor']
+
+        all_offers.sort(key=lambda x: x['sort_price'])
+
+        # Apply price elasticity - higher average prices reduce demand
+        if all_offers:
+            avg_price = sum(float(offer['price']) for offer in all_offers) / len(all_offers)
+            base_price = self._get_base_price_for_segment(price_segment)
+            price_ratio = avg_price / base_price if base_price > 0 else 1.0
+            elasticity_adjustment = 1.0 - (price_ratio - 1.0) * 0.3  # Simple elasticity
+            elasticity_adjustment = max(0.3, min(1.5, elasticity_adjustment))
+            adjusted_demand = int(base_demand * elasticity_adjustment)
+            logger.info(f"Demand adjusted for price elasticity: {base_demand} -> {adjusted_demand}")
+        else:
+            adjusted_demand = base_demand
+
+        # Allocate sales based on demand
+        bikes_to_sell = min(len(all_offers), adjusted_demand)
+        logger.info(f"Allocating {bikes_to_sell} sales out of {len(all_offers)} offers (demand: {adjusted_demand})")
+
+        # Execute sales for the top offers
+        for i, offer in enumerate(all_offers[:bikes_to_sell]):
+            self._execute_multiplayer_player_sale(offer, month, year)
+
+        # Mark remaining offers as unsold
+        for offer in all_offers[bikes_to_sell:]:
+            decision = offer['decision']
+            if not hasattr(decision, '_temp_unsold_count'):
+                decision._temp_unsold_count = 0
+            decision._temp_unsold_count += 1
+
+        # Update all player decisions with results
+        for decision in player_decisions:
+            sold_count = getattr(decision, '_temp_sold_count', 0)
+            unsold_count = getattr(decision, '_temp_unsold_count', 0)
+            total_revenue = getattr(decision, '_temp_total_revenue', Decimal('0'))
+
+            decision.quantity_sold = sold_count
+            decision.actual_revenue = total_revenue
+            decision.is_processed = True
+
+            if unsold_count > 0:
+                if sold_count == 0:
+                    decision.unsold_reason = 'market_oversaturated_no_sales'
+                else:
+                    decision.unsold_reason = 'market_oversaturated_partial_sales'
+
+            logger.info(
+                f"Player {decision._player_session.company_name}: {sold_count}/{decision.quantity} sold, revenue: {total_revenue}€"
+            )
+
+    def _execute_multiplayer_player_sale(self, offer, month, year):
+        """Execute a sale for a player in multiplayer context."""
+        from sales.models import SalesOrder
+        from finance.models import Transaction
+
+        decision = offer['decision']
+        bike = offer['bike']
+        sale_price = offer['price']
+        transport_cost = offer['transport_cost']
+        player_session = offer['player_session']
+
+        # Mark bike as sold
+        bike.is_sold = True
+        bike.selling_price = sale_price
+        bike.save()
+
+        # Create sales order
+        sales_order = SalesOrder.objects.create(
+            session=decision.session,
+            market=decision.market,
+            bike=bike,
+            sale_price=sale_price,
+            transport_cost=transport_cost,
+            sale_month=month,
+            sale_year=year
+        )
+
+        # Calculate net revenue (after transport cost)
+        # Transport cost is per shipment, not per bike, but we divide it across bikes
+        net_revenue = sale_price - (transport_cost / Decimal(str(decision.quantity)))
+
+        # Update decision statistics
+        if not hasattr(decision, '_temp_sold_count'):
+            decision._temp_sold_count = 0
+        if not hasattr(decision, '_temp_total_revenue'):
+            decision._temp_total_revenue = Decimal('0')
+
+        decision._temp_sold_count += 1
+        decision._temp_total_revenue += net_revenue
+
+        # Update player balance using BalanceManager
+        from multiplayer.balance_manager import BalanceManager
+        game_session = decision.session
+        balance_mgr = BalanceManager(player_session, game_session)
+        balance_mgr.add_to_balance(net_revenue, reason=f"bike_sale_{bike.id}")
+
+        # Create transaction record
+        Transaction.objects.create(
+            session=game_session,
+            transaction_type='sale',
+            amount=net_revenue,
+            description=f'Verkauf: {bike.bike_type.name} ({bike.get_price_segment_display()})',
+            month=month,
+            year=year
+        )
+
+        logger.info(f"Sale executed: {bike.bike_type.name} for {sale_price}€ (net: {net_revenue}€)")
+
+    def _calculate_market_demand(self, market, bike_type, price_segment, month, session):
+        """Calculate market demand for a specific bike type/segment."""
+        # Base capacity from market
+        base_capacity = market.monthly_volume_capacity if hasattr(market, 'monthly_volume_capacity') else 200
+
+        # Adjust for bike type based on location characteristics
+        bike_type_multiplier = market.get_bike_type_demand_multiplier(bike_type.name) if hasattr(market, 'get_bike_type_demand_multiplier') else 1.0
+
+        # Segment distribution
+        segment_distribution = {
+            'cheap': 0.4,
+            'standard': 0.4,
+            'premium': 0.2
+        }
+        segment_factor = segment_distribution.get(price_segment, 0.33)
+
+        # Seasonal adjustment (simple)
+        seasonal_factor = 1.0
+        if month in [5, 6, 7, 8]:  # Summer months
+            seasonal_factor = 1.2
+        elif month in [11, 12, 1, 2]:  # Winter months
+            seasonal_factor = 0.8
+
+        # Calculate final demand
+        demand = int(base_capacity * bike_type_multiplier * segment_factor * seasonal_factor)
+
+        # Add some randomness (±10%)
+        variance = random.uniform(0.9, 1.1)
+        demand = int(demand * variance)
+
+        return max(1, demand)  # At least 1 bike demand
+
+    def _get_quality_factor_for_segment(self, price_segment):
+        """Get quality multiplier for price segment."""
+        quality_factors = {
+            'cheap': 0.8,
+            'standard': 1.0,
+            'premium': 1.2
+        }
+        return quality_factors.get(price_segment, 1.0)
+
+    def _get_base_price_for_segment(self, price_segment):
+        """Get baseline expected price for a segment."""
+        base_prices = {
+            'cheap': Decimal('300'),
+            'standard': Decimal('500'),
+            'premium': Decimal('800')
+        }
+        return base_prices.get(price_segment, Decimal('500'))
+
     def _process_market_competition(self):
         """Process market competition using MarketSimulator for deferred sales.
 
@@ -380,7 +596,7 @@ class MultiplayerSimulationEngine:
 
                     market_segment_decisions[key].append(temp_decision)
 
-            # Process each market segment using MarketSimulator
+            # Process each market segment using multiplayer-aware sales processing
             for (market_id, bike_type_id, price_segment), decisions in market_segment_decisions.items():
                 if not decisions:
                     continue
@@ -389,15 +605,11 @@ class MultiplayerSimulationEngine:
                 first_decision = decisions[0]
                 market = first_decision.market
                 bike_type = first_decision.bike_type
-                game_session = first_decision.session
 
                 logger.info(f"Processing market segment: {market.name} - {bike_type.name} ({price_segment}) with {len(decisions)} players")
 
-                # Create MarketSimulator instance
-                simulator = MarketSimulator(game_session)
-
-                # Use MarketSimulator's internal method to process this specific segment
-                simulator._process_market_segment(
+                # Process sales for this market segment with all players' bikes
+                self._process_multiplayer_market_segment(
                     market=market,
                     bike_type=bike_type,
                     price_segment=price_segment,
@@ -687,9 +899,13 @@ class MultiplayerSimulationEngine:
         # Sync session state with player state
         game_session.current_month = self.game.current_month
         game_session.current_year = self.game.current_year
-        game_session.balance = player.balance
         game_session.save()
-        
+
+        # Sync balance using BalanceManager (PlayerSession is source of truth)
+        from .balance_manager import BalanceManager
+        balance_mgr = BalanceManager(player, game_session)
+        balance_mgr.sync_balances()
+
         return game_session
     
     def _execute_player_decisions(self, game_session, turn_state):
@@ -711,22 +927,33 @@ class MultiplayerSimulationEngine:
     
     def _update_player_metrics(self, player, execution_result):
         """Update player performance metrics based on execution results."""
-        # Sync balance from game session
+        # Sync balance from GameSession back to PlayerSession after turn processing
+        # GameSession may have been modified by SimulationEngine.process_month()
+        from .balance_manager import BalanceManager
         game_session = self._get_or_create_game_session(player)
+
+        # Special case: After turn processing, GameSession.balance may have changed
+        # Update PlayerSession.balance to match (reverse sync for this case only)
+        game_session.refresh_from_db()
         player.balance = game_session.balance
-        
+
         # Update cumulative metrics
         turn_revenue = getattr(execution_result, 'revenue', 0)
         turn_profit = getattr(execution_result, 'profit', 0)
         turn_bikes_produced = getattr(execution_result, 'bikes_produced', 0)
         turn_bikes_sold = getattr(execution_result, 'bikes_sold', 0)
-        
+
         player.total_revenue += Decimal(str(turn_revenue))
         player.total_profit += Decimal(str(turn_profit))
         player.bikes_produced += turn_bikes_produced
         player.bikes_sold += turn_bikes_sold
-        
+
         player.save()
+
+        logger.info(
+            f"Updated metrics for {player.company_name}: "
+            f"Balance={player.balance}€, Revenue={turn_revenue}€, Profit={turn_profit}€"
+        )
     
     def _update_market_shares(self):
         """Update market share calculations for all players."""

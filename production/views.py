@@ -251,9 +251,59 @@ def production_view(request, session_id):
     skilled_remaining = skilled_worker.get_remaining_hours(session.current_month, session.current_year) if skilled_worker else 0
     unskilled_remaining = unskilled_worker.get_remaining_hours(session.current_month, session.current_year) if unskilled_worker else 0
 
+    # Build detailed component information for each bike type
+    from procurement.models import Component as ProcurementComponent, ComponentType as ProcurementComponentType
+
+    bike_types_with_details = []
+    for bike_type in bike_types:
+        bike_details = {
+            'bike_type': bike_type,
+            'components_by_segment': {}
+        }
+
+        # For each segment, find required components with stock info
+        for segment in ['cheap', 'standard', 'premium']:
+            component_match_result = bike_type.find_best_components_for_segment(session, segment)
+
+            components_info = []
+            for component_type_name, component in component_match_result['components'].items():
+                # Get stock for this component
+                stock = component_stocks.filter(component=component).first()
+                stock_quantity = stock.quantity if stock else 0
+
+                # Get quality from supplier
+                quality = component.get_quality_for_session(session)
+                quality_display = {
+                    'basic': 'Basis',
+                    'standard': 'Standard',
+                    'premium': 'Premium'
+                }.get(quality, quality or 'Unbekannt')
+
+                # Determine if it's an upgrade for this segment
+                is_upgrade = component.is_quality_upgrade(session, segment)
+
+                components_info.append({
+                    'id': component.id,
+                    'type': component_type_name,
+                    'name': component.name,
+                    'quality': quality_display,
+                    'quality_raw': quality,
+                    'stock': stock_quantity,
+                    'is_upgrade': is_upgrade,
+                })
+
+            bike_details['components_by_segment'][segment] = {
+                'components': components_info,
+                'missing': component_match_result['missing'],
+                'has_upgrades': len(component_match_result['upgrades']) > 0
+            }
+
+        bike_types_with_details.append(bike_details)
+
     return render(request, 'production/production.html', {
         'session': session,
         'bike_types': bike_types,
+        'bike_types_with_details': bike_types_with_details,
         'workers': workers,
         'component_stocks': component_stocks,
         'skilled_remaining': skilled_remaining,

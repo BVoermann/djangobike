@@ -82,13 +82,15 @@ def purchase_warehouse(request, session_id):
                         'error': f'Nicht genügend Guthaben! Kaufpreis: {warehouse_type.purchase_price}€, Verfügbar: {session.balance}€'
                     })
 
-                # Create warehouse
+                # Create warehouse - apply game parameter multipliers
+                from multiplayer.parameter_utils import apply_warehouse_capacity_multiplier, apply_warehouse_cost_multiplier
+
                 warehouse = Warehouse.objects.create(
                     session=session,
                     name=warehouse_name or f"{warehouse_type.name} Lager #{existing_warehouses.count() + 1}",
                     location=warehouse_location or f"Standort {existing_warehouses.count() + 1}",
-                    capacity_m2=warehouse_type.capacity_m2,
-                    rent_per_month=warehouse_type.monthly_rent
+                    capacity_m2=apply_warehouse_capacity_multiplier(warehouse_type.capacity_m2, session),
+                    rent_per_month=apply_warehouse_cost_multiplier(warehouse_type.monthly_rent, session)
                 )
 
                 # Deduct purchase price from balance

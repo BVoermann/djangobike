@@ -146,12 +146,16 @@ def finance_view(request, session_id):
                 credit_type = data.get('credit_type')
                 amount = Decimal(str(data.get('amount')))
 
-                # Kreditkonditionen
+                # Kreditkonditionen - use interest_rate parameter
+                from multiplayer.parameter_utils import get_interest_rate
+                base_interest_rate = get_interest_rate(session)  # Get from game parameters (default 5%)
+
+                # Apply multipliers to base rate for different credit types
                 credit_conditions = {
-                    'instant': {'rate': 15, 'months': 1},
-                    'short': {'rate': 10, 'months': 3},
-                    'medium': {'rate': 8, 'months': 6},
-                    'long': {'rate': 6, 'months': 12}
+                    'instant': {'rate': base_interest_rate * 3.0, 'months': 1},    # 3x base (e.g., 15% if base is 5%)
+                    'short': {'rate': base_interest_rate * 2.0, 'months': 3},      # 2x base (e.g., 10% if base is 5%)
+                    'medium': {'rate': base_interest_rate * 1.6, 'months': 6},     # 1.6x base (e.g., 8% if base is 5%)
+                    'long': {'rate': base_interest_rate * 1.2, 'months': 12}       # 1.2x base (e.g., 6% if base is 5%)
                 }
 
                 conditions = credit_conditions[credit_type]

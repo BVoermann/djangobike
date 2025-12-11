@@ -111,3 +111,7 @@ class SalesOrder(models.Model):
     sale_price = models.DecimalField(max_digits=8, decimal_places=2)
     transport_cost = models.DecimalField(max_digits=6, decimal_places=2, help_text="Transport cost (only set on first bike of shipment, others have 0)")
     is_completed = models.BooleanField(default=False)
+
+
+# Import market research models
+from .models_market_research import MarketResearch, MarketResearchTransaction

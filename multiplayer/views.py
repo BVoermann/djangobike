@@ -214,6 +214,75 @@ def game_detail(request, game_id):
     # Check if parameters are uploaded (required for joining and starting)
     parameters_uploaded = game.parameters_uploaded and game.parameters_file
 
+    # Get AI player details for admin view
+    is_admin = request.user.is_staff or game.created_by == request.user
+    ai_players_details = []
+
+    if is_admin:
+        ai_players = game.players.filter(player_type='ai')
+
+        for ai_player in ai_players:
+            # Get AI strategy description
+            strategy_descriptions = {
+                'cheap_only': 'Focuses on low-cost production and competitive pricing',
+                'balanced': 'Balanced approach across all segments and markets',
+                'premium_focus': 'Concentrates on high-quality, premium bikes',
+                'e_bike_specialist': 'Specializes in e-bike production and sales',
+                'innovative': 'Prioritizes innovation and market leadership',
+                'aggressive': 'Aggressive market expansion and competitive pricing',
+            }
+
+            # Get difficulty description
+            difficulty_desc = {
+                (0, 0.5): 'Novice (Makes basic mistakes)',
+                (0.5, 0.8): 'Competent (Solid decisions)',
+                (0.8, 1.2): 'Expert (Strong competitor)',
+                (1.2, 2.0): 'Master (Formidable opponent)',
+            }
+
+            difficulty_level = 'Standard'
+            for (min_val, max_val), desc in difficulty_desc.items():
+                if min_val <= ai_player.ai_difficulty < max_val:
+                    difficulty_level = desc
+                    break
+
+            # Get recent TurnState for production/sales data
+            recent_turn = TurnState.objects.filter(
+                player_session=ai_player,
+                multiplayer_game=game
+            ).order_by('-year', '-month').first()
+
+            production_data = {}
+            sales_data = {}
+            procurement_data = {}
+
+            if recent_turn:
+                production_data = recent_turn.production_decisions or {}
+                sales_data = recent_turn.sales_decisions or {}
+                procurement_data = recent_turn.procurement_decisions or {}
+
+            ai_details = {
+                'player': ai_player,
+                'strategy': strategy_descriptions.get(ai_player.ai_strategy, 'Unknown Strategy'),
+                'strategy_code': ai_player.ai_strategy,
+                'difficulty_level': difficulty_level,
+                'difficulty_score': ai_player.ai_difficulty,
+                'aggressiveness': f"{ai_player.ai_aggressiveness * 100:.0f}%",
+                'risk_tolerance': f"{ai_player.ai_risk_tolerance * 100:.0f}%",
+                'production_target': production_data.get('target_volume', 'N/A'),
+                'segment_focus': ', '.join(production_data.get('segment_focus', [])),
+                'pricing_method': sales_data.get('pricing_method', 'N/A'),
+                'margin_target': f"{sales_data.get('margin_target', 0) * 100:.1f}%" if sales_data.get('margin_target') else 'N/A',
+                'inventory_target': procurement_data.get('inventory_target', 'N/A'),
+                'procurement_strategy': procurement_data.get('ordering_strategy', 'N/A'),
+                'last_turn_revenue': recent_turn.revenue_this_turn if recent_turn else 0,
+                'last_turn_profit': recent_turn.profit_this_turn if recent_turn else 0,
+                'last_turn_bikes_produced': recent_turn.bikes_produced_this_turn if recent_turn else 0,
+                'last_turn_bikes_sold': recent_turn.bikes_sold_this_turn if recent_turn else 0,
+            }
+
+            ai_players_details.append(ai_details)
+
     context = {
         'game': game,
         'is_player': is_player,
@@ -238,7 +307,9 @@ def game_detail(request, game_id):
             parameters_uploaded and  # Parameters must be uploaded before starting
             players.count() >= 1  # Allow starting with just 1 human player (AI will fill the rest)
         ),
-        'is_creator': game.created_by == request.user
+        'is_creator': game.created_by == request.user,
+        'is_admin': is_admin,
+        'ai_players_details': ai_players_details,
     }
 
     return render(request, 'multiplayer/game_detail.html', context)
@@ -807,13 +878,14 @@ def multiplayer_procurement(request, game_id):
                 warehouses = Warehouse.objects.filter(session=game_session)
 
                 # Create warehouse if none exist
+                # Increased default warehouse size from 200m² to 500m² for better gameplay
                 if not warehouses.exists():
                     warehouse = Warehouse.objects.create(
                         session=game_session,
                         name='Hauptlager',
                         location='Standort 1',
-                        capacity_m2=200.0,
-                        rent_per_month=Decimal('2500.00')
+                        capacity_m2=500.0,
+                        rent_per_month=Decimal('2400.00')
                     )
                     warehouses = [warehouse]
 
@@ -921,9 +993,10 @@ def multiplayer_procurement(request, game_id):
                     order.save()
                     total_cost += order_total
 
-                # Reduce balance
-                game_session.balance -= total_cost
-                game_session.save()
+                # Reduce balance using BalanceManager
+                from .balance_manager import BalanceManager
+                balance_mgr = BalanceManager(player_session, game_session)
+                balance_mgr.subtract_from_balance(total_cost, reason=f"procurement_order_{total_cost}€")
 
                 # Update turn state to track procurement decisions
                 turn_state, created = TurnState.objects.get_or_create(

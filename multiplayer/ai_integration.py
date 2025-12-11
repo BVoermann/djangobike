@@ -417,10 +417,13 @@ class MultiplayerIntegrationManager:
                     
                     if credit_amount > 0:
                         # Create credit transaction
+                        from multiplayer.parameter_utils import get_interest_rate
+                        base_rate = get_interest_rate(game_session)
+
                         credit = Credit.objects.create(
                             session=game_session,
                             amount=credit_amount,
-                            interest_rate=Decimal('0.05'),  # 5% default rate
+                            interest_rate=Decimal(str(base_rate * 1.2)),  # Use game parameter with 1.2x multiplier for long-term credit
                             duration_months=12,
                             remaining_amount=credit_amount,
                             month_taken=self.game.current_month,

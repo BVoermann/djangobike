@@ -51,11 +51,11 @@
                                             {% endif %}
                                         </p>
                                         <div class="supplier-info-badges">
-                                            <span class="badge bg-primary me-1">
-                                                <i class="fas fa-truck me-1"></i>{{ data.supplier.delivery_time }}T
+                                            <span class="badge bg-primary me-1" title="Angegebene Lieferzeit (aktuell erfolgt Lieferung sofort)" style="cursor: help;">
+                                                <i class="fas fa-truck me-1"></i>{{ data.supplier.delivery_time }}T <small>(sofort)</small>
                                             </span>
-                                            <span class="badge bg-success me-1">
-                                                <i class="fas fa-calendar me-1"></i>{{ data.supplier.payment_terms }}T Ziel
+                                            <span class="badge bg-success me-1" title="Angegebenes Zahlungsziel (aktuell erfolgt Zahlung sofort)" style="cursor: help;">
+                                                <i class="fas fa-calendar me-1"></i>{{ data.supplier.payment_terms }}T Ziel <small>(sofort)</small>
                                             </span>
                                             <span class="badge bg-warning">
                                                 <i class="fas fa-exclamation-triangle me-1"></i>{{ data.supplier.complaint_probability|floatformat:1 }}% Rekl.

@@ -178,13 +178,31 @@ class MultiplayerGame(models.Model):
 
 
 class PlayerSession(models.Model):
-    """Represents a player (human or AI) in a multiplayer game."""
-    
+    """Represents a player (human or AI) in a multiplayer game.
+
+    IMPORTANT - Balance Management:
+    ================================
+    The `balance` field in this model is the SOURCE OF TRUTH for player finances
+    in multiplayer games. Each player's balance is stored HERE, specific to this
+    game instance.
+
+    For compatibility with singleplayer code, each player also has a GameSession
+    object where balance is synchronized. However, PlayerSession.balance should
+    always be treated as the authoritative value.
+
+    To update player balance, use the BalanceManager from multiplayer.balance_manager:
+        from multiplayer.balance_manager import get_balance_manager
+        balance_mgr = get_balance_manager(player_session, game_session)
+        balance_mgr.subtract_from_balance(amount, reason="purchase")
+
+    This ensures both PlayerSession.balance and GameSession.balance stay in sync.
+    """
+
     PLAYER_TYPE_CHOICES = [
         ('human', 'Human Player'),
         ('ai', 'AI Player'),
     ]
-    
+
     AI_STRATEGY_CHOICES = [
         ('cheap_only', 'Cost Leader'),
         ('balanced', 'Balanced'),
@@ -193,18 +211,23 @@ class PlayerSession(models.Model):
         ('innovative', 'Innovation Leader'),
         ('aggressive', 'Aggressive Competitor'),
     ]
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     multiplayer_game = models.ForeignKey(MultiplayerGame, on_delete=models.CASCADE, related_name='players')
-    
+
     # Player identification
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  # None for AI
     company_name = models.CharField(max_length=100)
     player_type = models.CharField(max_length=10, choices=PLAYER_TYPE_CHOICES)
     ai_strategy = models.CharField(max_length=20, choices=AI_STRATEGY_CHOICES, null=True, blank=True)
-    
-    # Game state
-    balance = models.DecimalField(max_digits=12, decimal_places=2, default=80000.00)
+
+    # Game state - BALANCE IS STORED HERE (source of truth for multiplayer)
+    balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=80000.00,
+        help_text="Player's current balance in this specific game. This is the source of truth."
+    )
     is_bankrupt = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     bankruptcy_month = models.IntegerField(null=True, blank=True)
@@ -430,11 +453,11 @@ class GameParameters(models.Model):
     # === SUPPLIER PARAMETERS (from lieferanten.xlsx) ===
     supplier_payment_terms_multiplier = models.FloatField(
         default=1.0,
-        help_text='Multiplier for supplier payment terms in days (1.0 = normal, 0.5 = half payment terms)'
+        help_text='Multiplier for supplier payment terms in days (1.0 = normal, 0.5 = half payment terms) - HINWEIS: Aktuell werden Zahlungsziele nur angezeigt, Zahlung erfolgt sofort'
     )
     supplier_delivery_time_multiplier = models.FloatField(
         default=1.0,
-        help_text='Multiplier for supplier delivery time in days (1.0 = normal, 2.0 = double delivery time)'
+        help_text='Multiplier for supplier delivery time in days (1.0 = normal, 2.0 = double delivery time) - HINWEIS: Aktuell werden Lieferzeiten nur angezeigt, Lieferung erfolgt sofort'
     )
     supplier_complaint_probability_multiplier = models.FloatField(
         default=1.0,

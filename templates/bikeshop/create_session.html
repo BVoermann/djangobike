@@ -9,9 +9,9 @@
         <div class="col-12">
             <div class="text-center">
                 <h1 class="display-5 fw-bold mb-3">
-                    <i class="fas fa-gamepad me-3"></i>Create New Session
+                    <i class="fas fa-gamepad me-3"></i>Neue Sitzung erstellen
                 </h1>
-                <p class="lead text-muted">Give your bike business simulation a name and get started!</p>
+                <p class="lead text-muted">Geben Sie Ihrer Fahrradgeschäft-Simulation einen Namen und legen Sie los!</p>
             </div>
         </div>
     </div>
@@ -24,15 +24,15 @@
                         <div class="session-icon mb-3">
                             <i class="fas fa-rocket fa-3x"></i>
                         </div>
-                        <h4 class="fw-bold">Launch Your Business</h4>
-                        <p class="text-muted">Choose a memorable name for your simulation session</p>
+                        <h4 class="fw-bold">Starten Sie Ihr Geschäft</h4>
+                        <p class="text-muted">Wählen Sie einen einprägsamen Namen für Ihre Simulationssitzung</p>
                     </div>
-                    
+
                     <form method="post" class="session-form">
                         {% csrf_token %}
                         <div class="mb-4">
                             <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
-                                <i class="fas fa-tag me-2"></i>Session Name
+                                <i class="fas fa-tag me-2"></i>Sitzungsname
                             </label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text bg-light border-0">
@@ -40,15 +40,15 @@
                                 </span>
                                 {{ form.name }}
                             </div>
-                            <div class="form-text">Choose a unique name that represents your business vision</div>
+                            <div class="form-text">Wählen Sie einen eindeutigen Namen, der Ihre Geschäftsvision repräsentiert</div>
                         </div>
-                        
+
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg">
-                                <i class="fas fa-play me-2"></i>Create & Start Session
+                                <i class="fas fa-play me-2"></i>Erstellen & Sitzung starten
                             </button>
                             <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                                <i class="fas fa-arrow-left me-2"></i>Zurück zum Dashboard
                             </a>
                         </div>
                     </form>
@@ -59,26 +59,26 @@
             <div class="card tips-card mt-4">
                 <div class="card-header bg-transparent border-0">
                     <h6 class="fw-bold mb-0">
-                        <i class="fas fa-lightbulb me-2"></i>Tips for Success
+                        <i class="fas fa-lightbulb me-2"></i>Tipps für den Erfolg
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="tip-item">
                         <i class="fas fa-chart-line text-success me-3"></i>
                         <div>
-                            <strong>Monitor your finances:</strong> Keep track of income and expenses to maintain profitability
+                            <strong>Überwachen Sie Ihre Finanzen:</strong> Behalten Sie Einnahmen und Ausgaben im Auge, um die Rentabilität zu erhalten
                         </div>
                     </div>
                     <div class="tip-item">
                         <i class="fas fa-users text-primary me-3"></i>
                         <div>
-                            <strong>Manage your workforce:</strong> Hire skilled workers to increase production efficiency
+                            <strong>Verwalten Sie Ihre Belegschaft:</strong> Stellen Sie qualifizierte Mitarbeiter ein, um die Produktionseffizienz zu steigern
                         </div>
                     </div>
                     <div class="tip-item">
                         <i class="fas fa-balance-scale text-warning me-3"></i>
                         <div>
-                            <strong>Balance supply & demand:</strong> Keep optimal inventory levels to meet customer needs
+                            <strong>Ausgleich von Angebot & Nachfrage:</strong> Halten Sie optimale Lagerbestände, um Kundenbedürfnisse zu erfüllen
                         </div>
                     </div>
                 </div>

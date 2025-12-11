@@ -396,6 +396,186 @@
                     </div>
                 </div>
 
+                <!-- AI Player Details (Admin Only) -->
+                {% if is_admin and ai_players_details %}
+                <div class="col-lg-12 mt-4">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h5><i class="fas fa-robot"></i> AI Player Intelligence (Admin View)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> <strong>Admin View:</strong> This section shows detailed AI player strategies, decisions, and performance. Only visible to game administrators.
+                            </div>
+
+                            {% for ai in ai_players_details %}
+                            <div class="card mb-3 border-secondary">
+                                <div class="card-header bg-secondary text-white">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-robot me-2"></i>{{ ai.player.company_name }}
+                                        </h6>
+                                        <div>
+                                            <span class="badge bg-light text-dark">{{ ai.strategy_code }}</span>
+                                            <span class="badge bg-warning text-dark">{{ ai.difficulty_level }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Strategy & Personality -->
+                                        <div class="col-md-4">
+                                            <h6 class="border-bottom pb-2"><i class="fas fa-brain text-primary"></i> Strategy & Personality</h6>
+                                            <table class="table table-sm">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="fw-bold">Strategy:</td>
+                                                        <td>{{ ai.strategy }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Difficulty:</td>
+                                                        <td>{{ ai.difficulty_score|floatformat:2 }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Aggressiveness:</td>
+                                                        <td>
+                                                            <div class="progress" style="height: 20px;">
+                                                                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ ai.aggressiveness }}" aria-valuenow="{{ ai.aggressiveness|slice:':-1' }}" aria-valuemin="0" aria-valuemax="100">
+                                                                    {{ ai.aggressiveness }}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Risk Tolerance:</td>
+                                                        <td>
+                                                            <div class="progress" style="height: 20px;">
+                                                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ ai.risk_tolerance }}" aria-valuenow="{{ ai.risk_tolerance|slice:':-1' }}" aria-valuemin="0" aria-valuemax="100">
+                                                                    {{ ai.risk_tolerance }}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <!-- Production & Procurement -->
+                                        <div class="col-md-4">
+                                            <h6 class="border-bottom pb-2"><i class="fas fa-cogs text-success"></i> Production & Procurement</h6>
+                                            <table class="table table-sm">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="fw-bold">Production Target:</td>
+                                                        <td><span class="badge bg-success">{{ ai.production_target }} bikes</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Segment Focus:</td>
+                                                        <td>{{ ai.segment_focus|default:"N/A" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Inventory Target:</td>
+                                                        <td><span class="badge bg-primary">{{ ai.inventory_target }}</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Procurement Strategy:</td>
+                                                        <td>{{ ai.procurement_strategy }}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <!-- Pricing & Sales -->
+                                        <div class="col-md-4">
+                                            <h6 class="border-bottom pb-2"><i class="fas fa-chart-line text-warning"></i> Pricing & Sales</h6>
+                                            <table class="table table-sm">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="fw-bold">Pricing Method:</td>
+                                                        <td>{{ ai.pricing_method }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Margin Target:</td>
+                                                        <td><span class="badge bg-warning text-dark">{{ ai.margin_target }}</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Last Turn Revenue:</td>
+                                                        <td class="text-success">€{{ ai.last_turn_revenue|floatformat:0 }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">Last Turn Profit:</td>
+                                                        <td class="{% if ai.last_turn_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                            €{{ ai.last_turn_profit|floatformat:0 }}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- Performance Summary -->
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <h6 class="border-bottom pb-2"><i class="fas fa-chart-bar text-info"></i> Performance Summary</h6>
+                                            <div class="row text-center">
+                                                <div class="col-md-3">
+                                                    <div class="card bg-light">
+                                                        <div class="card-body">
+                                                            <h5 class="text-success">€{{ ai.player.balance|floatformat:0 }}</h5>
+                                                            <small class="text-muted">Current Balance</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card bg-light">
+                                                        <div class="card-body">
+                                                            <h5 class="text-primary">{{ ai.player.bikes_produced }}</h5>
+                                                            <small class="text-muted">Total Bikes Produced</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card bg-light">
+                                                        <div class="card-body">
+                                                            <h5 class="text-info">{{ ai.player.bikes_sold }}</h5>
+                                                            <small class="text-muted">Total Bikes Sold</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card bg-light">
+                                                        <div class="card-body">
+                                                            <h5 class="text-warning">{{ ai.player.market_share|floatformat:1 }}%</h5>
+                                                            <small class="text-muted">Market Share</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Last Turn Stats -->
+                                    {% if ai.last_turn_bikes_produced > 0 or ai.last_turn_bikes_sold > 0 %}
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <div class="alert alert-secondary mb-0">
+                                                <strong><i class="fas fa-history"></i> Last Turn:</strong>
+                                                Produced <span class="badge bg-success">{{ ai.last_turn_bikes_produced }} bikes</span>,
+                                                Sold <span class="badge bg-primary">{{ ai.last_turn_bikes_sold }} bikes</span>,
+                                                Revenue <span class="badge bg-info">€{{ ai.last_turn_revenue|floatformat:0 }}</span>,
+                                                Profit <span class="badge {% if ai.last_turn_profit >= 0 %}bg-success{% else %}bg-danger{% endif %}">€{{ ai.last_turn_profit|floatformat:0 }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Game Events / Activity Log -->
                 <div class="col-lg-6">
                     <div class="card">

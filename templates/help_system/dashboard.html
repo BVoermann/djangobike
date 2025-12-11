@@ -7,9 +7,9 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1><i class="fas fa-question-circle"></i> Help & Tutorial System</h1>
+                <h1><i class="fas fa-question-circle"></i> Hilfe & Tutorial-System</h1>
                 <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-home"></i> Back to Dashboard
+                    <i class="fas fa-home"></i> Zurück zum Dashboard
                 </a>
             </div>
 
@@ -19,10 +19,10 @@
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-play-circle fa-3x text-primary mb-3"></i>
-                            <h5 class="card-title">Video Tutorials</h5>
-                            <p class="card-text">Watch step-by-step guides on how to use all features of the bike shop simulator.</p>
+                            <h5 class="card-title">Video-Tutorials</h5>
+                            <p class="card-text">Schauen Sie sich Schritt-für-Schritt-Anleitungen an, wie Sie alle Funktionen des Fahrradshop-Simulators nutzen können.</p>
                             <a href="{% url 'help_system:video_library' %}" class="btn btn-primary">
-                                <i class="fas fa-video"></i> Watch Videos
+                                <i class="fas fa-video"></i> Videos ansehen
                             </a>
                         </div>
                     </div>
@@ -32,10 +32,10 @@
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-route fa-3x text-success mb-3"></i>
-                            <h5 class="card-title">Interactive Guides</h5>
-                            <p class="card-text">Follow interactive step-by-step guides that highlight interface elements.</p>
+                            <h5 class="card-title">Interaktive Anleitungen</h5>
+                            <p class="card-text">Folgen Sie interaktiven Schritt-für-Schritt-Anleitungen, die Oberflächenelemente hervorheben.</p>
                             <a href="{% url 'help_system:interactive_guides' %}" class="btn btn-success">
-                                <i class="fas fa-hand-point-right"></i> Start Guide
+                                <i class="fas fa-hand-point-right"></i> Anleitung starten
                             </a>
                         </div>
                     </div>
@@ -45,10 +45,10 @@
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <i class="fas fa-book fa-3x text-info mb-3"></i>
-                            <h5 class="card-title">Documentation</h5>
-                            <p class="card-text">Read comprehensive documentation about game mechanics and strategies.</p>
+                            <h5 class="card-title">Dokumentation</h5>
+                            <p class="card-text">Lesen Sie umfassende Dokumentation über Spielmechaniken und Strategien.</p>
                             <a href="{% url 'help_system:documentation' %}" class="btn btn-info">
-                                <i class="fas fa-book-open"></i> Read Docs
+                                <i class="fas fa-book-open"></i> Dokumentation lesen
                             </a>
                         </div>
                     </div>
@@ -60,54 +60,54 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5><i class="fas fa-rocket"></i> Getting Started</h5>
+                            <h5><i class="fas fa-rocket"></i> Erste Schritte</h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h6>New to the Bike Shop Simulator?</h6>
-                                    <p>Start with these essential guides:</p>
+                                    <h6>Neu beim Fahrradshop-Simulator?</h6>
+                                    <p>Beginnen Sie mit diesen wichtigen Anleitungen:</p>
                                     <ul class="list-group list-group-flush">
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Creating Your First Session</span>
+                                            <span>Ihre erste Sitzung erstellen</span>
                                             <button class="btn btn-sm btn-outline-primary" onclick="startTour('first-session')">
-                                                <i class="fas fa-play"></i> Start
+                                                <i class="fas fa-play"></i> Starten
                                             </button>
                                         </li>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Understanding the Dashboard</span>
+                                            <span>Das Dashboard verstehen</span>
                                             <button class="btn btn-sm btn-outline-primary" onclick="startTour('dashboard')">
-                                                <i class="fas fa-play"></i> Start
+                                                <i class="fas fa-play"></i> Starten
                                             </button>
                                         </li>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Your First Procurement</span>
+                                            <span>Ihr erster Einkauf</span>
                                             <button class="btn btn-sm btn-outline-primary" onclick="startTour('procurement')">
-                                                <i class="fas fa-play"></i> Start
+                                                <i class="fas fa-play"></i> Starten
                                             </button>
                                         </li>
                                     </ul>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6>Advanced Topics</h6>
-                                    <p>Master these for better performance:</p>
+                                    <h6>Fortgeschrittene Themen</h6>
+                                    <p>Meistern Sie diese für bessere Leistung:</p>
                                     <ul class="list-group list-group-flush">
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Financial Management</span>
+                                            <span>Finanzverwaltung</span>
                                             <button class="btn btn-sm btn-outline-success" onclick="startTour('finance')">
-                                                <i class="fas fa-play"></i> Start
+                                                <i class="fas fa-play"></i> Starten
                                             </button>
                                         </li>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Production Optimization</span>
+                                            <span>Produktionsoptimierung</span>
                                             <button class="btn btn-sm btn-outline-success" onclick="startTour('production')">
-                                                <i class="fas fa-play"></i> Start
+                                                <i class="fas fa-play"></i> Starten
                                             </button>
                                         </li>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>Market Analysis & Competition</span>
+                                            <span>Marktanalyse & Konkurrenz</span>
                                             <button class="btn btn-sm btn-outline-success" onclick="startTour('competition')">
-                                                <i class="fas fa-play"></i> Start
+                                                <i class="fas fa-play"></i> Starten
                                             </button>
                                         </li>
                                     </ul>

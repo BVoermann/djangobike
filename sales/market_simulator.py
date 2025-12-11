@@ -235,6 +235,12 @@ class MarketSimulator:
 
     def _get_seasonal_factor(self, bike_type_name, month):
         """Get seasonal demand adjustment factor"""
+        from multiplayer.parameter_utils import are_seasonal_effects_enabled
+
+        # Check if seasonal effects are enabled via game parameters
+        if not are_seasonal_effects_enabled(self.session):
+            return 1.0  # No seasonal variation when disabled
+
         bike_type_lower = bike_type_name.lower()
 
         # Mountain bikes peak in summer

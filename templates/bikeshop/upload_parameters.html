@@ -9,9 +9,9 @@
         <div class="col-12">
             <div class="text-center">
                 <h1 class="display-5 fw-bold mb-3">
-                    <i class="fas fa-cloud-upload-alt me-3"></i>Upload Simulation Parameters
+                    <i class="fas fa-cloud-upload-alt me-3"></i>Simulations-Parameter hochladen
                 </h1>
-                <p class="lead text-muted">Upload your ZIP file containing Excel parameter files to get started</p>
+                <p class="lead text-muted">Laden Sie Ihre ZIP-Datei mit Excel-Parameterdateien hoch, um zu beginnen</p>
             </div>
         </div>
     </div>
@@ -24,8 +24,8 @@
                         <div class="upload-icon mb-3">
                             <i class="fas fa-file-upload fa-4x"></i>
                         </div>
-                        <h4 class="fw-bold">Select Your Parameter File</h4>
-                        <p class="text-muted">Choose a ZIP file containing all required Excel files</p>
+                        <h4 class="fw-bold">Wählen Sie Ihre Parameterdatei</h4>
+                        <p class="text-muted">Wählen Sie eine ZIP-Datei mit allen erforderlichen Excel-Dateien</p>
                     </div>
                     
                     <form method="post" enctype="multipart/form-data" class="upload-form">
@@ -41,8 +41,8 @@
                                 <label for="{{ form.parameter_file.id_for_label }}" class="file-upload-label">
                                     <div class="file-upload-content">
                                         <i class="fas fa-plus-circle fa-2x mb-2"></i>
-                                        <div class="fw-semibold file-label-text">Click to browse files</div>
-                                        <small class="text-muted">or drag and drop your ZIP file here</small>
+                                        <div class="fw-semibold file-label-text">Klicken Sie, um Dateien zu durchsuchen</div>
+                                        <small class="text-muted">oder ziehen Sie Ihre ZIP-Datei hierher</small>
                                     </div>
                                 </label>
                             </div>
@@ -58,7 +58,7 @@
                         
                         <div class="text-center">
                             <button type="submit" class="btn btn-primary btn-lg px-5">
-                                <i class="fas fa-rocket me-2"></i>Start Upload
+                                <i class="fas fa-rocket me-2"></i>Upload starten
                             </button>
                         </div>
                     </form>
@@ -70,11 +70,11 @@
             <div class="card requirements-card h-100">
                 <div class="card-header bg-transparent border-0">
                     <h5 class="fw-bold mb-0">
-                        <i class="fas fa-list-check me-2"></i>Required Files
+                        <i class="fas fa-list-check me-2"></i>Erforderliche Dateien
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-4">Your ZIP file must contain these Excel files:</p>
+                    <p class="text-muted mb-4">Ihre ZIP-Datei muss diese Excel-Dateien enthalten:</p>
                     <div class="requirement-list">
                         <div class="requirement-item">
                             <i class="fas fa-file-excel text-success me-3"></i>
@@ -103,25 +103,25 @@
                         <div class="requirement-item">
                             <i class="fas fa-file-excel text-success me-3"></i>
                             <span class="fw-semibold">finanzen.xlsx</span>
-                            <small class="text-muted ms-2">(must include Transportkosten sheet)</small>
+                            <small class="text-muted ms-2">(muss Transportkosten-Blatt enthalten)</small>
                         </div>
                         <div class="requirement-item">
                             <i class="fas fa-file-excel text-success me-3"></i>
                             <span class="fw-semibold">konkurrenten.xlsx</span>
-                            <small class="text-muted ms-2">(AI competitor configuration)</small>
+                            <small class="text-muted ms-2">(KI-Konkurrenz-Konfiguration)</small>
                         </div>
                     </div>
                     
                     <div class="alert alert-info border-0 mt-4">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Tip:</strong> Make sure all files are properly formatted and contain the required data columns. The finanzen.xlsx file must include a 'Transportkosten' sheet, and konkurrenten.xlsx configures AI competitor behavior.
+                        <strong>Tipp:</strong> Stellen Sie sicher, dass alle Dateien korrekt formatiert sind und die erforderlichen Datenspalten enthalten. Die finanzen.xlsx-Datei muss ein 'Transportkosten'-Blatt enthalten, und konkurrenten.xlsx konfiguriert das KI-Konkurrenzverhalten.
                     </div>
-                    
+
                     <div class="text-center mt-4">
                         <a href="{% url 'bikeshop:download_default_parameters' %}" class="btn btn-outline-success btn-sm">
-                            <i class="fas fa-download me-2"></i>Download Example Files
+                            <i class="fas fa-download me-2"></i>Beispieldateien herunterladen
                         </a>
-                        <small class="d-block text-muted mt-2">Get a ZIP with template files to get started</small>
+                        <small class="d-block text-muted mt-2">Holen Sie sich eine ZIP-Datei mit Vorlagendateien, um zu beginnen</small>
                     </div>
                 </div>
             </div>
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (file) {
             // Update UI to show selected file
             fileLabel.classList.add('has-file');
-            fileLabelText.textContent = 'File selected!';
+            fileLabelText.textContent = 'Datei ausgewählt!';
             fileNameSpan.textContent = file.name;
             selectedFileDiv.style.display = 'flex';
         }
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear the file input
         fileInput.value = '';
         fileLabel.classList.remove('has-file');
-        fileLabelText.textContent = 'Click to browse files';
+        fileLabelText.textContent = 'Klicken Sie, um Dateien zu durchsuchen';
         selectedFileDiv.style.display = 'none';
     });
 
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const event = new Event('change', { bubbles: true });
                 fileInput.dispatchEvent(event);
             } else {
-                alert('Please select a ZIP file.');
+                alert('Bitte wählen Sie eine ZIP-Datei.');
             }
         }
     });

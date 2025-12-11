@@ -31,12 +31,14 @@ class PlayerStateManager:
         """
         Initialize complete game state for a player.
         Creates a GameSession and all necessary game objects.
+        PlayerSession.balance is the source of truth.
         """
         logger.info(f"Initializing game state for player: {player_session.company_name}")
 
         from multiplayer.parameter_utils import get_game_parameters_for_multiplayer_game
+        from .balance_manager import BalanceManager
 
-        # Apply starting balance multiplier
+        # Apply starting balance multiplier and set on PlayerSession (source of truth)
         base_balance = self.multiplayer_game.starting_balance
         params = get_game_parameters_for_multiplayer_game(self.multiplayer_game)
         if params:
@@ -45,6 +47,11 @@ class PlayerStateManager:
         else:
             starting_balance = base_balance
 
+        # Set PlayerSession balance (source of truth) if not already set
+        if player_session.balance == self.multiplayer_game.starting_balance:
+            player_session.balance = starting_balance
+            player_session.save(update_fields=['balance'])
+
         # Create or get GameSession for this player
         game_session, created = GameSession.objects.get_or_create(
             user=player_session.user,
@@ -52,7 +59,7 @@ class PlayerStateManager:
             defaults={
                 'current_month': self.multiplayer_game.current_month,
                 'current_year': self.multiplayer_game.current_year,
-                'balance': starting_balance,
+                'balance': player_session.balance,  # Sync from PlayerSession (source of truth)
                 'is_active': True,
                 'multiplayer_game': self.multiplayer_game  # Link to multiplayer game
             }
@@ -62,9 +69,13 @@ class PlayerStateManager:
             # Update existing session to sync with multiplayer game
             game_session.current_month = self.multiplayer_game.current_month
             game_session.current_year = self.multiplayer_game.current_year
-            game_session.balance = player_session.balance
             game_session.multiplayer_game = self.multiplayer_game  # Ensure link is set
             game_session.save()
+
+            # Sync balances using BalanceManager
+            balance_mgr = BalanceManager(player_session, game_session)
+            balance_mgr.sync_balances()
+
             logger.info(f"Updated existing GameSession for {player_session.company_name}")
             return game_session
 
@@ -243,7 +254,6 @@ class PlayerStateManager:
         ]
 
         suppliers = Supplier.objects.filter(session=session)
-        supplier_map = {s.quality: s for s in suppliers}
 
         for comp_data in components_data:
             component = Component.objects.create(
@@ -252,9 +262,10 @@ class PlayerStateManager:
                 name=comp_data['name']
             )
 
-            # Store base prices - multipliers applied via properties (Fix for Issue #2)
-            for quality, supplier in supplier_map.items():
-                price_value = Decimal(str(comp_data['prices'].get(quality, comp_data['prices']['standard'])))
+            # Create SupplierPrice for each supplier based on their quality
+            # This ensures all suppliers (including multiple with same quality) get components
+            for supplier in suppliers:
+                price_value = Decimal(str(comp_data['prices'].get(supplier.quality, comp_data['prices']['standard'])))
                 SupplierPrice.objects.create(
                     session=session,
                     supplier=supplier,
@@ -401,9 +412,10 @@ class PlayerStateManager:
         """Create initial worker types."""
         from multiplayer.parameter_utils import apply_worker_cost_multiplier
 
+        # Reduced wages for better economic balance (28% reduction for skilled, 20% for unskilled)
         workers_data = [
-            {'worker_type': 'skilled', 'base_hourly_wage': Decimal('25.00'), 'monthly_hours': 160, 'count': 2},
-            {'worker_type': 'unskilled', 'base_hourly_wage': Decimal('15.00'), 'monthly_hours': 160, 'count': 3}
+            {'worker_type': 'skilled', 'base_hourly_wage': Decimal('18.00'), 'monthly_hours': 160, 'count': 2},
+            {'worker_type': 'unskilled', 'base_hourly_wage': Decimal('12.00'), 'monthly_hours': 160, 'count': 3}
         ]
 
         for worker_data in workers_data:
@@ -425,8 +437,10 @@ class PlayerStateManager:
             self._create_default_warehouse_types()
 
         # Create initial warehouse for player with multipliers applied
-        base_capacity = 200.0
-        base_rent = Decimal('2000.00')
+        # Increased default warehouse size from 200m² to 500m² (Groß) for better gameplay
+        # Rent adjusted accordingly (from 1200€ to 2400€)
+        base_capacity = 500.0
+        base_rent = Decimal('2400.00')
 
         Warehouse.objects.create(
             session=session,
@@ -438,11 +452,12 @@ class PlayerStateManager:
 
     def _create_default_warehouse_types(self):
         """Create default warehouse types if they don't exist."""
+        # Reduced warehouse rents by ~40% for better economic balance
         warehouse_types = [
-            {'name': 'Klein', 'capacity_m2': 100.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('1500.00'), 'order': 1},
-            {'name': 'Mittel', 'capacity_m2': 200.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('2000.00'), 'order': 2},
-            {'name': 'Groß', 'capacity_m2': 500.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('4000.00'), 'order': 3},
-            {'name': 'Sehr Groß', 'capacity_m2': 1000.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('7000.00'), 'order': 4}
+            {'name': 'Klein', 'capacity_m2': 100.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('900.00'), 'order': 1},
+            {'name': 'Mittel', 'capacity_m2': 200.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('1200.00'), 'order': 2},
+            {'name': 'Groß', 'capacity_m2': 500.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('2400.00'), 'order': 3},
+            {'name': 'Sehr Groß', 'capacity_m2': 1000.0, 'purchase_price': Decimal('0'), 'monthly_rent': Decimal('4200.00'), 'order': 4}
         ]
 
         for wt_data in warehouse_types:

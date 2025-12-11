@@ -114,13 +114,14 @@ def procurement_view(request, session_id):
                 warehouses = Warehouse.objects.filter(session=session)
 
                 # Create warehouse if none exist
+                # Increased default warehouse size from 200m² to 500m² for better gameplay
                 if not warehouses.exists():
                     warehouse = Warehouse.objects.create(
                         session=session,
                         name='Hauptlager',
                         location='Standort 1',
-                        capacity_m2=200.0,
-                        rent_per_month=Decimal('2500.00')
+                        capacity_m2=500.0,
+                        rent_per_month=Decimal('2400.00')
                     )
                     warehouses = [warehouse]
 

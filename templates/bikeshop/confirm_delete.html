@@ -11,34 +11,34 @@
                     <div class="warning-icon mb-3">
                         <i class="fas fa-exclamation-triangle fa-4x"></i>
                     </div>
-                    <h3 class="fw-bold text-danger mb-0">Delete Session</h3>
+                    <h3 class="fw-bold text-danger mb-0">Sitzung löschen</h3>
                 </div>
-                
+
                 <div class="card-body p-5">
                     <div class="text-center mb-4">
                         <p class="fs-5 mb-3">
-                            Are you sure you want to delete <strong>"{{ session.name }}"</strong>?
+                            Möchten Sie wirklich <strong>"{{ session.name }}"</strong> löschen?
                         </p>
                     </div>
-                    
+
                     <div class="alert alert-danger border-0 mb-4">
                         <div class="d-flex align-items-start">
                             <i class="fas fa-exclamation-circle me-3 mt-1"></i>
                             <div>
-                                <strong>Warning:</strong> This action cannot be undone. All data from this session will be permanently lost, including:
+                                <strong>Warnung:</strong> Diese Aktion kann nicht rückgängig gemacht werden. Alle Daten dieser Sitzung gehen unwiederbringlich verloren, einschließlich:
                                 <ul class="mt-2 mb-0">
-                                    <li>Financial records and transactions</li>
-                                    <li>Inventory and production data</li>
-                                    <li>Employee and customer information</li>
-                                    <li>All progress and statistics</li>
+                                    <li>Finanzunterlagen und Transaktionen</li>
+                                    <li>Lager- und Produktionsdaten</li>
+                                    <li>Mitarbeiter- und Kundeninformationen</li>
+                                    <li>Aller Fortschritte und Statistiken</li>
                                 </ul>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="session-details-card mb-4">
                         <h6 class="fw-bold mb-3">
-                            <i class="fas fa-info-circle me-2"></i>Session Details
+                            <i class="fas fa-info-circle me-2"></i>Sitzungsdetails
                         </h6>
                         <div class="row g-3">
                             <div class="col-sm-6">
@@ -49,43 +49,43 @@
                             </div>
                             <div class="col-sm-6">
                                 <div class="detail-item">
-                                    <span class="detail-label">Current Period:</span>
+                                    <span class="detail-label">Aktueller Zeitraum:</span>
                                     <span class="detail-value">{{ session.current_month }}/{{ session.current_year }}</span>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="detail-item">
-                                    <span class="detail-label">Balance:</span>
+                                    <span class="detail-label">Kontostand:</span>
                                     <span class="detail-value text-success">{{ session.balance|floatformat:2 }}€</span>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="detail-item">
-                                    <span class="detail-label">Created:</span>
+                                    <span class="detail-label">Erstellt:</span>
                                     <span class="detail-value">{{ session.created_at|date:"d.m.Y H:i" }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-footer bg-transparent border-0 p-4">
                     <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                         <form method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-lg px-4 me-md-2">
-                                <i class="fas fa-trash me-2"></i>Yes, Delete Forever
+                                <i class="fas fa-trash me-2"></i>Ja, endgültig löschen
                             </button>
                         </form>
                         <a href="{% url 'bikeshop:dashboard' %}" class="btn btn-outline-secondary btn-lg px-4">
-                            <i class="fas fa-arrow-left me-2"></i>Cancel & Go Back
+                            <i class="fas fa-arrow-left me-2"></i>Abbrechen & Zurück
                         </a>
                     </div>
-                    
+
                     <div class="text-center mt-3">
                         <small class="text-muted">
                             <i class="fas fa-shield-alt me-1"></i>
-                            Your other sessions will remain safe and unaffected
+                            Ihre anderen Sitzungen bleiben sicher und unberührt
                         </small>
                     </div>
                 </div>

@@ -467,7 +467,8 @@ class PlayerStateManager:
         """Create markets with demand patterns."""
         from multiplayer.parameter_utils import (
             apply_transport_cost_multiplier,
-            apply_market_demand_multiplier
+            apply_market_demand_multiplier,
+            apply_market_price_sensitivity_multiplier
         )
 
         markets_data = [
@@ -476,14 +477,16 @@ class PlayerStateManager:
                 'location': 'Germany',
                 'base_transport_cost_home': Decimal('50.00'),
                 'base_transport_cost_foreign': Decimal('100.00'),
-                'base_monthly_volume_capacity': 200
+                'base_monthly_volume_capacity': 200,
+                'base_price_elasticity_factor': 1.0
             },
             {
                 'name': 'EU Market',
                 'location': 'Europe',
                 'base_transport_cost_home': Decimal('150.00'),
                 'base_transport_cost_foreign': Decimal('200.00'),
-                'base_monthly_volume_capacity': 300
+                'base_monthly_volume_capacity': 300,
+                'base_price_elasticity_factor': 1.2
             }
         ]
 
@@ -500,11 +503,16 @@ class PlayerStateManager:
             base_capacity = market_data.pop('base_monthly_volume_capacity')
             monthly_volume_capacity = int(apply_market_demand_multiplier(base_capacity, session))
 
+            # Apply price sensitivity multiplier
+            base_price_elasticity = market_data.pop('base_price_elasticity_factor')
+            price_elasticity_factor = apply_market_price_sensitivity_multiplier(base_price_elasticity, session)
+
             market = Market.objects.create(
                 session=session,
                 transport_cost_home=transport_cost_home,
                 transport_cost_foreign=transport_cost_foreign,
                 monthly_volume_capacity=monthly_volume_capacity,
+                price_elasticity_factor=price_elasticity_factor,
                 **market_data
             )
 

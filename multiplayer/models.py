@@ -521,7 +521,7 @@ class GameParameters(models.Model):
     )
     market_distance_multiplier = models.FloatField(
         default=1.0,
-        help_text='Multiplier for market distances (affects transport costs, 1.0 = normal)'
+        help_text='Multiplier for market distances (currently not used - transport costs are calculated from Excel distance data via transport_cost_multiplier)'
     )
     market_price_sensitivity_multiplier = models.FloatField(
         default=1.0,
@@ -565,7 +565,7 @@ class GameParameters(models.Model):
     )
     other_costs_multiplier = models.FloatField(
         default=1.0,
-        help_text='Multiplier for miscellaneous/overhead costs (1.0 = normal, 1.2 = 20% higher costs)'
+        help_text='Multiplier for miscellaneous/overhead costs (currently applies to warehouse rent via warehouse_cost_multiplier - this parameter reserved for future use)'
     )
     inflation_rate = models.FloatField(
         default=0.02,

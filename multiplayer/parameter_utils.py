@@ -262,3 +262,84 @@ def are_seasonal_effects_enabled(session):
     if params:
         return params.seasonal_effects_enabled
     return True  # Default enabled
+
+
+def apply_market_distance_multiplier(base_distance, session):
+    """Apply market distance multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = float(params.market_distance_multiplier)
+        return base_distance * multiplier
+    return base_distance
+
+
+def apply_market_price_sensitivity_multiplier(base_sensitivity, session):
+    """Apply market price sensitivity multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = float(params.market_price_sensitivity_multiplier)
+        return base_sensitivity * multiplier
+    return base_sensitivity
+
+
+def apply_loan_availability_multiplier(base_max_amount, session):
+    """Apply loan availability multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = Decimal(str(params.loan_availability_multiplier))
+        return base_max_amount * multiplier
+    return base_max_amount
+
+
+def apply_other_costs_multiplier(base_cost, session):
+    """Apply other/overhead costs multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = Decimal(str(params.other_costs_multiplier))
+        return base_cost * multiplier
+    return base_cost
+
+
+def apply_competitor_aggressiveness(base_aggressiveness, session):
+    """Apply competitor aggressiveness multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = float(params.competitor_aggressiveness)
+        return base_aggressiveness * multiplier
+    return base_aggressiveness
+
+
+def apply_competitor_financial_resources_multiplier(base_resources, session):
+    """Apply competitor financial resources multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = Decimal(str(params.competitor_financial_resources_multiplier))
+        return base_resources * multiplier
+    return base_resources
+
+
+def apply_competitor_efficiency_multiplier(base_efficiency, session):
+    """Apply competitor efficiency multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = float(params.competitor_efficiency_multiplier)
+        return base_efficiency * multiplier
+    return base_efficiency
+
+
+def apply_competitor_market_presence_multiplier(base_presence, session):
+    """Apply competitor market presence multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = float(params.competitor_market_presence_multiplier)
+        return base_presence * multiplier
+    return base_presence
+
+
+def apply_competitor_marketing_budget_multiplier(base_budget, session):
+    """Apply competitor marketing budget multiplier."""
+    params = get_game_parameters(session)
+    if params:
+        multiplier = Decimal(str(params.competitor_marketing_budget_multiplier))
+        return base_budget * multiplier
+    return base_budget

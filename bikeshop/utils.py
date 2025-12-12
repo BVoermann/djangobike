@@ -327,20 +327,49 @@ def initialize_session_data(session, parameters):
                 )
 
     # AI-Konkurrenten erstellen (nur aktive)
+    # Import competitor parameter utilities
+    from multiplayer.parameter_utils import (
+        apply_competitor_financial_resources_multiplier,
+        apply_competitor_market_presence_multiplier,
+        apply_competitor_aggressiveness,
+        apply_competitor_efficiency_multiplier
+    )
+
     for competitor_data in parameters['competitors']['competitors']:
         if competitor_data.get('Aktiv', True):  # Nur aktive Konkurrenten erstellen
+            # Apply parameter multipliers (will be 1.0 for singleplayer, but applied for multiplayer)
+            financial_resources = apply_competitor_financial_resources_multiplier(
+                competitor_data['Startkapital'], session
+            )
+            market_presence = apply_competitor_market_presence_multiplier(
+                competitor_data['Marktanteil_Start'], session
+            )
+            aggressiveness = apply_competitor_aggressiveness(
+                competitor_data['Aggressivität'], session
+            )
+            efficiency = apply_competitor_efficiency_multiplier(
+                competitor_data['Effizienz'], session
+            )
+
             AICompetitor.objects.create(
                 session=session,
                 name=competitor_data['Name'],
                 strategy=competitor_data['Strategie'],
-                financial_resources=competitor_data['Startkapital'],
-                market_presence=competitor_data['Marktanteil_Start'],
-                aggressiveness=competitor_data['Aggressivität'],
-                efficiency=competitor_data['Effizienz']
+                financial_resources=financial_resources,
+                market_presence=market_presence,
+                aggressiveness=aggressiveness,
+                efficiency=efficiency
             )
 
     # Strategiekonfigurationen erstellen
+    from multiplayer.parameter_utils import apply_competitor_marketing_budget_multiplier
+
     for strategy_data in parameters['competitors']['strategies']:
+        # Apply marketing budget multiplier (will be 1.0 for singleplayer, but applied for multiplayer)
+        marketing_budget = apply_competitor_marketing_budget_multiplier(
+            strategy_data['Marketingbudget'], session
+        )
+
         StrategyConfiguration.objects.create(
             session=session,
             strategy=strategy_data['Strategie'],
@@ -351,7 +380,7 @@ def initialize_session_data(session, parameters):
             price_factor=strategy_data['Preisfaktor'],
             production_volume=strategy_data['Produktionsvolumen'],
             quality_focus=strategy_data['Qualitätsfokus'],
-            marketing_budget=strategy_data['Marketingbudget']
+            marketing_budget=marketing_budget
         )
 
     # Marktdynamik-Einstellungen erstellen

@@ -45,15 +45,35 @@ class MultiplayerIntegrationManager:
                 name=ai_player.company_name
             )
         except AICompetitor.DoesNotExist:
-            # Create new AI competitor
+            # Create new AI competitor - apply game parameter multipliers
+            from multiplayer.parameter_utils import (
+                apply_competitor_financial_resources_multiplier,
+                apply_competitor_market_presence_multiplier,
+                apply_competitor_aggressiveness,
+                apply_competitor_efficiency_multiplier
+            )
+
+            financial_resources = apply_competitor_financial_resources_multiplier(
+                ai_player.balance, game_session
+            )
+            market_presence = apply_competitor_market_presence_multiplier(
+                self._calculate_market_presence(ai_player), game_session
+            )
+            aggressiveness = apply_competitor_aggressiveness(
+                ai_player.ai_aggressiveness, game_session
+            )
+            efficiency = apply_competitor_efficiency_multiplier(
+                self._calculate_efficiency(ai_player), game_session
+            )
+
             ai_competitor = AICompetitor.objects.create(
                 session=game_session,
                 name=ai_player.company_name,
                 strategy=ai_player.ai_strategy or 'balanced',
-                financial_resources=ai_player.balance,
-                market_presence=self._calculate_market_presence(ai_player),
-                aggressiveness=ai_player.ai_aggressiveness,
-                efficiency=self._calculate_efficiency(ai_player)
+                financial_resources=financial_resources,
+                market_presence=market_presence,
+                aggressiveness=aggressiveness,
+                efficiency=efficiency
             )
         
         return ai_competitor

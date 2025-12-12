@@ -147,7 +147,7 @@ def finance_view(request, session_id):
                 amount = Decimal(str(data.get('amount')))
 
                 # Kreditkonditionen - use interest_rate parameter
-                from multiplayer.parameter_utils import get_interest_rate
+                from multiplayer.parameter_utils import get_interest_rate, apply_loan_availability_multiplier
                 base_interest_rate = get_interest_rate(session)  # Get from game parameters (default 5%)
 
                 # Apply multipliers to base rate for different credit types
@@ -162,9 +162,12 @@ def finance_view(request, session_id):
 
                 # Sofortkredit hat niedrigere Maximalgrenze (15% des Guthabens)
                 if credit_type == 'instant':
-                    max_amount = session.balance * Decimal('0.15')
+                    base_max_amount = session.balance * Decimal('0.15')
                 else:
-                    max_amount = session.balance * Decimal('0.25')  # Andere Kredite: 25% des Guthabens
+                    base_max_amount = session.balance * Decimal('0.25')  # Andere Kredite: 25% des Guthabens
+
+                # Apply loan availability multiplier from game parameters
+                max_amount = apply_loan_availability_multiplier(base_max_amount, session)
 
                 if amount > max_amount:
                     return JsonResponse({'success': False, 'error': 'Kreditbetrag zu hoch!'})
